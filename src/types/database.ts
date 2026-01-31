@@ -4,6 +4,47 @@ export type ProductCategory = 'frutas' | 'verduras' | 'legumes' | 'temperos' | '
 export type UnitType = 'kg' | 'un' | 'maco' | 'bandeja';
 export type BreakageReason = 'vencido' | 'danificado' | 'furto' | 'erro_operacional' | 'outro';
 
+// New entity types
+export type PersonType = 'funcionario' | 'cliente' | 'motorista';
+export type PackagingMaterial = 'plastico' | 'madeira' | 'papelao' | 'isopor';
+export type LocationType = 'box_ceasa' | 'camara_fria' | 'pulmao' | 'deposito' | 'gondola';
+
+export interface Person {
+  id: string;
+  name: string;
+  type: PersonType;
+  cpf_cnpj: string | null;
+  phone: string | null;
+  email: string | null;
+  is_active: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Packaging {
+  id: string;
+  name: string;
+  tare_weight: number;
+  material: PackagingMaterial;
+  is_returnable: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  type: LocationType;
+  max_capacity: number | null;
+  temperature_min: number | null;
+  temperature_max: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Supplier {
   id: string;
   name: string;
@@ -37,12 +78,14 @@ export interface Product {
 export interface StockBatch {
   id: string;
   product_id: string;
+  location_id: string | null;
   quantity: number;
   cost_per_unit: number;
   expiry_date: string | null;
   received_at: string;
   created_at: string;
   product?: Product;
+  location?: Location;
 }
 
 export interface Sale {
@@ -111,4 +154,25 @@ export const BREAKAGE_REASON_LABELS: Record<BreakageReason, string> = {
   furto: 'Furto',
   erro_operacional: 'Erro Operacional',
   outro: 'Outro'
+};
+
+export const PERSON_TYPE_LABELS: Record<PersonType, string> = {
+  funcionario: 'Funcionário',
+  cliente: 'Cliente',
+  motorista: 'Motorista'
+};
+
+export const PACKAGING_MATERIAL_LABELS: Record<PackagingMaterial, string> = {
+  plastico: 'Plástico',
+  madeira: 'Madeira',
+  papelao: 'Papelão',
+  isopor: 'Isopor'
+};
+
+export const LOCATION_TYPE_LABELS: Record<LocationType, string> = {
+  box_ceasa: 'Box CEASA',
+  camara_fria: 'Câmara Fria',
+  pulmao: 'Pulmão',
+  deposito: 'Depósito',
+  gondola: 'Gôndola'
 };

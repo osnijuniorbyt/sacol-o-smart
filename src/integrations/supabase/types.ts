@@ -65,6 +65,114 @@ export type Database = {
           },
         ]
       }
+      locations: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          max_capacity: number | null
+          name: string
+          temperature_max: number | null
+          temperature_min: number | null
+          type: Database["public"]["Enums"]["location_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_capacity?: number | null
+          name: string
+          temperature_max?: number | null
+          temperature_min?: number | null
+          type?: Database["public"]["Enums"]["location_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_capacity?: number | null
+          name?: string
+          temperature_max?: number | null
+          temperature_min?: number | null
+          type?: Database["public"]["Enums"]["location_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      packagings: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_returnable: boolean
+          material: Database["public"]["Enums"]["packaging_material"]
+          name: string
+          tare_weight: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_returnable?: boolean
+          material?: Database["public"]["Enums"]["packaging_material"]
+          name: string
+          tare_weight?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_returnable?: boolean
+          material?: Database["public"]["Enums"]["packaging_material"]
+          name?: string
+          tare_weight?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      people: {
+        Row: {
+          cpf_cnpj: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          type: Database["public"]["Enums"]["person_type"]
+          updated_at: string
+        }
+        Insert: {
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          type?: Database["public"]["Enums"]["person_type"]
+          updated_at?: string
+        }
+        Update: {
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          type?: Database["public"]["Enums"]["person_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: Database["public"]["Enums"]["product_category"]
@@ -209,6 +317,7 @@ export type Database = {
           created_at: string
           expiry_date: string | null
           id: string
+          location_id: string | null
           product_id: string
           quantity: number
           received_at: string
@@ -218,6 +327,7 @@ export type Database = {
           created_at?: string
           expiry_date?: string | null
           id?: string
+          location_id?: string | null
           product_id: string
           quantity?: number
           received_at?: string
@@ -227,11 +337,19 @@ export type Database = {
           created_at?: string
           expiry_date?: string | null
           id?: string
+          location_id?: string | null
           product_id?: string
           quantity?: number
           received_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_batches_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_batches_product_id_fkey"
             columns: ["product_id"]
@@ -288,6 +406,14 @@ export type Database = {
         | "furto"
         | "erro_operacional"
         | "outro"
+      location_type:
+        | "box_ceasa"
+        | "camara_fria"
+        | "pulmao"
+        | "deposito"
+        | "gondola"
+      packaging_material: "plastico" | "madeira" | "papelao" | "isopor"
+      person_type: "funcionario" | "cliente" | "motorista"
       product_category:
         | "frutas"
         | "verduras"
@@ -429,6 +555,15 @@ export const Constants = {
         "erro_operacional",
         "outro",
       ],
+      location_type: [
+        "box_ceasa",
+        "camara_fria",
+        "pulmao",
+        "deposito",
+        "gondola",
+      ],
+      packaging_material: ["plastico", "madeira", "papelao", "isopor"],
+      person_type: ["funcionario", "cliente", "motorista"],
       product_category: ["frutas", "verduras", "legumes", "temperos", "outros"],
       unit_type: ["kg", "un", "maco", "bandeja"],
     },

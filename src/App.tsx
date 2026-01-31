@@ -11,6 +11,7 @@ import PDV from "@/pages/PDV";
 import Estoque from "@/pages/Estoque";
 import Quebras from "@/pages/Quebras";
 import Produtos from "@/pages/Produtos";
+import Compras from "@/pages/Compras";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -99,6 +100,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <Produtos />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/compras"
+        element={
+          <PrivateRoute>
+            <Compras />
           </PrivateRoute>
         }
       />

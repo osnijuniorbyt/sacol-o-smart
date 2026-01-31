@@ -1,38 +1,44 @@
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useSales } from '@/hooks/useSales';
 import { useStock } from '@/hooks/useStock';
 import { useBreakages } from '@/hooks/useBreakages';
 import { useProducts } from '@/hooks/useProducts';
 import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  ScatterChart,
+  Scatter,
+  ZAxis,
+  Cell,
+  ReferenceLine
+} from 'recharts';
+import { 
   DollarSign, 
-  ShoppingCart, 
+  TrendingUp, 
+  TrendingDown,
   AlertTriangle, 
   Package,
-  TrendingUp,
-  Clock
+  Clock,
+  Target,
+  Wallet,
+  BarChart3
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function Dashboard() {
-  const { getTodayTotal, getTodayCount, todaySales } = useSales();
-  const { getExpiringBatches, batches } = useStock();
-  const { getRecentBreakages, getTotalLoss } = useBreakages();
+  const { sales, getTodayTotal, getTodayCount } = useSales();
+  const { getExpiringBatches, batches, getProductStock } = useStock();
+  const { breakages, getTotalLoss, getRecentBreakages } = useBreakages();
   const { products } = useProducts();
-
-  const todayTotal = getTodayTotal();
-  const todayCount = getTodayCount();
-  const expiringBatches = getExpiringBatches(3);
-  const recentBreakages = getRecentBreakages(7);
-  const totalLoss = getTotalLoss();
-
-  // Products with low stock
-  const lowStockProducts = products.filter(product => {
-    const totalStock = batches
-      .filter(b => b.product_id === product.id)
-      .reduce((sum, b) => sum + Number(b.quantity), 0);
-    return totalStock <= product.min_stock && product.is_active;
-  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -41,114 +47,430 @@ export default function Dashboard() {
     }).format(value);
   };
 
+  const formatPercent = (value: number) => {
+    return `${(value * 100).toFixed(1)}%`;
+  };
+
+  // Calculate advanced metrics
+  const metrics = useMemo(() => {
+    const today = new Date();
+    const todayStart = startOfDay(today);
+    const todayEnd = endOfDay(today);
+
+    // Today's revenue
+    const todayRevenue = sales
+      .filter(s => isWithinInterval(new Date(s.created_at), { start: todayStart, end: todayEnd }))
+      .reduce((sum, s) => sum + Number(s.total), 0);
+
+    // Today's cost (from batches sold - simplified as we don't track cost per sale)
+    // Using average cost from batches
+    const avgCostPerUnit = batches.length > 0
+      ? batches.reduce((sum, b) => sum + Number(b.cost_per_unit) * Number(b.quantity), 0) /
+        batches.reduce((sum, b) => sum + Number(b.quantity), 0)
+      : 0;
+
+    // Today's breakage loss
+    const todayBreakageLoss = breakages
+      .filter(b => isWithinInterval(new Date(b.created_at), { start: todayStart, end: todayEnd }))
+      .reduce((sum, b) => sum + Number(b.total_loss), 0);
+
+    // Total stock value (quantity * cost_per_unit)
+    const stockValue = batches.reduce((sum, b) => 
+      sum + Number(b.quantity) * Number(b.cost_per_unit), 0);
+
+    // Products expiring in 3 days
+    const expiringIn3Days = getExpiringBatches(3);
+
+    // Profit calculation (simplified)
+    const estimatedCost = todayRevenue * 0.6; // Assuming 60% cost
+    const todayProfit = todayRevenue - estimatedCost - todayBreakageLoss;
+
+    // Real margin (average)
+    const avgSalePrice = products.reduce((sum, p) => sum + Number(p.price), 0) / (products.length || 1);
+    const realMargin = avgSalePrice > 0 ? (avgSalePrice - avgCostPerUnit) / avgSalePrice : 0;
+
+    return {
+      todayRevenue,
+      todayBreakageLoss,
+      stockValue,
+      expiringCount: expiringIn3Days.length,
+      todayProfit,
+      realMargin,
+      avgCostPerUnit
+    };
+  }, [sales, batches, breakages, products, getExpiringBatches]);
+
+  // Data for stacked bar chart (last 7 days)
+  const stackedBarData = useMemo(() => {
+    const data = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = subDays(new Date(), i);
+      const dayStart = startOfDay(date);
+      const dayEnd = endOfDay(date);
+
+      const revenue = sales
+        .filter(s => isWithinInterval(new Date(s.created_at), { start: dayStart, end: dayEnd }))
+        .reduce((sum, s) => sum + Number(s.total), 0);
+
+      const breakageCost = breakages
+        .filter(b => isWithinInterval(new Date(b.created_at), { start: dayStart, end: dayEnd }))
+        .reduce((sum, b) => sum + Number(b.total_loss), 0);
+
+      // Estimated merchandise cost (60% of revenue as approximation)
+      const merchandiseCost = revenue * 0.6;
+      const profit = revenue - merchandiseCost - breakageCost;
+
+      data.push({
+        day: format(date, 'EEE', { locale: ptBR }),
+        fullDate: format(date, 'dd/MM'),
+        receita: revenue,
+        custoMercadoria: merchandiseCost,
+        custoQuebra: breakageCost,
+        lucro: Math.max(0, profit)
+      });
+    }
+    return data;
+  }, [sales, breakages]);
+
+  // Data for scatter plot (Supplier toxic ranking simulation)
+  // Since we don't have supplier data, we'll use product categories as proxy
+  const scatterData = useMemo(() => {
+    const productMetrics = products.map(product => {
+      // Get all breakages for this product marked as "danificado" (from supplier)
+      const productBreakages = breakages.filter(b => 
+        b.product_id === product.id && b.reason === 'danificado'
+      );
+      const totalBreakageQty = productBreakages.reduce((sum, b) => sum + Number(b.quantity), 0);
+      
+      // Get total stock received for this product
+      const totalReceived = batches
+        .filter(b => b.product_id === product.id)
+        .reduce((sum, b) => sum + Number(b.quantity), 0) + totalBreakageQty;
+
+      const defectRate = totalReceived > 0 ? totalBreakageQty / totalReceived : 0;
+
+      // Average cost
+      const productBatches = batches.filter(b => b.product_id === product.id);
+      const avgCost = productBatches.length > 0
+        ? productBatches.reduce((sum, b) => sum + Number(b.cost_per_unit), 0) / productBatches.length
+        : 0;
+
+      return {
+        name: product.name,
+        category: product.category,
+        avgPrice: avgCost,
+        defectRate: defectRate * 100, // percentage
+        // Quadrant: expensive (>5) and bad (>10% defect)
+        isToxic: avgCost > 5 && defectRate > 0.1,
+        z: totalReceived // size based on volume
+      };
+    }).filter(p => p.avgPrice > 0 || p.defectRate > 0);
+
+    return productMetrics;
+  }, [products, breakages, batches]);
+
+  // Calculate quadrant thresholds
+  const priceThreshold = useMemo(() => {
+    const prices = scatterData.map(d => d.avgPrice).filter(p => p > 0);
+    return prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : 5;
+  }, [scatterData]);
+
+  const defectThreshold = 10; // 10% defect rate threshold
+
+  // Low stock products
+  const lowStockProducts = products.filter(product => {
+    const totalStock = getProductStock(product.id);
+    return totalStock <= product.min_stock && product.is_active;
+  });
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
-          {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
-        </p>
+    <div className="space-y-6 pb-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard Inteligente</h1>
+          <p className="text-muted-foreground">
+            {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
+          </p>
+        </div>
+        <Badge variant="outline" className="w-fit">
+          <BarChart3 className="h-3 w-3 mr-1" />
+          Análise em tempo real
+        </Badge>
       </div>
 
-      {/* Main metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Vendas Hoje</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+      {/* Main Metrics - 2x2 on mobile, 4 columns on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Lucro do Dia */}
+        <Card className={metrics.todayProfit >= 0 ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs sm:text-sm font-medium">Lucro do Dia</CardTitle>
+            {metrics.todayProfit >= 0 ? (
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            )}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(todayTotal)}
+            <div className={`text-xl sm:text-2xl font-bold ${metrics.todayProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(metrics.todayProfit)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {todayCount} {todayCount === 1 ? 'venda' : 'vendas'} realizadas
+              Receita - Custos - Quebras
             </p>
           </CardContent>
         </Card>
 
+        {/* Margem Real */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Quebras (7 dias)</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs sm:text-sm font-medium">Margem Real</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(recentBreakages.reduce((sum, b) => sum + Number(b.total_loss), 0))}
+            <div className={`text-xl sm:text-2xl font-bold ${metrics.realMargin >= 0.3 ? 'text-green-600' : 'text-yellow-600'}`}>
+              {formatPercent(metrics.realMargin)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {recentBreakages.length} {recentBreakages.length === 1 ? 'registro' : 'registros'}
+              Preço - Custo Dinâmico
             </p>
           </CardContent>
         </Card>
 
+        {/* Estoque em Valor */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs sm:text-sm font-medium">Estoque (R$)</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {lowStockProducts.length}
+            <div className="text-xl sm:text-2xl font-bold text-foreground">
+              {formatCurrency(metrics.stockValue)}
             </div>
             <p className="text-xs text-muted-foreground">
-              produtos abaixo do mínimo
+              {batches.length} lotes ativos
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Vencendo</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+        {/* Vencendo em 3 dias */}
+        <Card className={metrics.expiringCount > 0 ? 'border-orange-500/30 bg-orange-500/5' : ''}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs sm:text-sm font-medium">Vencendo</CardTitle>
+            <Clock className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {expiringBatches.length}
+            <div className={`text-xl sm:text-2xl font-bold ${metrics.expiringCount > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+              {metrics.expiringCount}
             </div>
             <p className="text-xs text-muted-foreground">
-              lotes nos próximos 3 dias
+              lotes em 3 dias
             </p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Stacked Bar Chart - Revenue vs Costs */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <DollarSign className="h-5 w-5" />
+            Receita vs Custos (7 dias)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[250px] sm:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stackedBarData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="day" 
+                  tick={{ fontSize: 12 }}
+                  className="text-muted-foreground"
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(v) => `R$${v}`}
+                  className="text-muted-foreground"
+                />
+                <Tooltip 
+                  formatter={(value: number, name: string) => [
+                    formatCurrency(value),
+                    name === 'receita' ? 'Receita' :
+                    name === 'custoMercadoria' ? 'Custo Mercadoria' :
+                    name === 'custoQuebra' ? 'Custo Quebra' : 'Lucro'
+                  ]}
+                  labelFormatter={(label, payload) => {
+                    const item = payload?.[0]?.payload;
+                    return item?.fullDate || label;
+                  }}
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--popover))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Legend 
+                  wrapperStyle={{ fontSize: '12px' }}
+                  formatter={(value) => 
+                    value === 'receita' ? 'Receita' :
+                    value === 'custoMercadoria' ? 'Custo Mercadoria' :
+                    value === 'custoQuebra' ? 'Custo Quebra' : 'Lucro'
+                  }
+                />
+                <Bar dataKey="receita" stackId="a" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="custoMercadoria" stackId="b" fill="#64748b" />
+                <Bar dataKey="custoQuebra" stackId="b" fill="#ef4444" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex flex-wrap gap-4 mt-4 justify-center text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-green-500"></div>
+              <span className="text-muted-foreground">Receita (verde)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-slate-500"></div>
+              <span className="text-muted-foreground">Custo Mercadoria</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-red-500"></div>
+              <span className="text-muted-foreground">Custo Quebra</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Scatter Plot - Toxic Supplier Ranking */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            Ranking Fornecedor Tóxico
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Produtos no quadrante vermelho: Caro + Alto índice de defeito
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[280px] sm:h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  type="number" 
+                  dataKey="avgPrice" 
+                  name="Preço Médio"
+                  tick={{ fontSize: 12 }}
+                  label={{ value: 'Preço Médio (R$/kg)', position: 'bottom', fontSize: 12 }}
+                  className="text-muted-foreground"
+                />
+                <YAxis 
+                  type="number" 
+                  dataKey="defectRate" 
+                  name="% Defeito"
+                  tick={{ fontSize: 12 }}
+                  label={{ value: '% Defeito', angle: -90, position: 'insideLeft', fontSize: 12 }}
+                  className="text-muted-foreground"
+                />
+                <ZAxis type="number" dataKey="z" range={[50, 400]} />
+                <Tooltip 
+                  cursor={{ strokeDasharray: '3 3' }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-popover border rounded-lg p-3 shadow-lg">
+                          <p className="font-medium">{data.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Preço: {formatCurrency(data.avgPrice)}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Defeito: {data.defectRate.toFixed(1)}%
+                          </p>
+                          {data.isToxic && (
+                            <Badge variant="destructive" className="mt-2">
+                              ⚠️ Fornecedor Tóxico
+                            </Badge>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                {/* Reference lines for quadrants */}
+                <ReferenceLine 
+                  x={priceThreshold} 
+                  stroke="#fbbf24" 
+                  strokeDasharray="5 5"
+                  label={{ value: 'Preço Médio', position: 'top', fontSize: 10 }}
+                />
+                <ReferenceLine 
+                  y={defectThreshold} 
+                  stroke="#fbbf24" 
+                  strokeDasharray="5 5"
+                  label={{ value: '10% defeito', position: 'right', fontSize: 10 }}
+                />
+                <Scatter name="Produtos" data={scatterData}>
+                  {scatterData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.isToxic ? '#ef4444' : '#22c55e'}
+                      strokeWidth={entry.isToxic ? 2 : 0}
+                      stroke="#ef4444"
+                    />
+                  ))}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex flex-wrap gap-4 mt-4 justify-center text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span className="text-muted-foreground">Bom fornecedor</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <span className="text-muted-foreground">Tóxico (Caro + Ruim)</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bottom cards - Alerts */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Low stock alerts */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
+              <Package className="h-5 w-5 text-yellow-500" />
               Estoque Baixo
+              {lowStockProducts.length > 0 && (
+                <Badge variant="secondary">{lowStockProducts.length}</Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {lowStockProducts.length === 0 ? (
               <p className="text-muted-foreground text-sm">
-                Nenhum produto com estoque baixo
+                ✅ Todos os estoques OK
               </p>
             ) : (
               <div className="space-y-3">
                 {lowStockProducts.slice(0, 5).map(product => {
-                  const totalStock = batches
-                    .filter(b => b.product_id === product.id)
-                    .reduce((sum, b) => sum + Number(b.quantity), 0);
+                  const totalStock = getProductStock(product.id);
                   return (
                     <div key={product.id} className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">{product.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          PLU: {product.plu}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-yellow-600">
-                          {totalStock.toFixed(2)} {product.unit}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
                           Mín: {product.min_stock} {product.unit}
                         </p>
                       </div>
+                      <Badge variant="destructive">
+                        {totalStock.toFixed(1)} {product.unit}
+                      </Badge>
                     </div>
                   );
                 })}
@@ -161,74 +483,41 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Lotes Vencendo
+              <Clock className="h-5 w-5 text-orange-500" />
+              Vencendo em Breve
+              {metrics.expiringCount > 0 && (
+                <Badge variant="secondary">{metrics.expiringCount}</Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {expiringBatches.length === 0 ? (
+            {metrics.expiringCount === 0 ? (
               <p className="text-muted-foreground text-sm">
-                Nenhum lote próximo do vencimento
+                ✅ Nenhum lote próximo do vencimento
               </p>
             ) : (
               <div className="space-y-3">
-                {expiringBatches.slice(0, 5).map(batch => (
-                  <div key={batch.id} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">
-                        {(batch.product as any)?.name || 'Produto'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {batch.quantity.toFixed(2)} {(batch.product as any)?.unit || 'un'}
-                      </p>
+                {getExpiringBatches(3).slice(0, 5).map(batch => {
+                  const product = products.find(p => p.id === batch.product_id);
+                  return (
+                    <div key={batch.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{product?.name || 'Produto'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {Number(batch.quantity).toFixed(2)} {product?.unit || 'kg'}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-orange-600 border-orange-500">
+                        {batch.expiry_date && format(new Date(batch.expiry_date), 'dd/MM')}
+                      </Badge>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium text-orange-600">
-                        {batch.expiry_date && format(new Date(batch.expiry_date), 'dd/MM/yyyy')}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Recent sales */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Vendas Recentes
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {todaySales.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              Nenhuma venda hoje
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {todaySales.slice(0, 5).map(sale => (
-                <div key={sale.id} className="flex items-center justify-between border-b pb-2 last:border-0">
-                  <div>
-                    <p className="font-medium">
-                      {sale.items_count} {sale.items_count === 1 ? 'item' : 'itens'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(sale.created_at), 'HH:mm')}
-                    </p>
-                  </div>
-                  <p className="font-medium text-green-600">
-                    {formatCurrency(Number(sale.total))}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

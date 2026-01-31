@@ -176,3 +176,44 @@ export const LOCATION_TYPE_LABELS: Record<LocationType, string> = {
   deposito: 'Depósito',
   gondola: 'Gôndola'
 };
+
+// Purchase Order Types
+export type PurchaseOrderStatus = 'rascunho' | 'enviado' | 'recebido' | 'cancelado';
+
+export interface PurchaseOrder {
+  id: string;
+  supplier_id: string | null;
+  status: PurchaseOrderStatus;
+  total_estimated: number;
+  total_received: number | null;
+  created_by: string | null;
+  notes: string | null;
+  offline_id: string | null;
+  created_at: string;
+  updated_at: string;
+  received_at: string | null;
+  supplier?: Supplier;
+  creator?: Person;
+  items?: PurchaseOrderItem[];
+}
+
+export interface PurchaseOrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  unit: string;
+  estimated_kg: number;
+  unit_cost_estimated: number | null;
+  unit_cost_actual: number | null;
+  quantity_received: number | null;
+  created_at: string;
+  product?: Product;
+}
+
+export const PURCHASE_ORDER_STATUS_LABELS: Record<PurchaseOrderStatus, string> = {
+  rascunho: 'Rascunho',
+  enviado: 'Enviado',
+  recebido: 'Recebido',
+  cancelado: 'Cancelado'
+};

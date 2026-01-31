@@ -8,11 +8,14 @@ interface PedidoItem {
   quantity: number;
   unit: 'cx' | 'kg';
   estimated_kg: number;
+  unit_cost_estimated?: number;
 }
 
 interface PedidoOffline {
   id: string;
+  supplier_id?: string;
   items: PedidoItem[];
+  notes?: string;
   created_at: string;
   synced: boolean;
 }
@@ -58,12 +61,54 @@ export function useOfflineQueue() {
     );
   }, []);
 
+  // Save order to normalized tables
+  const saveOrderToDb = async (order: PedidoOffline) => {
+    // 1. Create purchase_order
+    const { data: purchaseOrder, error: orderError } = await supabase
+      .from('purchase_orders')
+      .insert({
+        supplier_id: order.supplier_id || null,
+        status: 'enviado',
+        notes: order.notes || null,
+        offline_id: order.id,
+        created_at: order.created_at,
+      })
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    // 2. Create purchase_order_items
+    const itemsToInsert = order.items.map(item => ({
+      order_id: purchaseOrder.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      unit: item.unit,
+      estimated_kg: item.estimated_kg,
+      unit_cost_estimated: item.unit_cost_estimated || null,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('purchase_order_items')
+      .insert(itemsToInsert);
+
+    if (itemsError) throw itemsError;
+
+    return purchaseOrder;
+  };
+
   // Save order (offline or online)
-  const saveOrder = useCallback(async (items: PedidoItem[]) => {
+  const saveOrder = useCallback(async (
+    items: PedidoItem[], 
+    supplierId?: string,
+    notes?: string
+  ) => {
     const orderId = crypto.randomUUID();
     const order: PedidoOffline = {
       id: orderId,
+      supplier_id: supplierId,
       items,
+      notes,
       created_at: new Date().toISOString(),
       synced: false,
     };
@@ -82,20 +127,9 @@ export function useOfflineQueue() {
       return { success: true, offline: true, orderId };
     }
 
-    // Online - send directly to Supabase
+    // Online - save to normalized tables
     try {
-      // For now, we'll store purchases in a simple format
-      // In production, you'd want a dedicated purchases table
-      const { error } = await supabase.from('stock_batches').insert(
-        items.map(item => ({
-          product_id: item.product_id,
-          quantity: item.estimated_kg,
-          cost_per_unit: 0, // Will be filled later with actual cost
-          received_at: new Date().toISOString(),
-        }))
-      );
-
-      if (error) throw error;
+      await saveOrderToDb(order);
 
       toast.success('✅ Pedido Enviado', {
         description: 'Dados salvos no servidor',
@@ -103,6 +137,7 @@ export function useOfflineQueue() {
 
       return { success: true, offline: false, orderId };
     } catch (error) {
+      console.error('Error saving order:', error);
       // If online send fails, save offline
       const key = `${QUEUE_PREFIX}${Date.now()}`;
       localStorage.setItem(key, JSON.stringify(order));
@@ -128,32 +163,25 @@ export function useOfflineQueue() {
 
     for (const order of pending) {
       try {
-        const { error } = await supabase.from('stock_batches').insert(
-          order.items.map(item => ({
-            product_id: item.product_id,
-            quantity: item.estimated_kg,
-            cost_per_unit: 0,
-            received_at: order.created_at,
-          }))
-        );
+        // Check if already synced by offline_id
+        const { data: existing } = await supabase
+          .from('purchase_orders')
+          .select('id')
+          .eq('offline_id', order.id)
+          .maybeSingle();
 
-        if (!error) {
-          // Remove from localStorage
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith(QUEUE_PREFIX)) {
-              const data = localStorage.getItem(key);
-              if (data) {
-                const stored = JSON.parse(data);
-                if (stored.id === order.id) {
-                  localStorage.removeItem(key);
-                  synced++;
-                  break;
-                }
-              }
-            }
-          }
+        if (existing) {
+          // Already synced, just remove from localStorage
+          removeOrderFromLocalStorage(order.id);
+          synced++;
+          continue;
         }
+
+        await saveOrderToDb(order);
+
+        // Remove from localStorage
+        removeOrderFromLocalStorage(order.id);
+        synced++;
       } catch (e) {
         console.error('Error syncing order:', e);
       }
@@ -169,23 +197,35 @@ export function useOfflineQueue() {
     }
   }, [getPendingOrders, isSyncing, countPending]);
 
-  // Clear a specific pending order
-  const clearPendingOrder = useCallback((orderId: string) => {
-    for (let i = 0; i < localStorage.length; i++) {
+  // Helper to remove order from localStorage
+  const removeOrderFromLocalStorage = (orderId: string) => {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
       const key = localStorage.key(i);
       if (key?.startsWith(QUEUE_PREFIX)) {
         const data = localStorage.getItem(key);
         if (data) {
-          const stored = JSON.parse(data);
-          if (stored.id === orderId) {
-            localStorage.removeItem(key);
-            countPending();
-            return true;
+          try {
+            const stored = JSON.parse(data);
+            if (stored.id === orderId) {
+              localStorage.removeItem(key);
+              return true;
+            }
+          } catch (e) {
+            console.error('Error parsing stored order:', e);
           }
         }
       }
     }
     return false;
+  };
+
+  // Clear a specific pending order
+  const clearPendingOrder = useCallback((orderId: string) => {
+    const removed = removeOrderFromLocalStorage(orderId);
+    if (removed) {
+      countPending();
+    }
+    return removed;
   }, [countPending]);
 
   // Listen for online/offline events

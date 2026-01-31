@@ -442,9 +442,9 @@ export default function Produtos() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Custo</span>
                         <span className="text-sm">
-                          {formatCurrency(Number(product.custo_compra))}
+                        {formatCurrency(Number(product.custo_compra))}
                           {margin && (
-                            <span className="ml-1 text-xs text-green-500">({margin}%)</span>
+                            <span className="ml-1 text-xs opacity-75">(+{margin}%)</span>
                           )}
                         </span>
                       </div>

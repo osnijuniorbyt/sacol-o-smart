@@ -4,6 +4,17 @@ export type ProductCategory = 'frutas' | 'verduras' | 'legumes' | 'temperos' | '
 export type UnitType = 'kg' | 'un' | 'maco' | 'bandeja';
 export type BreakageReason = 'vencido' | 'danificado' | 'furto' | 'erro_operacional' | 'outro';
 
+export interface Supplier {
+  id: string;
+  name: string;
+  cnpj: string | null;
+  phone: string | null;
+  payment_terms: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Product {
   id: string;
   plu: string;
@@ -13,8 +24,14 @@ export interface Product {
   price: number;
   min_stock: number;
   is_active: boolean;
+  codigo_balanca: string | null;
+  custo_compra: number;
+  supplier_id: string | null;
+  shelf_life: number;
+  fator_conversao: number;
   created_at: string;
   updated_at: string;
+  supplier?: Supplier;
 }
 
 export interface StockBatch {

@@ -68,41 +68,64 @@ export type Database = {
       products: {
         Row: {
           category: Database["public"]["Enums"]["product_category"]
+          codigo_balanca: string | null
           created_at: string
+          custo_compra: number | null
+          fator_conversao: number | null
           id: string
           is_active: boolean
           min_stock: number
           name: string
           plu: string
           price: number
+          shelf_life: number | null
+          supplier_id: string | null
           unit: Database["public"]["Enums"]["unit_type"]
           updated_at: string
         }
         Insert: {
           category?: Database["public"]["Enums"]["product_category"]
+          codigo_balanca?: string | null
           created_at?: string
+          custo_compra?: number | null
+          fator_conversao?: number | null
           id?: string
           is_active?: boolean
           min_stock?: number
           name: string
           plu: string
           price?: number
+          shelf_life?: number | null
+          supplier_id?: string | null
           unit?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
         }
         Update: {
           category?: Database["public"]["Enums"]["product_category"]
+          codigo_balanca?: string | null
           created_at?: string
+          custo_compra?: number | null
+          fator_conversao?: number | null
           id?: string
           is_active?: boolean
           min_stock?: number
           name?: string
           plu?: string
           price?: number
+          shelf_life?: number | null
+          supplier_id?: string | null
           unit?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sale_items: {
         Row: {
@@ -217,6 +240,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      suppliers: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          payment_terms: number | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          payment_terms?: number | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          payment_terms?: number | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

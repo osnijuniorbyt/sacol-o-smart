@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { useProducts } from '@/hooks/useProducts';
 import { useStock } from '@/hooks/useStock';
+import { useSuppliers } from '@/hooks/useSuppliers';
 import { 
   Product, 
   ProductCategory, 
@@ -27,11 +28,12 @@ import {
   CATEGORY_LABELS, 
   UNIT_LABELS 
 } from '@/types/database';
-import { Apple, Plus, Pencil, Search } from 'lucide-react';
+import { Apple, Plus, Pencil, Search, Building2 } from 'lucide-react';
 
 export default function Produtos() {
   const { products, createProduct, updateProduct, isLoading } = useProducts();
   const { getProductStock } = useStock();
+  const { suppliers } = useSuppliers();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,7 +46,12 @@ export default function Produtos() {
     unit: 'kg' as UnitType,
     price: '',
     min_stock: '',
-    is_active: true
+    is_active: true,
+    codigo_balanca: '',
+    custo_compra: '',
+    supplier_id: '',
+    shelf_life: '7',
+    fator_conversao: '1'
   });
 
   const resetForm = () => {
@@ -55,7 +62,12 @@ export default function Produtos() {
       unit: 'kg',
       price: '',
       min_stock: '',
-      is_active: true
+      is_active: true,
+      codigo_balanca: '',
+      custo_compra: '',
+      supplier_id: '',
+      shelf_life: '7',
+      fator_conversao: '1'
     });
     setEditingProduct(null);
   };
@@ -73,7 +85,12 @@ export default function Produtos() {
       unit: product.unit,
       price: String(product.price),
       min_stock: String(product.min_stock),
-      is_active: product.is_active
+      is_active: product.is_active,
+      codigo_balanca: product.codigo_balanca || '',
+      custo_compra: String(product.custo_compra || ''),
+      supplier_id: product.supplier_id || '',
+      shelf_life: String(product.shelf_life || 7),
+      fator_conversao: String(product.fator_conversao || 1)
     });
     setEditingProduct(product);
     setDialogOpen(true);
@@ -89,7 +106,12 @@ export default function Produtos() {
       unit: formData.unit,
       price: parseFloat(formData.price),
       min_stock: parseFloat(formData.min_stock) || 0,
-      is_active: formData.is_active
+      is_active: formData.is_active,
+      codigo_balanca: formData.codigo_balanca || null,
+      custo_compra: parseFloat(formData.custo_compra) || 0,
+      supplier_id: formData.supplier_id || null,
+      shelf_life: parseInt(formData.shelf_life) || 7,
+      fator_conversao: parseFloat(formData.fator_conversao) || 1
     };
 
     if (editingProduct) {
@@ -117,6 +139,12 @@ export default function Produtos() {
     }).format(value);
   };
 
+  const getSupplierName = (supplierId: string | null) => {
+    if (!supplierId) return null;
+    const supplier = suppliers.find(s => s.id === supplierId);
+    return supplier?.name || null;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -131,7 +159,7 @@ export default function Produtos() {
               Novo Produto
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingProduct ? 'Editar Produto' : 'Novo Produto'}
@@ -148,21 +176,21 @@ export default function Produtos() {
                       plu: e.target.value.replace(/\D/g, '').slice(0, 5) 
                     }))}
                     placeholder="00001"
-                    className="h-14"
+                    className="h-12"
                     maxLength={5}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Preço de Venda</Label>
+                  <Label>Código Balança</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    placeholder="0.00"
-                    className="h-14"
-                    required
+                    value={formData.codigo_balanca}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      codigo_balanca: e.target.value.replace(/\D/g, '').slice(0, 20) 
+                    }))}
+                    placeholder="Opcional"
+                    className="h-12"
                   />
                 </div>
               </div>
@@ -173,7 +201,7 @@ export default function Produtos() {
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="Ex: Banana Prata"
-                  className="h-14"
+                  className="h-12"
                   required
                 />
               </div>
@@ -188,7 +216,7 @@ export default function Produtos() {
                       category: value as ProductCategory 
                     }))}
                   >
-                    <SelectTrigger className="h-14">
+                    <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -209,7 +237,7 @@ export default function Produtos() {
                       unit: value as UnitType 
                     }))}
                   >
-                    <SelectTrigger className="h-14">
+                    <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -223,16 +251,88 @@ export default function Produtos() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Preço Venda (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    placeholder="0.00"
+                    className="h-12"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Custo Compra (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.custo_compra}
+                    onChange={(e) => setFormData(prev => ({ ...prev, custo_compra: e.target.value }))}
+                    placeholder="0.00"
+                    className="h-12"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label>Estoque Mínimo</Label>
-                <Input
-                  type="number"
-                  step="0.001"
-                  value={formData.min_stock}
-                  onChange={(e) => setFormData(prev => ({ ...prev, min_stock: e.target.value }))}
-                  placeholder="0.000"
-                  className="h-14"
-                />
+                <Label>Fornecedor Principal</Label>
+                <Select
+                  value={formData.supplier_id}
+                  onValueChange={(value) => setFormData(prev => ({ 
+                    ...prev, 
+                    supplier_id: value === 'none' ? '' : value 
+                  }))}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Selecionar fornecedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    {suppliers.filter(s => s.is_active).map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Estoque Mín</Label>
+                  <Input
+                    type="number"
+                    step="0.001"
+                    value={formData.min_stock}
+                    onChange={(e) => setFormData(prev => ({ ...prev, min_stock: e.target.value }))}
+                    placeholder="0"
+                    className="h-12"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Shelf Life (dias)</Label>
+                  <Input
+                    type="number"
+                    value={formData.shelf_life}
+                    onChange={(e) => setFormData(prev => ({ ...prev, shelf_life: e.target.value }))}
+                    placeholder="7"
+                    className="h-12"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Fator Conv.</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.fator_conversao}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fator_conversao: e.target.value }))}
+                    placeholder="1"
+                    className="h-12"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
@@ -305,6 +405,10 @@ export default function Produtos() {
           {filteredProducts.map(product => {
             const stock = getProductStock(product.id);
             const isLowStock = stock <= product.min_stock;
+            const supplierName = getSupplierName(product.supplier_id);
+            const margin = product.custo_compra > 0 
+              ? ((product.price - product.custo_compra) / product.price * 100).toFixed(1)
+              : null;
             
             return (
               <Card 
@@ -334,6 +438,17 @@ export default function Produtos() {
                         {formatCurrency(Number(product.price))}/{product.unit}
                       </span>
                     </div>
+                    {product.custo_compra > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Custo</span>
+                        <span className="text-sm">
+                          {formatCurrency(Number(product.custo_compra))}
+                          {margin && (
+                            <span className="ml-1 text-xs text-green-500">({margin}%)</span>
+                          )}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Estoque</span>
                       <span className={`font-medium ${isLowStock ? 'text-destructive' : ''}`}>
@@ -346,6 +461,12 @@ export default function Produtos() {
                         {CATEGORY_LABELS[product.category]}
                       </span>
                     </div>
+                    {supplierName && (
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground mt-2 pt-2 border-t">
+                        <Building2 className="h-3 w-3" />
+                        <span className="truncate">{supplierName}</span>
+                      </div>
+                    )}
                   </div>
                   
                   {!product.is_active && (

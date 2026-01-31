@@ -1,65 +1,50 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useCallback } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useProducts } from '@/hooks/useProducts';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useBarcode } from '@/hooks/useBarcode';
 import { useSales } from '@/hooks/useSales';
 import { useStock } from '@/hooks/useStock';
+import { FocusTrap } from '@/components/FocusTrap';
+import { CartItemRow } from '@/components/pdv/CartItemRow';
+import { TotalsPanel } from '@/components/pdv/TotalsPanel';
 import { CartItem } from '@/types/database';
-import { 
-  ShoppingCart, 
-  Trash2, 
-  Plus, 
-  Minus, 
-  CreditCard,
-  Barcode,
-  Search
-} from 'lucide-react';
+import { Barcode, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function PDV() {
   const { products, getProductByPlu } = useProducts();
-  const { lastBarcode, parseEAN13, clearLastBarcode } = useBarcode();
+  const { parseEAN13 } = useBarcode();
   const { createSale } = useSales();
   const { getProductStock } = useStock();
   
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [manualBarcode, setManualBarcode] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [lastScannedCode, setLastScannedCode] = useState<string>('');
 
-  // Process barcode from scanner
-  useEffect(() => {
-    if (lastBarcode) {
-      const data = parseEAN13(lastBarcode);
-      if (data) {
-        const product = getProductByPlu(data.plu);
-        if (product) {
-          addToCart(product.id, data.weight);
-        } else {
-          toast.error(`Produto não encontrado: PLU ${data.plu}`);
-        }
-      }
-      clearLastBarcode();
-    }
-  }, [lastBarcode]);
+  const formatCurrency = useCallback((value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  }, []);
 
-  const addToCart = (productId: string, quantity: number = 1) => {
+  const addToCart = useCallback((productId: string, quantity: number = 1) => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
     const stock = getProductStock(productId);
-    const existingItem = cart.find(item => item.product.id === productId);
-    const currentQuantity = existingItem ? existingItem.quantity : 0;
-
-    if (currentQuantity + quantity > stock) {
-      toast.error(`Estoque insuficiente. Disponível: ${stock.toFixed(3)} ${product.unit}`);
-      return;
-    }
-
+    
     setCart(prev => {
-      const existing = prev.find(item => item.product.id === productId);
-      if (existing) {
+      const existingItem = prev.find(item => item.product.id === productId);
+      const currentQuantity = existingItem ? existingItem.quantity : 0;
+
+      if (currentQuantity + quantity > stock) {
+        toast.error(`Estoque insuficiente. Disponível: ${stock.toFixed(3)} ${product.unit}`);
+        return prev;
+      }
+
+      if (existingItem) {
         return prev.map(item =>
           item.product.id === productId
             ? {
@@ -70,6 +55,7 @@ export default function PDV() {
             : item
         );
       }
+      
       return [
         ...prev,
         {
@@ -80,9 +66,49 @@ export default function PDV() {
         }
       ];
     });
-  };
 
-  const updateQuantity = (productId: string, delta: number) => {
+    // Play beep sound on successful add
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.frequency.value = 1000;
+      gainNode.gain.value = 0.1;
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (e) {
+      // Audio not supported
+    }
+  }, [products, getProductStock]);
+
+  // Handle barcode scan from scanner
+  const handleScan = useCallback((barcode: string) => {
+    setLastScannedCode(barcode);
+    
+    const data = parseEAN13(barcode);
+    if (data) {
+      // Use cached products from React Query (no DB call)
+      const product = getProductByPlu(data.plu);
+      if (product) {
+        addToCart(product.id, data.weight);
+        toast.success(`${product.name} - ${data.weight.toFixed(3)} kg`);
+      } else {
+        toast.error(`Produto não encontrado: PLU ${data.plu}`);
+      }
+    } else {
+      toast.error('Código de barras inválido');
+    }
+  }, [parseEAN13, getProductByPlu, addToCart]);
+
+  // Initialize barcode scanner
+  useBarcodeScanner({
+    onScan: handleScan,
+    enabled: true
+  });
+
+  const updateQuantity = useCallback((productId: string, delta: number) => {
     setCart(prev =>
       prev
         .map(item => {
@@ -104,202 +130,109 @@ export default function PDV() {
         })
         .filter(Boolean) as CartItem[]
     );
-  };
+  }, [getProductStock]);
 
-  const removeFromCart = (productId: string) => {
+  const removeFromCart = useCallback((productId: string) => {
     setCart(prev => prev.filter(item => item.product.id !== productId));
-  };
+  }, []);
 
-  const handleManualBarcode = () => {
-    if (manualBarcode.length !== 13) {
-      toast.error('Código de barras deve ter 13 dígitos');
-      return;
-    }
+  const clearCart = useCallback(() => {
+    setCart([]);
+    toast.info('Carrinho limpo');
+  }, []);
 
-    const data = parseEAN13(manualBarcode);
-    if (data) {
-      const product = getProductByPlu(data.plu);
-      if (product) {
-        addToCart(product.id, data.weight);
-        setManualBarcode('');
-      } else {
-        toast.error(`Produto não encontrado: PLU ${data.plu}`);
-      }
-    } else {
-      toast.error('Código de barras inválido');
-    }
-  };
-
-  const finalizeSale = async () => {
+  const finalizeSale = useCallback(async () => {
     if (cart.length === 0) {
       toast.error('Carrinho vazio');
       return;
     }
 
+    // Only DB call happens here on finalize
     await createSale.mutateAsync(cart);
     setCart([]);
-  };
+  }, [cart, createSale]);
 
   const total = cart.reduce((sum, item) => sum + item.total, 0);
 
-  const filteredProducts = products.filter(p =>
-    p.is_active &&
-    (p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     p.plu.includes(searchQuery))
-  );
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-120px)]">
-      {/* Product selection */}
-      <div className="lg:col-span-2 flex flex-col gap-4">
-        {/* Barcode input */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  placeholder="Código de barras (13 dígitos)"
-                  value={manualBarcode}
-                  onChange={(e) => setManualBarcode(e.target.value.replace(/\D/g, '').slice(0, 13))}
-                  onKeyDown={(e) => e.key === 'Enter' && handleManualBarcode()}
-                  className="pl-10 h-14 text-lg"
-                />
-              </div>
-              <Button onClick={handleManualBarcode} className="h-14 px-6">
-                Adicionar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Product search */}
-        <Card className="flex-1 overflow-hidden flex flex-col">
-          <CardHeader className="pb-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produto por nome ou PLU..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-14"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="flex-1 overflow-auto">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {filteredProducts.map(product => {
-                const stock = getProductStock(product.id);
-                return (
-                  <Button
-                    key={product.id}
-                    variant="outline"
-                    className="h-auto py-4 px-3 flex flex-col items-start justify-start"
-                    onClick={() => addToCart(product.id)}
-                    disabled={stock <= 0}
-                  >
-                    <span className="font-medium text-left line-clamp-2">{product.name}</span>
-                    <span className="text-xs text-muted-foreground">PLU: {product.plu}</span>
-                    <span className="text-primary font-bold">{formatCurrency(Number(product.price))}/{product.unit}</span>
-                    <span className={`text-xs ${stock <= product.min_stock ? 'text-destructive' : 'text-muted-foreground'}`}>
-                      Estoque: {stock.toFixed(2)}
-                    </span>
-                  </Button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Cart */}
-      <Card className="flex flex-col h-full">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Carrinho ({cart.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-auto pb-0">
-          {cart.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              Carrinho vazio
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {cart.map(item => (
-                <div key={item.product.id} className="border rounded-lg p-3">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-medium">{item.product.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatCurrency(item.unit_price)}/{item.product.unit}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive"
-                      onClick={() => removeFromCart(item.product.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+    <FocusTrap enabled={true}>
+      <div className="grid grid-cols-10 gap-4 h-[calc(100vh-120px)]">
+        {/* Left Panel - Cart Items (70%) */}
+        <div className="col-span-7 flex flex-col gap-4">
+          {/* Scanner status indicator */}
+          <Card className="bg-card">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Barcode className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10"
-                        onClick={() => updateQuantity(item.product.id, -0.1)}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="w-20 text-center font-medium">
-                        {item.quantity.toFixed(3)} {item.product.unit}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10"
-                        onClick={() => updateQuantity(item.product.id, 0.1)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <span className="font-bold text-primary">
-                      {formatCurrency(item.total)}
-                    </span>
+                  <div>
+                    <p className="font-medium text-foreground">Scanner Ativo</p>
+                    <p className="text-sm text-muted-foreground">
+                      Aguardando leitura do código de barras...
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-        <div className="p-4 border-t mt-auto">
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-lg font-medium">Total</span>
-            <span className="text-2xl font-bold text-primary">
-              {formatCurrency(total)}
-            </span>
-          </div>
-          <Button
-            className="w-full h-14 text-lg"
-            onClick={finalizeSale}
-            disabled={cart.length === 0 || createSale.isPending}
-          >
-            <CreditCard className="mr-2 h-5 w-5" />
-            {createSale.isPending ? 'Processando...' : 'Finalizar Venda'}
-          </Button>
+                {lastScannedCode && (
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Último código:</p>
+                    <p className="font-mono text-sm">{lastScannedCode}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Cart Items List */}
+          <Card className="flex-1 overflow-hidden flex flex-col bg-card">
+            <CardHeader className="pb-2 border-b">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                <span className="font-semibold">Itens do Carrinho</span>
+                <span className="ml-auto text-muted-foreground">
+                  {cart.length} {cart.length === 1 ? 'item' : 'itens'}
+                </span>
+              </div>
+            </CardHeader>
+            <ScrollArea className="flex-1">
+              <div className="p-4">
+                {cart.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                    <ShoppingCart className="h-16 w-16 mb-4 opacity-50" />
+                    <p className="text-lg">Carrinho vazio</p>
+                    <p className="text-sm">Escaneie um produto para começar</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {cart.map(item => (
+                      <CartItemRow
+                        key={item.product.id}
+                        item={item}
+                        onUpdateQuantity={updateQuantity}
+                        onRemove={removeFromCart}
+                        formatCurrency={formatCurrency}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </Card>
         </div>
-      </Card>
-    </div>
+
+        {/* Right Panel - Totals (30%) */}
+        <div className="col-span-3">
+          <TotalsPanel
+            itemsCount={cart.length}
+            total={total}
+            onFinalize={finalizeSale}
+            onClearCart={clearCart}
+            isProcessing={createSale.isPending}
+            formatCurrency={formatCurrency}
+          />
+        </div>
+      </div>
+    </FocusTrap>
   );
 }

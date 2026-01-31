@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useProducts } from '@/hooks/useProducts';
+import { useSuppliers } from '@/hooks/useSuppliers';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 import { 
   Plus, 
@@ -24,7 +25,8 @@ import {
   Package,
   Scale,
   Send,
-  CloudOff
+  CloudOff,
+  Building2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -34,6 +36,7 @@ interface CompraItem {
   quantity: number;
   unit: 'cx' | 'kg';
   estimated_kg: number;
+  unit_cost_estimated?: number;
 }
 
 // Average kg per box (caixa) - can be customized per product
@@ -41,12 +44,15 @@ const KG_PER_CAIXA = 22;
 
 export default function Compras() {
   const { activeProducts } = useProducts();
+  const { activeSuppliers } = useSuppliers();
   const { isOnline, pendingCount, saveOrder, isSyncing, syncPendingOrders } = useOfflineQueue();
   
   const [items, setItems] = useState<CompraItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState('');
+  const [selectedSupplier, setSelectedSupplier] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [unit, setUnit] = useState<'cx' | 'kg'>('cx');
+  const [unitCost, setUnitCost] = useState('');
 
   const addItem = useCallback(() => {
     if (!selectedProduct) {
@@ -59,6 +65,7 @@ export default function Compras() {
 
     const qty = parseFloat(quantity) || 1;
     const estimatedKg = unit === 'cx' ? qty * KG_PER_CAIXA : qty;
+    const cost = unitCost ? parseFloat(unitCost) : undefined;
 
     setItems(prev => {
       const existing = prev.find(i => i.product_id === selectedProduct);
@@ -68,7 +75,8 @@ export default function Compras() {
             ? { 
                 ...i, 
                 quantity: i.quantity + qty,
-                estimated_kg: i.estimated_kg + estimatedKg
+                estimated_kg: i.estimated_kg + estimatedKg,
+                unit_cost_estimated: cost || i.unit_cost_estimated
               }
             : i
         );
@@ -79,12 +87,14 @@ export default function Compras() {
         quantity: qty,
         unit,
         estimated_kg: estimatedKg,
+        unit_cost_estimated: cost,
       }];
     });
 
     setQuantity('1');
     setSelectedProduct('');
-  }, [selectedProduct, quantity, unit, activeProducts]);
+    setUnitCost('');
+  }, [selectedProduct, quantity, unit, unitCost, activeProducts]);
 
   const updateItemQuantity = useCallback((productId: string, delta: number) => {
     setItems(prev => prev.map(item => {
@@ -108,14 +118,23 @@ export default function Compras() {
       return;
     }
 
-    const result = await saveOrder(items);
+    const result = await saveOrder(
+      items, 
+      selectedSupplier || undefined,
+      undefined // notes
+    );
+    
     if (result.success) {
       setItems([]);
+      setSelectedSupplier('');
     }
   };
 
   const totalCaixas = items.reduce((sum, i) => sum + (i.unit === 'cx' ? i.quantity : 0), 0);
   const totalKg = items.reduce((sum, i) => sum + i.estimated_kg, 0);
+  const totalEstimado = items.reduce((sum, i) => 
+    sum + (i.estimated_kg * (i.unit_cost_estimated || 0)), 0
+  );
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)]">
@@ -141,6 +160,30 @@ export default function Compras() {
 
       {/* Main content - scrollable */}
       <ScrollArea className="flex-1 -mx-4 px-4">
+        {/* Supplier Select Card */}
+        <Card className="mb-4 bg-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Fornecedor
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
+              <SelectTrigger className="h-14">
+                <SelectValue placeholder="Selecione o fornecedor (opcional)" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                {activeSuppliers.map(supplier => (
+                  <SelectItem key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
         {/* Add Item Card */}
         <Card className="mb-4 bg-card">
           <CardHeader className="pb-3">
@@ -202,6 +245,20 @@ export default function Compras() {
               )}
             </div>
 
+            {/* Unit Cost (optional) */}
+            <div className="space-y-2">
+              <Label>Custo por kg (opcional)</Label>
+              <Input
+                type="number"
+                value={unitCost}
+                onChange={(e) => setUnitCost(e.target.value)}
+                className="h-14 text-xl text-center font-mono"
+                placeholder="R$ 0,00"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
             <Button onClick={addItem} className="w-full h-14 text-lg">
               <Plus className="mr-2 h-5 w-5" />
               Adicionar ao Pedido
@@ -227,6 +284,11 @@ export default function Compras() {
                     <p className="font-medium truncate">{item.product_name}</p>
                     <p className="text-sm text-muted-foreground">
                       {item.quantity} {item.unit} ≈ {item.estimated_kg.toFixed(0)} kg
+                      {item.unit_cost_estimated && (
+                        <span className="ml-2">
+                          (R$ {item.unit_cost_estimated.toFixed(2)}/kg)
+                        </span>
+                      )}
                     </p>
                   </div>
                   
@@ -280,6 +342,12 @@ export default function Compras() {
               <span className="text-muted-foreground">≈</span>
               <span className="font-bold ml-1">{totalKg.toFixed(0)} kg</span>
             </div>
+            {totalEstimado > 0 && (
+              <div>
+                <span className="text-muted-foreground">Est.:</span>
+                <span className="font-bold ml-1">R$ {totalEstimado.toFixed(2)}</span>
+              </div>
+            )}
           </div>
         )}
 

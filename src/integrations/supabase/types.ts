@@ -235,6 +235,117 @@ export type Database = {
           },
         ]
       }
+      purchase_order_items: {
+        Row: {
+          created_at: string
+          estimated_kg: number
+          id: string
+          order_id: string
+          product_id: string
+          quantity: number
+          quantity_received: number | null
+          unit: string
+          unit_cost_actual: number | null
+          unit_cost_estimated: number | null
+        }
+        Insert: {
+          created_at?: string
+          estimated_kg: number
+          id?: string
+          order_id: string
+          product_id: string
+          quantity: number
+          quantity_received?: number | null
+          unit?: string
+          unit_cost_actual?: number | null
+          unit_cost_estimated?: number | null
+        }
+        Update: {
+          created_at?: string
+          estimated_kg?: number
+          id?: string
+          order_id?: string
+          product_id?: string
+          quantity?: number
+          quantity_received?: number | null
+          unit?: string
+          unit_cost_actual?: number | null
+          unit_cost_estimated?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          offline_id: string | null
+          received_at: string | null
+          status: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id: string | null
+          total_estimated: number
+          total_received: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          offline_id?: string | null
+          received_at?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id?: string | null
+          total_estimated?: number
+          total_received?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          offline_id?: string | null
+          received_at?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id?: string | null
+          total_estimated?: number
+          total_received?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sale_items: {
         Row: {
           batch_id: string | null
@@ -420,6 +531,7 @@ export type Database = {
         | "legumes"
         | "temperos"
         | "outros"
+      purchase_order_status: "rascunho" | "enviado" | "recebido" | "cancelado"
       unit_type: "kg" | "un" | "maco" | "bandeja"
     }
     CompositeTypes: {
@@ -565,6 +677,7 @@ export const Constants = {
       packaging_material: ["plastico", "madeira", "papelao", "isopor"],
       person_type: ["funcionario", "cliente", "motorista"],
       product_category: ["frutas", "verduras", "legumes", "temperos", "outros"],
+      purchase_order_status: ["rascunho", "enviado", "recebido", "cancelado"],
       unit_type: ["kg", "un", "maco", "bandeja"],
     },
   },

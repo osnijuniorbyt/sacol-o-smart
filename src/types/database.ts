@@ -89,8 +89,8 @@ export const UNIT_LABELS: Record<UnitType, string> = {
 };
 
 export const BREAKAGE_REASON_LABELS: Record<BreakageReason, string> = {
-  vencido: 'Vencido',
-  danificado: 'Danificado',
+  vencido: 'Amadureceu Demais',
+  danificado: 'Veio Estragado do Fornecedor',
   furto: 'Furto',
   erro_operacional: 'Erro Operacional',
   outro: 'Outro'

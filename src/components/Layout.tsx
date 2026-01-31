@@ -13,9 +13,11 @@ import {
   Menu,
   X,
   Leaf,
-  Truck
+  Truck,
+  Building2
 } from 'lucide-react';
 import { useState } from 'react';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface LayoutProps {
   children: ReactNode;
@@ -23,17 +25,21 @@ interface LayoutProps {
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/pdv', label: 'PDV', icon: ShoppingCart },
+  { path: '/pdv', label: 'PDV', icon: ShoppingCart, shortcut: 'F2' },
   { path: '/compras', label: 'Compras', icon: Truck },
   { path: '/estoque', label: 'Estoque', icon: Package },
-  { path: '/quebras', label: 'Quebras', icon: Trash2 },
+  { path: '/quebras', label: 'Quebras', icon: Trash2, shortcut: 'F3' },
   { path: '/produtos', label: 'Produtos', icon: Apple },
+  { path: '/fornecedores', label: 'Fornecedores', icon: Building2 },
 ];
 
 export default function Layout({ children }: LayoutProps) {
   const { signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Global keyboard shortcuts
+  useKeyboardShortcuts();
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,7 +106,10 @@ export default function Layout({ children }: LayoutProps) {
                   )}
                 >
                   <Icon className="h-5 w-5" />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium flex-1">{item.label}</span>
+                  {item.shortcut && (
+                    <span className="text-xs opacity-60 hidden lg:inline">{item.shortcut}</span>
+                  )}
                 </Link>
               );
             })}

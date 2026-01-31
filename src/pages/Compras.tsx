@@ -1,0 +1,311 @@
+import { useState, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useProducts } from '@/hooks/useProducts';
+import { useOfflineQueue } from '@/hooks/useOfflineQueue';
+import { 
+  Plus, 
+  Minus, 
+  ShoppingBag, 
+  Wifi, 
+  WifiOff, 
+  Trash2,
+  Package,
+  Scale,
+  Send,
+  CloudOff
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+interface CompraItem {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit: 'cx' | 'kg';
+  estimated_kg: number;
+}
+
+// Average kg per box (caixa) - can be customized per product
+const KG_PER_CAIXA = 22;
+
+export default function Compras() {
+  const { activeProducts } = useProducts();
+  const { isOnline, pendingCount, saveOrder, isSyncing, syncPendingOrders } = useOfflineQueue();
+  
+  const [items, setItems] = useState<CompraItem[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState('');
+  const [quantity, setQuantity] = useState('1');
+  const [unit, setUnit] = useState<'cx' | 'kg'>('cx');
+
+  const addItem = useCallback(() => {
+    if (!selectedProduct) {
+      toast.error('Selecione um produto');
+      return;
+    }
+
+    const product = activeProducts.find(p => p.id === selectedProduct);
+    if (!product) return;
+
+    const qty = parseFloat(quantity) || 1;
+    const estimatedKg = unit === 'cx' ? qty * KG_PER_CAIXA : qty;
+
+    setItems(prev => {
+      const existing = prev.find(i => i.product_id === selectedProduct);
+      if (existing) {
+        return prev.map(i => 
+          i.product_id === selectedProduct
+            ? { 
+                ...i, 
+                quantity: i.quantity + qty,
+                estimated_kg: i.estimated_kg + estimatedKg
+              }
+            : i
+        );
+      }
+      return [...prev, {
+        product_id: selectedProduct,
+        product_name: product.name,
+        quantity: qty,
+        unit,
+        estimated_kg: estimatedKg,
+      }];
+    });
+
+    setQuantity('1');
+    setSelectedProduct('');
+  }, [selectedProduct, quantity, unit, activeProducts]);
+
+  const updateItemQuantity = useCallback((productId: string, delta: number) => {
+    setItems(prev => prev.map(item => {
+      if (item.product_id !== productId) return item;
+      
+      const newQty = Math.max(0, item.quantity + delta);
+      if (newQty === 0) return item; // Will be filtered below
+      
+      const estimatedKg = item.unit === 'cx' ? newQty * KG_PER_CAIXA : newQty;
+      return { ...item, quantity: newQty, estimated_kg: estimatedKg };
+    }).filter(item => item.quantity > 0));
+  }, []);
+
+  const removeItem = useCallback((productId: string) => {
+    setItems(prev => prev.filter(i => i.product_id !== productId));
+  }, []);
+
+  const handleSaveOrder = async () => {
+    if (items.length === 0) {
+      toast.error('Adicione itens ao pedido');
+      return;
+    }
+
+    const result = await saveOrder(items);
+    if (result.success) {
+      setItems([]);
+    }
+  };
+
+  const totalCaixas = items.reduce((sum, i) => sum + (i.unit === 'cx' ? i.quantity : 0), 0);
+  const totalKg = items.reduce((sum, i) => sum + i.estimated_kg, 0);
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-120px)]">
+      {/* Header with connection status */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-2xl font-bold">Compras CEASA</h1>
+          <p className="text-muted-foreground text-sm">Registro de pedidos offline</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {pendingCount > 0 && (
+            <Badge variant="secondary" className="gap-1">
+              <CloudOff className="h-3 w-3" />
+              {pendingCount} pendente(s)
+            </Badge>
+          )}
+          <Badge variant={isOnline ? 'default' : 'destructive'} className="gap-1">
+            {isOnline ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+            {isOnline ? 'Online' : 'Offline'}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Main content - scrollable */}
+      <ScrollArea className="flex-1 -mx-4 px-4">
+        {/* Add Item Card */}
+        <Card className="mb-4 bg-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5" />
+              Adicionar Item
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Product Select */}
+            <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+              <SelectTrigger className="h-14">
+                <SelectValue placeholder="Selecione o produto" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                {activeProducts.map(product => (
+                  <SelectItem key={product.id} value={product.id}>
+                    {product.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Unit Toggle */}
+            <div className="flex gap-2">
+              <Button
+                variant={unit === 'cx' ? 'default' : 'outline'}
+                className="flex-1 h-14 text-lg"
+                onClick={() => setUnit('cx')}
+              >
+                <Package className="mr-2 h-5 w-5" />
+                CX (Caixa)
+              </Button>
+              <Button
+                variant={unit === 'kg' ? 'default' : 'outline'}
+                className="flex-1 h-14 text-lg"
+                onClick={() => setUnit('kg')}
+              >
+                <Scale className="mr-2 h-5 w-5" />
+                KG
+              </Button>
+            </div>
+
+            {/* Quantity with equivalence */}
+            <div className="space-y-2">
+              <Label>Quantidade ({unit === 'cx' ? 'caixas' : 'kg'})</Label>
+              <Input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                className="h-14 text-xl text-center font-mono"
+                min="0.1"
+                step={unit === 'cx' ? '1' : '0.5'}
+              />
+              {unit === 'cx' && parseFloat(quantity) > 0 && (
+                <p className="text-sm text-muted-foreground text-center">
+                  ≈ {(parseFloat(quantity) * KG_PER_CAIXA).toFixed(0)} kg
+                </p>
+              )}
+            </div>
+
+            <Button onClick={addItem} className="w-full h-14 text-lg">
+              <Plus className="mr-2 h-5 w-5" />
+              Adicionar ao Pedido
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Items List */}
+        {items.length > 0 && (
+          <Card className="mb-4 bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">
+                Itens do Pedido ({items.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {items.map(item => (
+                <div 
+                  key={item.product_id} 
+                  className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{item.product_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {item.quantity} {item.unit} ≈ {item.estimated_kg.toFixed(0)} kg
+                    </p>
+                  </div>
+                  
+                  {/* One-handed controls at bottom-right */}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12"
+                      onClick={() => updateItemQuantity(item.product_id, item.unit === 'cx' ? -1 : -0.5)}
+                    >
+                      <Minus className="h-5 w-5" />
+                    </Button>
+                    <span className="w-12 text-center font-bold text-lg">
+                      {item.quantity}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12"
+                      onClick={() => updateItemQuantity(item.product_id, item.unit === 'cx' ? 1 : 0.5)}
+                    >
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-12 w-12 text-destructive"
+                      onClick={() => removeItem(item.product_id)}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </ScrollArea>
+
+      {/* Fixed Bottom Panel - One-handed design */}
+      <div className="border-t bg-background pt-4 -mx-4 px-4 pb-safe">
+        {/* Summary */}
+        {items.length > 0 && (
+          <div className="flex justify-between mb-4 text-lg">
+            <div>
+              <span className="text-muted-foreground">Total:</span>
+              <span className="font-bold ml-2">{totalCaixas} CX</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">≈</span>
+              <span className="font-bold ml-1">{totalKg.toFixed(0)} kg</span>
+            </div>
+          </div>
+        )}
+
+        {/* Save Button */}
+        <Button 
+          onClick={handleSaveOrder}
+          disabled={items.length === 0 || isSyncing}
+          className="w-full h-16 text-xl font-semibold"
+        >
+          <Send className="mr-3 h-6 w-6" />
+          {isSyncing ? 'Sincronizando...' : isOnline ? 'Enviar Pedido' : 'Salvar Offline'}
+        </Button>
+
+        {/* Sync pending button */}
+        {isOnline && pendingCount > 0 && (
+          <Button
+            variant="outline"
+            onClick={syncPendingOrders}
+            disabled={isSyncing}
+            className="w-full h-14 mt-3"
+          >
+            <CloudOff className="mr-2 h-5 w-5" />
+            Sincronizar {pendingCount} Pendente(s)
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}

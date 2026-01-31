@@ -12,7 +12,8 @@ import {
   LogOut,
   Menu,
   X,
-  Leaf
+  Leaf,
+  Truck
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -23,6 +24,7 @@ interface LayoutProps {
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/pdv', label: 'PDV', icon: ShoppingCart },
+  { path: '/compras', label: 'Compras', icon: Truck },
   { path: '/estoque', label: 'Estoque', icon: Package },
   { path: '/quebras', label: 'Quebras', icon: Trash2 },
   { path: '/produtos', label: 'Produtos', icon: Apple },

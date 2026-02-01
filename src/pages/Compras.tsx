@@ -24,6 +24,7 @@ import { useSuppliers } from '@/hooks/useSuppliers';
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders';
 import { supabase } from '@/integrations/supabase/client';
 import { OrdersList } from '@/components/compras/OrdersList';
+import { SuggestedOrderDialog } from '@/components/compras/SuggestedOrderDialog';
 import { 
   Plus, 
   Minus,
@@ -138,6 +139,32 @@ export default function Compras() {
     setItems(prev => prev.filter(i => i.product_id !== productId));
   }, []);
 
+  // Callback para aplicar sugestões do Pedido Sugerido
+  const handleApplySuggestion = useCallback((
+    suggestedItems: Array<{
+      product_id: string;
+      product_name: string;
+      quantity: number;
+      unit_cost: number | null;
+    }>,
+    supplierId: string
+  ) => {
+    // Define o fornecedor
+    setSelectedSupplier(supplierId);
+    
+    // Adiciona/substitui os itens sugeridos
+    setItems(suggestedItems.map(item => ({
+      product_id: item.product_id,
+      product_name: item.product_name,
+      quantity: item.quantity,
+      unit_cost: item.unit_cost,
+      subtotal: item.unit_cost ? item.quantity * item.unit_cost : null,
+    })));
+    
+    // Muda para aba "Novo"
+    setActiveTab('novo');
+  }, []);
+
   // Pega quantidade atual de um produto no pedido
   const getQuantity = (productId: string) => {
     const item = items.find(i => i.product_id === productId);
@@ -228,6 +255,15 @@ export default function Compras() {
   return (
     <div className="space-y-4 pb-24">
       <h1 className="text-2xl font-bold">Compras</h1>
+
+      {/* Botão Pedido Sugerido */}
+      <div className="flex justify-end">
+        <SuggestedOrderDialog
+          suppliers={activeSuppliers}
+          products={activeProducts}
+          onApplySuggestion={handleApplySuggestion}
+        />
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">

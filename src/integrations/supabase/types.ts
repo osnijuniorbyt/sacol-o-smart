@@ -188,6 +188,7 @@ export type Database = {
           price: number
           shelf_life: number | null
           supplier_id: string | null
+          ultimo_preco_caixa: number | null
           unit: Database["public"]["Enums"]["unit_type"]
           updated_at: string
         }
@@ -205,6 +206,7 @@ export type Database = {
           price?: number
           shelf_life?: number | null
           supplier_id?: string | null
+          ultimo_preco_caixa?: number | null
           unit?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
         }
@@ -222,6 +224,7 @@ export type Database = {
           price?: number
           shelf_life?: number | null
           supplier_id?: string | null
+          ultimo_preco_caixa?: number | null
           unit?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
         }

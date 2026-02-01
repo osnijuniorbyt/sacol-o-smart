@@ -54,6 +54,7 @@ export function usePurchaseOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase_orders'] });
+      queryClient.invalidateQueries({ queryKey: ['stock_batches'] });
       toast.success('Status atualizado!');
     },
     onError: (error: Error) => {

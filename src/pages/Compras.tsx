@@ -26,6 +26,7 @@ import { usePurchaseOrders } from '@/hooks/usePurchaseOrders';
 import { supabase } from '@/integrations/supabase/client';
 import { OrdersList } from '@/components/compras/OrdersList';
 import { SuggestedOrderDialog } from '@/components/compras/SuggestedOrderDialog';
+import { ProductSupplierIndicator } from '@/components/compras/ProductSupplierIndicator';
 import { ProductImage } from '@/components/ui/product-image';
 import { 
   Plus, 
@@ -396,8 +397,14 @@ export default function Compras() {
                               category={product.category}
                               size="sm"
                             />
-                            <div className="text-sm font-medium truncate flex-1">
-                              {product.name}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium truncate">
+                                {product.name}
+                              </div>
+                              <ProductSupplierIndicator 
+                                productId={product.id} 
+                                selectedSupplierId={selectedSupplier}
+                              />
                             </div>
                           </div>
                           

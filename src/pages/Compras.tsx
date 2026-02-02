@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -49,6 +50,7 @@ interface PedidoItem {
 }
 
 export default function Compras() {
+  const queryClient = useQueryClient();
   const { activeProducts, isLoading: loadingProducts } = useProducts();
   const { activeSuppliers, isLoading: loadingSuppliers } = useSuppliers();
   const { 
@@ -216,6 +218,9 @@ export default function Compras() {
       if (itemsError) throw itemsError;
 
       toast.success('Pedido enviado com sucesso!');
+      
+      // Invalida o cache para atualizar a lista automaticamente
+      queryClient.invalidateQueries({ queryKey: ['purchase_orders'] });
       
       // Limpar form
       setItems([]);

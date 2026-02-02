@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useDismissKeyboardOnEnter } from "@/hooks/useDismissKeyboardOnEnter";
 import Layout from "@/components/Layout";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
@@ -16,6 +17,12 @@ import Fornecedores from "@/pages/Fornecedores";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Componente para aplicar hooks globais
+function GlobalHooks({ children }: { children: React.ReactNode }) {
+  useDismissKeyboardOnEnter();
+  return <>{children}</>;
+}
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   // TODO: Re-enable authentication after testing
@@ -118,13 +125,15 @@ function AppRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
+      <GlobalHooks>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      </GlobalHooks>
     </TooltipProvider>
   </QueryClientProvider>
 );

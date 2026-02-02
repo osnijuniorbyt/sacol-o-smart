@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -68,11 +68,51 @@ const QUALITY_OPTIONS = [
   { value: 'recusado', label: 'Recusado', icon: XCircle, color: 'text-red-500' },
 ];
 
+// Separate component for notes input to prevent scroll jumping
+// Uses local state and only syncs on blur
+function ItemNotesInput({ 
+  itemId, 
+  initialValue, 
+  onUpdate 
+}: { 
+  itemId: string; 
+  initialValue: string; 
+  onUpdate: (id: string, field: 'quality_notes', value: string) => void;
+}) {
+  const [localValue, setLocalValue] = useState(initialValue);
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Sync with parent only on blur to prevent scroll jumping
+  const handleBlur = () => {
+    if (localValue !== initialValue) {
+      onUpdate(itemId, 'quality_notes', localValue);
+    }
+  };
+  
+  return (
+    <Input
+      ref={inputRef}
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={handleBlur}
+      className="h-11 text-base"
+      placeholder="Observação do item..."
+      style={{ fontSize: '16px' }} // Prevent iOS zoom
+    />
+  );
+}
+
 export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: ReceivingDialogProps) {
   const isMobile = useIsMobile();
   const [items, setItems] = useState<ItemReceiving[]>([]);
   const [generalNotes, setGeneralNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Ref for scroll container to preserve position
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Store local notes state to avoid scroll issues during typing
+  const localNotesRef = useRef<Map<string, string>>(new Map());
   
   // Numeric keypad modal state
   const [numericModal, setNumericModal] = useState<{
@@ -118,7 +158,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
 
   useEffect(() => {
     if (order?.items) {
-      setItems(order.items.map(item => ({
+      const newItems = order.items.map(item => ({
         id: item.id,
         product_id: item.product_id,
         product_name: item.product?.name || 'Produto',
@@ -128,16 +168,39 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
         unit_cost_actual: item.unit_cost_estimated || 0,
         quality_status: 'ok' as QualityStatus,
         quality_notes: '',
-      })));
+      }));
+      setItems(newItems);
       setGeneralNotes('');
+      localNotesRef.current.clear();
     }
   }, [order]);
 
-  const updateItem = (id: string, field: keyof ItemReceiving, value: any) => {
-    setItems(prev => prev.map(item => 
-      item.id === id ? { ...item, [field]: value } : item
-    ));
-  };
+  // Memoized update function that preserves scroll position
+  const updateItem = useCallback((id: string, field: keyof ItemReceiving, value: any) => {
+    // For text fields, just update local ref during typing
+    if (field === 'quality_notes') {
+      localNotesRef.current.set(id, value);
+    }
+    
+    // Preserve scroll position before state update
+    const scrollElement = scrollContainerRef.current;
+    const scrollTop = scrollElement?.scrollTop || 0;
+    
+    setItems(prev => {
+      const updated = prev.map(item => 
+        item.id === id ? { ...item, [field]: value } : item
+      );
+      
+      // Restore scroll position after React's microtask
+      if (scrollElement) {
+        requestAnimationFrame(() => {
+          scrollElement.scrollTop = scrollTop;
+        });
+      }
+      
+      return updated;
+    });
+  }, []);
 
   const handleConfirmReceiving = async () => {
     if (!order) return;
@@ -225,15 +288,19 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
 
   // Content shared between Dialog and Drawer
   const ReceivingContent = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header info */}
-      <div className="px-4 py-2 bg-muted/50 text-sm">
+      <div className="px-4 py-2 bg-muted/50 text-sm flex-shrink-0">
         <span className="text-muted-foreground">Fornecedor: </span>
         <strong>{order.supplier?.name}</strong>
       </div>
 
-      {/* Items List - Mobile optimized cards */}
-      <ScrollArea className="flex-1 px-4">
+      {/* Items List - Custom scroll container to preserve scroll position */}
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 overscroll-contain"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         <div className="space-y-3 py-4">
           {items.map(item => {
             const qtyDiff = item.quantity_received - item.quantity_ordered;
@@ -339,19 +406,18 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                     </div>
                   </div>
 
-                  {/* Notes */}
-                  <Input
-                    value={item.quality_notes}
-                    onChange={(e) => updateItem(item.id, 'quality_notes', e.target.value)}
-                    className="h-11"
-                    placeholder="Observação do item..."
+                  {/* Notes - Using uncontrolled input to prevent scroll jumping */}
+                  <ItemNotesInput
+                    itemId={item.id}
+                    initialValue={item.quality_notes}
+                    onUpdate={updateItem}
                   />
                 </CardContent>
               </Card>
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Totals Summary - Fixed at bottom */}
       <div className="border-t bg-card p-4 space-y-3 pb-safe">
@@ -389,8 +455,9 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
           value={generalNotes}
           onChange={(e) => setGeneralNotes(e.target.value)}
           placeholder="Observações gerais do recebimento..."
-          className="min-h-[60px]"
+          className="min-h-[60px] text-base"
           rows={2}
+          style={{ fontSize: '16px' }} // Prevent iOS zoom
         />
       </div>
     </div>

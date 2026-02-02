@@ -30,6 +30,7 @@ import {
 import { PurchaseOrder, PURCHASE_ORDER_STATUS_LABELS } from '@/types/database';
 import { ReceivingDialog } from './ReceivingDialog';
 import { EditOrderDialog } from './EditOrderDialog';
+import { PhotoGallery } from './PhotoGallery';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -201,8 +202,11 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
               )}
 
               {type === 'received' && order.received_at && (
-                <div className="mt-2 text-sm text-muted-foreground">
-                  Recebido em: {format(new Date(order.received_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                <div className="mt-4 space-y-3">
+                  <div className="text-sm text-muted-foreground">
+                    Recebido em: {format(new Date(order.received_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </div>
+                  <PhotoGallery orderId={order.id} compact />
                 </div>
               )}
             </CardContent>

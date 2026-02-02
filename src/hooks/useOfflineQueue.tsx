@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { registerSyncTask, unregisterSyncTask } from './useBackgroundSync';
 
 interface PedidoItem {
   product_id: string;
@@ -228,20 +229,29 @@ export function useOfflineQueue() {
     return removed;
   }, [countPending]);
 
+  // Store syncPendingOrders in ref for registration
+  const syncRef = useRef(syncPendingOrders);
+  syncRef.current = syncPendingOrders;
+
   // Listen for online/offline events
   useEffect(() => {
+    // Register sync task for pending orders
+    registerSyncTask({
+      id: 'pending_orders',
+      name: 'Pedidos Pendentes',
+      syncFn: async () => {
+        await syncRef.current();
+      },
+      priority: 1, // Highest priority - sync pending writes first
+    });
+
     const handleOnline = () => {
       setIsOnline(true);
-      toast.success('🌐 Conexão restaurada');
-      // Auto-sync when back online
-      syncPendingOrders();
+      // Sync is now handled by background sync manager
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      toast.warning('📴 Sem conexão', {
-        description: 'Trabalhando em modo offline',
-      });
     };
 
     window.addEventListener('online', handleOnline);
@@ -251,10 +261,11 @@ export function useOfflineQueue() {
     countPending();
 
     return () => {
+      unregisterSyncTask('pending_orders');
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [syncPendingOrders, countPending]);
+  }, [countPending]);
 
   return {
     isOnline,

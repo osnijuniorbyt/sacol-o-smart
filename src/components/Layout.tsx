@@ -15,10 +15,9 @@ import {
   Leaf,
   Truck,
   Building2,
-  WifiOff
 } from 'lucide-react';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useOnlineStatus } from '@/hooks/useOfflineCache';
+import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
 
 interface LayoutProps {
   children: ReactNode;
@@ -38,7 +37,6 @@ export default function Layout({ children }: LayoutProps) {
   const { signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isOnline = useOnlineStatus();
   
   // Global keyboard shortcuts
   useKeyboardShortcuts();
@@ -50,12 +48,7 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex items-center gap-2">
           <Leaf className="h-6 w-6 text-primary" />
           <span className="font-semibold">HortiFruti</span>
-          {!isOnline && (
-            <span className="flex items-center gap-1 text-xs text-destructive bg-destructive/10 px-2 py-1 rounded">
-              <WifiOff className="h-3 w-3" />
-              Offline
-            </span>
-          )}
+          <SyncStatusIndicator />
         </div>
         <Button
           variant="ghost"
@@ -122,6 +115,11 @@ export default function Layout({ children }: LayoutProps) {
               );
             })}
           </nav>
+
+          {/* Sync Status */}
+          <div className="px-4 pb-2">
+            <SyncStatusIndicator showDetails />
+          </div>
 
           {/* Logout button */}
           <div className="p-4 border-t">

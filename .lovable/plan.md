@@ -1,241 +1,148 @@
 
-# Plano: Fotos de Produtos com Auto-Ajuste por Contexto
+# Plano: Fornecedor Principal Calculado Automaticamente
 
-## Resumo da Solução
+## Problema Atual
 
-A melhor abordagem é gerar **uma única imagem de qualidade** (512x512 pixels) usando Gemini e deixar o **CSS/Tailwind redimensionar automaticamente** conforme o contexto. Isso é mais eficiente que manter múltiplas versões da mesma imagem.
+O campo `products.supplier_id` assume que cada produto tem UM fornecedor fixo. Na realidade:
+- O mesmo produto vem de múltiplos fornecedores
+- O "principal" deveria ser quem mais fornece (por volume ou frequência)
+- Essa informação já existe no histórico de compras
 
----
+## Solução
 
-## Por que uma imagem com auto-ajuste?
+### 1. Criar View de Fornecedor Principal (Calculado)
 
-| Abordagem | Vantagens | Desvantagens |
-|-----------|-----------|--------------|
-| **Múltiplos tamanhos** | Carregamento otimizado | Mais complexo, mais armazenamento |
-| **Uma imagem + CSS** ✅ | Simples, uma fonte de verdade | Imagem um pouco maior que necessário |
-
-Para o uso em hortifruti (poucos produtos), a diferença de performance é insignificante. O CSS moderno redimensiona imagens de forma eficiente.
-
----
-
-## Tamanhos por Contexto
-
-```text
-┌────────────────────────────────────────────────────────┐
-│               TAMANHOS DE EXIBIÇÃO                     │
-├────────────────────────────────────────────────────────┤
-│                                                        │
-│   PDV (CartItemRow)     →  48x48 px  (miniatura)      │
-│   Compras (grid)        →  40x40 px  (miniatura)      │
-│   Pedido Sugerido       →  32x32 px  (compacto)       │
-│   Cadastro de Produtos  →  200x200 px (edição)        │
-│   Detalhes do Produto   →  300x300 px (visualização)  │
-│                                                        │
-│   Imagem Original (Storage)  →  512x512 px            │
-│                                                        │
-└────────────────────────────────────────────────────────┘
-```
-
----
-
-## Padrão de Geração Gemini
-
-Para garantir consistência visual, o prompt para o Gemini seguirá um padrão fixo:
+Uma view no banco que calcula automaticamente o fornecedor principal de cada produto baseado no histórico:
 
 ```
-"Create a simple, clean illustration of a [PRODUTO] on a white background. 
-Style: flat design, minimalist, vibrant colors. 
-The item should be centered and fill 80% of the frame. 
-No text, no shadows, no decorations."
-```
-
-Isso garante:
-- Fundo branco (funciona em light/dark mode)
-- Estilo consistente entre todos os produtos
-- Centralizado (funciona bem em qualquer tamanho)
-- Cores vibrantes (identificação rápida)
-
----
-
-## Alterações Necessárias
-
-### 1. Banco de Dados
-
-Adicionar coluna `image_url` na tabela `products`:
-
-```sql
-ALTER TABLE products 
-ADD COLUMN image_url TEXT DEFAULT NULL;
-```
-
-### 2. Storage Bucket
-
-Criar bucket para armazenar as imagens:
-
-```sql
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('product-images', 'product-images', true);
-
--- Política de leitura pública
-CREATE POLICY "Public read product images" 
-ON storage.objects FOR SELECT 
-USING (bucket_id = 'product-images');
-
--- Política de escrita (usuários autenticados ou público para teste)
-CREATE POLICY "Public write product images" 
-ON storage.objects FOR INSERT 
-WITH CHECK (bucket_id = 'product-images');
-```
-
-### 3. Componente de Imagem Reutilizável
-
-Criar `src/components/ui/product-image.tsx`:
-
-```typescript
-// Componente que auto-ajusta tamanho via props
-interface ProductImageProps {
-  src: string | null;
-  alt: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  className?: string;
-}
-
-// Tamanhos pré-definidos
-const sizes = {
-  xs: 'h-8 w-8',    // 32px - Pedido Sugerido
-  sm: 'h-10 w-10',  // 40px - Compras grid
-  md: 'h-12 w-12',  // 48px - PDV
-  lg: 'h-24 w-24',  // 96px - Listagens
-  xl: 'h-48 w-48',  // 192px - Cadastro/Edição
-};
-```
-
-### 4. Edge Function para Gerar Imagem
-
-Criar `supabase/functions/generate-product-image/index.ts`:
-
-- Recebe nome do produto
-- Chama Gemini com prompt padronizado
-- Faz upload para Storage
-- Retorna URL da imagem
-
-### 5. Atualizar Componentes Existentes
-
-**CartItemRow.tsx (PDV)**:
-```tsx
-<ProductImage 
-  src={item.product.image_url} 
-  alt={item.product.name}
-  size="md"  // 48px
-/>
-```
-
-**Compras.tsx (Grid de produtos)**:
-```tsx
-<ProductImage 
-  src={product.image_url} 
-  alt={product.name}
-  size="sm"  // 40px
-/>
-```
-
-**SuggestedOrderDialog.tsx**:
-```tsx
-<ProductImage 
-  src={item.product_image} 
-  alt={item.product_name}
-  size="xs"  // 32px
-/>
-```
-
-### 6. Tela de Cadastro de Produtos
-
-Adicionar seção para:
-- Upload manual de foto
-- Botão "Gerar Ilustração com IA"
-- Preview da imagem atual
-
----
-
-## Fluxo de Geração de Imagem
-
-```text
 ┌─────────────────────────────────────────────────────────┐
-│              FLUXO: GERAR IMAGEM DO PRODUTO             │
+│ product_supplier_stats (VIEW)                          │
 ├─────────────────────────────────────────────────────────┤
-│                                                         │
-│   [Usuário clica "Gerar Ilustração"]                   │
-│               │                                         │
-│               ▼                                         │
-│   [Frontend chama Edge Function]                       │
-│               │                                         │
-│               ▼                                         │
-│   [Edge Function monta prompt padrão]                  │
-│   "Create illustration of BANANA..."                   │
-│               │                                         │
-│               ▼                                         │
-│   [Chama Gemini Image Generation]                      │
-│               │                                         │
-│               ▼                                         │
-│   [Recebe imagem Base64]                               │
-│               │                                         │
-│               ▼                                         │
-│   [Upload para Storage Bucket]                         │
-│   bucket: product-images/banana-abc123.webp            │
-│               │                                         │
-│               ▼                                         │
-│   [Retorna URL pública]                                │
-│               │                                         │
-│               ▼                                         │
-│   [Atualiza products.image_url no banco]               │
-│               │                                         │
-│               ▼                                         │
-│   [Frontend exibe imagem no cadastro]                  │
-│                                                         │
+│ product_id     | supplier_id   | total_qty | rank     │
+│ Alface Crespa  | Frutas Vale   | 7         | 1 (MAIN) │
+│ Alface Crespa  | Hortaliças    | 2         | 2        │
+│ Alface Crespa  | Osni          | 1         | 3        │
 └─────────────────────────────────────────────────────────┘
 ```
 
+### 2. Mostrar Histórico de Fornecedores na Tela de Compras
+
+No grid de produtos, indicar visualmente:
+- De quais fornecedores o produto já veio
+- Qual é o principal (maior volume)
+- Se o produto já veio do fornecedor atualmente selecionado
+
+```
+┌──────────────────┐   ┌──────────────────┐
+│   🥬 Alface      │   │   🍌 Banana      │
+│   Principal:     │   │   Principal:     │
+│   Frutas Vale    │   │   CEASA (51 cx)  │
+│   ───────────    │   │   ───────────    │
+│   Também:        │   │   Também:        │
+│   • Hortaliças   │   │   • Frutas Vale  │
+│   • Osni         │   │                  │
+│      [+]         │   │      [+]         │
+└──────────────────┘   └──────────────────┘
+```
+
+### 3. Ficha do Fornecedor com Histórico Real
+
+Acessível na tela de Fornecedores, mostra:
+- Todos os produtos já comprados daquele fornecedor
+- Volume total e frequência
+- Estatísticas de compras
+
 ---
 
-## Placeholder para Produtos sem Foto
+## Implementação Técnica
 
-Quando `image_url` for null, exibir:
-- Ícone da categoria (🍎 frutas, 🥬 verduras, etc.)
-- Ou primeira letra do produto em círculo colorido
-- Estilo consistente com o design atual
+### Banco de Dados
 
----
+**Criar View para calcular fornecedor principal:**
 
-## Estimativa de Implementação
+```sql
+CREATE VIEW product_supplier_rankings AS
+SELECT 
+  poi.product_id,
+  po.supplier_id,
+  s.name as supplier_name,
+  COUNT(*) as order_count,
+  SUM(poi.quantity) as total_quantity,
+  MAX(po.created_at) as last_order,
+  ROW_NUMBER() OVER (
+    PARTITION BY poi.product_id 
+    ORDER BY SUM(poi.quantity) DESC
+  ) as rank
+FROM purchase_order_items poi
+JOIN purchase_orders po ON poi.order_id = po.id
+JOIN suppliers s ON po.supplier_id = s.id
+WHERE po.status IN ('enviado', 'recebido')
+GROUP BY poi.product_id, po.supplier_id, s.name;
+```
 
-| Etapa | Complexidade |
-|-------|--------------|
-| Migration + Storage | Simples |
-| Componente ProductImage | Simples |
-| Edge Function Gemini | Média |
-| Integração nos componentes | Simples |
-| Tela de upload/geração | Média |
+**Criar View simplificada do fornecedor principal:**
 
-**Ordem sugerida**:
-1. Migration e Storage
-2. Componente ProductImage com placeholder
-3. Integrar nos componentes (PDV, Compras)
-4. Edge Function de geração
-5. Tela de upload/edição
+```sql
+CREATE VIEW product_main_supplier AS
+SELECT 
+  product_id,
+  supplier_id,
+  supplier_name,
+  total_quantity
+FROM product_supplier_rankings
+WHERE rank = 1;
+```
 
----
+### Novos Arquivos
 
-## Impacto no Sistema
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/hooks/useProductSupplierStats.tsx` | Hook para buscar estatísticas produto/fornecedor |
+| `src/components/fornecedores/SupplierHistorySheet.tsx` | Sheet com histórico completo do fornecedor |
 
-| Aspecto | Impacto |
+### Arquivos a Modificar
+
+| Arquivo | Mudança |
 |---------|---------|
-| Performance | Mínimo (imagens pequenas, lazy loading) |
-| Armazenamento | ~50KB por produto (512x512 WebP) |
-| Custo | Baixo (Gemini é econômico para imagens) |
-| UX | Melhora significativa na identificação visual |
+| `src/pages/Compras.tsx` | Mostrar indicador de fornecedores no grid de produtos |
+| `src/pages/Fornecedores.tsx` | Adicionar botão "Ver Histórico" |
 
 ---
 
-## Nota sobre Fotos de Recebimento
+## Fluxo de Uso
 
-Este plano foca **apenas nas fotos de produtos** (ilustrações). As fotos de comprovante de recebimento são um recurso separado que pode ser implementado posteriormente seguindo a mesma arquitetura de Storage.
+### Cenário 1: Criar pedido
+1. Seleciona fornecedor "Frutas do Vale"
+2. Vê no grid que Alface já veio desse fornecedor (indicador visual)
+3. Vê que Banana tem CEASA como principal (51 cx) vs Frutas Vale (8 cx)
+4. Adiciona produtos normalmente
+5. Histórico é registrado automaticamente ao enviar
+
+### Cenário 2: Ver histórico do fornecedor
+1. Em Fornecedores, clica "Ver Histórico" de "Frutas do Vale"
+2. Vê lista de todos produtos já comprados
+3. Vê estatísticas: total gasto, média por pedido, produtos mais comprados
+
+### Cenário 3: Decidir de quem comprar
+1. Na tela de compras, ao ver produto mostra os fornecedores disponíveis
+2. Pode comparar: "Alface - Frutas Vale (7 cx) vs Hortaliças (2 cx)"
+3. Informação ajuda na negociação
+
+---
+
+## Benefícios
+
+- **Dados reais**: Fornecedor principal baseado em histórico, não em cadastro manual
+- **Nenhuma manutenção**: Atualiza automaticamente conforme novas compras
+- **Histórico intacto**: Relatórios continuam funcionando normalmente
+- **Visibilidade**: Operador vê de quem já comprou cada produto
+- **Simplicidade**: Sem botões extras de vincular/desvincular
+
+---
+
+## Ordem de Implementação
+
+1. **Migration**: Criar views no banco de dados
+2. **Hook**: `useProductSupplierStats` para buscar dados
+3. **UI Compras**: Indicador visual no grid de produtos
+4. **UI Fornecedores**: Sheet de histórico do fornecedor

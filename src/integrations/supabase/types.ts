@@ -555,7 +555,57 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      product_main_supplier: {
+        Row: {
+          product_id: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          total_quantity: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_supplier_rankings: {
+        Row: {
+          last_order: string | null
+          order_count: number | null
+          product_id: string | null
+          rank: number | null
+          supplier_id: string | null
+          supplier_name: string | null
+          total_quantity: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never

@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useSuppliers, Supplier } from '@/hooks/useSuppliers';
+import { SupplierHistorySheet } from '@/components/fornecedores/SupplierHistorySheet';
 import { Building2, Plus, Pencil, Trash2, Search, Phone, CreditCard } from 'lucide-react';
 
 export default function Fornecedores() {
@@ -309,6 +310,9 @@ export default function Fornecedores() {
                       <span>Prazo: {supplier.payment_terms} dias</span>
                     </div>
                   )}
+                  <div className="pt-2">
+                    <SupplierHistorySheet supplierId={supplier.id} supplierName={supplier.name} />
+                  </div>
                 </div>
                 
                 {!supplier.is_active && (

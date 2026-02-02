@@ -3,8 +3,14 @@ import { Drawer as DrawerPrimitive } from "vaul";
 
 import { cn } from "@/lib/utils";
 
-const Drawer = ({ shouldScaleBackground = true, ...props }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
-  <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
+const Drawer = ({ 
+  shouldScaleBackground = true,
+  ...props 
+}: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
+  <DrawerPrimitive.Root 
+    shouldScaleBackground={shouldScaleBackground} 
+    {...props} 
+  />
 );
 Drawer.displayName = "Drawer";
 
@@ -27,26 +33,102 @@ const DrawerContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & {
     showHandle?: boolean;
   }
->(({ className, children, showHandle = true, ...props }, ref) => (
-  <DrawerPortal>
-    <DrawerOverlay />
-    <DrawerPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[16px] border bg-background",
-        className,
-      )}
-      {...props}
-    >
-      {showHandle && (
-        <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none">
-          <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30 transition-colors hover:bg-muted-foreground/50" />
-        </div>
-      )}
-      {children}
-    </DrawerPrimitive.Content>
-  </DrawerPortal>
-));
+>(({ className, children, showHandle = true, ...props }, ref) => {
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [isBouncing, setIsBouncing] = React.useState(false);
+  const lastDragY = React.useRef<number | null>(null);
+  const isAtTop = React.useRef(false);
+
+  // Detect drag at top boundary and trigger bounce
+  React.useEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      lastDragY.current = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (lastDragY.current === null) return;
+      
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - lastDragY.current;
+      
+      // User is trying to drag up (close)
+      if (deltaY < -10) {
+        const rect = content.getBoundingClientRect();
+        // Check if drawer is at its maximum open position
+        if (rect.top <= 50) {
+          if (!isAtTop.current) {
+            isAtTop.current = true;
+            setIsBouncing(true);
+            setTimeout(() => setIsBouncing(false), 500);
+          }
+        }
+      } else {
+        isAtTop.current = false;
+      }
+      
+      lastDragY.current = currentY;
+    };
+
+    const handleTouchEnd = () => {
+      lastDragY.current = null;
+      isAtTop.current = false;
+    };
+
+    content.addEventListener('touchstart', handleTouchStart, { passive: true });
+    content.addEventListener('touchmove', handleTouchMove, { passive: true });
+    content.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      content.removeEventListener('touchstart', handleTouchStart);
+      content.removeEventListener('touchmove', handleTouchMove);
+      content.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
+
+  // Combine refs
+  const combinedRef = React.useCallback(
+    (node: HTMLDivElement) => {
+      contentRef.current = node;
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+    },
+    [ref]
+  );
+
+  return (
+    <DrawerPortal>
+      <DrawerOverlay />
+      <DrawerPrimitive.Content
+        ref={combinedRef}
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[16px] border bg-background",
+          isBouncing && "drawer-rubber-band",
+          className,
+        )}
+        {...props}
+      >
+        {showHandle && (
+          <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none">
+            <div 
+              className={cn(
+                "h-1.5 w-12 rounded-full bg-muted-foreground/30 transition-all",
+                "hover:bg-muted-foreground/50 hover:w-14",
+                isBouncing && "drawer-handle-pulse"
+              )} 
+            />
+          </div>
+        )}
+        {children}
+      </DrawerPrimitive.Content>
+    </DrawerPortal>
+  );
+});
 DrawerContent.displayName = "DrawerContent";
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (

@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { CartItem } from '@/types/database';
+import { ProductImage } from '@/components/ui/product-image';
 import { Trash2, Plus, Minus } from 'lucide-react';
 
 interface CartItemRowProps {
@@ -19,11 +20,19 @@ export const CartItemRow = memo(function CartItemRow({
   return (
     <div className="border border-border rounded-lg p-3 bg-card">
       <div className="flex justify-between items-start mb-2">
-        <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{item.product.name}</p>
-          <p className="text-sm text-muted-foreground">
-            {formatCurrency(item.unit_price)}/{item.product.unit}
-          </p>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <ProductImage 
+            src={item.product.image_url} 
+            alt={item.product.name}
+            category={item.product.category}
+            size="md"
+          />
+          <div className="min-w-0">
+            <p className="font-medium truncate">{item.product.name}</p>
+            <p className="text-sm text-muted-foreground">
+              {formatCurrency(item.unit_price)}/{item.product.unit}
+            </p>
+          </div>
         </div>
         <Button
           variant="ghost"

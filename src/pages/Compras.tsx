@@ -26,6 +26,7 @@ import { usePurchaseOrders } from '@/hooks/usePurchaseOrders';
 import { supabase } from '@/integrations/supabase/client';
 import { OrdersList } from '@/components/compras/OrdersList';
 import { SuggestedOrderDialog } from '@/components/compras/SuggestedOrderDialog';
+import { ProductImage } from '@/components/ui/product-image';
 import { 
   Plus, 
   Minus,
@@ -388,8 +389,16 @@ export default function Compras() {
                             </Badge>
                           )}
                           
-                          <div className="text-sm font-medium truncate mb-2">
-                            {product.name}
+                          <div className="flex items-center gap-2 mb-2">
+                            <ProductImage 
+                              src={product.image_url}
+                              alt={product.name}
+                              category={product.category}
+                              size="sm"
+                            />
+                            <div className="text-sm font-medium truncate flex-1">
+                              {product.name}
+                            </div>
                           </div>
                           
                           {lastPrice > 0 && (

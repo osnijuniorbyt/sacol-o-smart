@@ -3,11 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory, UnitType } from '@/types/database';
 import { toast } from 'sonner';
 import { useOfflineCache, useOnlineStatus } from './useOfflineCache';
-import { useCallback, useMemo } from 'react';
+import { useSyncTask } from './useBackgroundSync';
+import { useCallback, useMemo, useRef } from 'react';
 
 export function useProducts() {
   const queryClient = useQueryClient();
   const isOnline = useOnlineStatus();
+  const refreshRef = useRef<() => void>(() => {});
 
   // Fetch function for products
   const fetchProducts = async (): Promise<Product[]> => {
@@ -33,6 +35,19 @@ export function useProducts() {
     fetchFn: fetchProducts,
     ttlMinutes: 60, // Cache products for 1 hour
   });
+
+  // Store refresh in ref for sync task
+  refreshRef.current = refresh;
+
+  // Register background sync task
+  useSyncTask(
+    'products',
+    'Produtos',
+    async () => {
+      await refreshRef.current();
+    },
+    10 // Medium priority
+  );
 
   const safeProducts = products || [];
 

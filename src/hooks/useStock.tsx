@@ -3,11 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { StockBatch } from '@/types/database';
 import { toast } from 'sonner';
 import { useOfflineCache, useOnlineStatus } from './useOfflineCache';
-import { useCallback, useMemo } from 'react';
+import { useSyncTask } from './useBackgroundSync';
+import { useCallback, useMemo, useRef } from 'react';
 
 export function useStock() {
   const queryClient = useQueryClient();
   const isOnline = useOnlineStatus();
+  const refreshRef = useRef<() => void>(() => {});
 
   // Fetch function for stock batches
   const fetchStockBatches = async (): Promise<StockBatch[]> => {
@@ -37,6 +39,19 @@ export function useStock() {
     fetchFn: fetchStockBatches,
     ttlMinutes: 30, // Cache for 30 minutes
   });
+
+  // Store refresh in ref for sync task
+  refreshRef.current = refresh;
+
+  // Register background sync task
+  useSyncTask(
+    'stock_batches',
+    'Estoque',
+    async () => {
+      await refreshRef.current();
+    },
+    5 // High priority
+  );
 
   const safeBatches = batches || [];
 

@@ -24,10 +24,12 @@ import {
   ClipboardCheck,
   Calendar,
   Building2,
-  Loader2
+  Loader2,
+  Pencil
 } from 'lucide-react';
 import { PurchaseOrder, PURCHASE_ORDER_STATUS_LABELS } from '@/types/database';
 import { ReceivingDialog } from './ReceivingDialog';
+import { EditOrderDialog } from './EditOrderDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -41,6 +43,7 @@ interface OrdersListProps {
 
 export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: OrdersListProps) {
   const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
+  const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
 
   const statusColors: Record<string, string> = {
     rascunho: 'bg-muted text-muted-foreground',
@@ -91,6 +94,11 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
                     <Badge className={statusColors[order.status]}>
                       {PURCHASE_ORDER_STATUS_LABELS[order.status]}
                     </Badge>
+                    {order.edited_at && (
+                      <Badge variant="secondary">
+                        ✏️ Editado
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
@@ -166,6 +174,14 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
                     <ClipboardCheck className="mr-2 h-5 w-5" />
                     Conferir Recebimento
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-12 w-12"
+                    onClick={() => setEditingOrder(order)}
+                  >
+                    <Pencil className="h-5 w-5" />
+                  </Button>
                   {onDelete && (
                     <Button 
                       variant="outline" 
@@ -198,6 +214,13 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
         order={receivingOrder}
         open={!!receivingOrder}
         onOpenChange={(open) => !open && setReceivingOrder(null)}
+        onSuccess={onRefresh}
+      />
+
+      <EditOrderDialog
+        order={editingOrder}
+        open={!!editingOrder}
+        onOpenChange={(open) => !open && setEditingOrder(null)}
         onSuccess={onRefresh}
       />
     </>

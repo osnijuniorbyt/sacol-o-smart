@@ -17,11 +17,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { NumericInputModal } from '@/components/ui/numeric-input-modal';
 import { useBreakages } from '@/hooks/useBreakages';
 import { useProducts } from '@/hooks/useProducts';
 import { useStock } from '@/hooks/useStock';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useBarcode } from '@/hooks/useBarcode';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { BreakageReason, BREAKAGE_REASON_LABELS } from '@/types/database';
 import { Trash2, Plus, AlertTriangle, Barcode, Scale } from 'lucide-react';
 import { format } from 'date-fns';
@@ -32,8 +34,11 @@ export default function Quebras() {
   const { activeProducts, products, getProductByPlu } = useProducts();
   const { getBatchesByProduct } = useStock();
   const { parseEAN13 } = useBarcode();
+  const isMobile = useIsMobile();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [scannedProduct, setScannedProduct] = useState<{name: string; plu: string} | null>(null);
+  const [numericModalOpen, setNumericModalOpen] = useState(false);
+  const [numericValue, setNumericValue] = useState('');
   
   const [formData, setFormData] = useState({
     product_id: '',
@@ -312,17 +317,49 @@ export default function Quebras() {
                 <Scale className="h-4 w-4" />
                 Peso da Perda (KG) *
               </Label>
-              <Input
-                type="number"
-                step="0.001"
-                min="0.001"
-                value={formData.quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
-                placeholder="0.000"
-                className="h-14 text-lg font-mono"
-                required
-              />
+              {isMobile ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNumericValue(formData.quantity || '0');
+                    setNumericModalOpen(true);
+                  }}
+                  className="w-full h-14 px-3 rounded-md border border-input bg-background text-left font-mono text-lg hover:bg-accent/50 transition-colors flex items-center justify-between"
+                >
+                  <span className={formData.quantity ? 'text-foreground' : 'text-muted-foreground'}>
+                    {formData.quantity || '0.000'}
+                  </span>
+                  <span className="text-muted-foreground text-sm">kg</span>
+                </button>
+              ) : (
+                <Input
+                  type="number"
+                  step="0.001"
+                  min="0.001"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                  placeholder="0.000"
+                  className="h-14 text-lg font-mono"
+                  required
+                />
+              )}
             </div>
+
+            <NumericInputModal
+              open={numericModalOpen}
+              onOpenChange={setNumericModalOpen}
+              value={numericValue}
+              onChange={setNumericValue}
+              onConfirm={(value) => {
+                setFormData(prev => ({ ...prev, quantity: value }));
+              }}
+              title="Peso da Perda"
+              label="Quantidade"
+              unit="kg"
+              allowDecimal={true}
+              maxDecimals={3}
+              minValue={0.001}
+            />
 
             {/* Reason Select */}
             <div className="space-y-2">

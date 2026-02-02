@@ -39,10 +39,15 @@ import {
   AlertTriangle,
   Check,
   Minus,
-  Plus
+  Plus,
+  MessageCircle,
+  FileText,
+  Share2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface SuggestedItem {
   product_id: string;
@@ -199,6 +204,122 @@ export function SuggestedOrderDialog({
     onApplySuggestion(itemsToApply, selectedSupplier);
     setOpen(false);
     toast.success(`${itemsToApply.length} itens adicionados ao pedido`);
+  };
+
+  const getSupplierName = () => {
+    return suppliers.find(s => s.id === selectedSupplier)?.name || 'Fornecedor';
+  };
+
+  const handleExportWhatsApp = () => {
+    const itemsToExport = suggestions.filter(s => s.suggested_qty > 0);
+    if (itemsToExport.length === 0) {
+      toast.warning('Nenhum item para exportar');
+      return;
+    }
+
+    const supplierName = getSupplierName();
+    const date = new Date().toLocaleDateString('pt-BR');
+    
+    let message = `🛒 *PEDIDO - ${supplierName}*\n`;
+    message += `📅 ${date}\n`;
+    message += `━━━━━━━━━━━━━━━━\n\n`;
+    
+    itemsToExport.forEach((item, index) => {
+      message += `${index + 1}. *${item.product_name}*\n`;
+      message += `   📦 ${item.suggested_qty} cx`;
+      if (item.last_price) {
+        message += ` • R$ ${item.last_price.toFixed(2)}/cx`;
+      }
+      message += `\n\n`;
+    });
+    
+    message += `━━━━━━━━━━━━━━━━\n`;
+    message += `📦 *Total: ${totalBoxes} caixas*\n`;
+    message += `🏷️ *${itemsToExport.length} produtos*`;
+
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+    toast.success('Pedido pronto para enviar no WhatsApp');
+  };
+
+  const handleExportPDF = () => {
+    const itemsToExport = suggestions.filter(s => s.suggested_qty > 0);
+    if (itemsToExport.length === 0) {
+      toast.warning('Nenhum item para exportar');
+      return;
+    }
+
+    const supplierName = getSupplierName();
+    const date = new Date().toLocaleDateString('pt-BR');
+    const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PEDIDO DE COMPRA', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Fornecedor: ${supplierName}`, 14, 35);
+    doc.text(`Data: ${date} às ${time}`, 14, 42);
+    doc.text(`Análise: últimos ${daysToAnalyze} dias • Estoque para ${daysToStock} dias`, 14, 49);
+    
+    // Line separator
+    doc.setDrawColor(200);
+    doc.line(14, 54, 196, 54);
+
+    // Table data
+    const tableData = itemsToExport.map((item, index) => [
+      index + 1,
+      item.product_name,
+      `${item.suggested_qty} cx`,
+      item.last_price ? `R$ ${item.last_price.toFixed(2)}` : '-',
+      item.last_price ? `R$ ${(item.suggested_qty * item.last_price).toFixed(2)}` : '-'
+    ]);
+
+    // Add table
+    autoTable(doc, {
+      startY: 60,
+      head: [['#', 'Produto', 'Qtd', 'Preço/Cx', 'Subtotal']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { 
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 25, halign: 'center' },
+        3: { cellWidth: 30, halign: 'right' },
+        4: { cellWidth: 35, halign: 'right' }
+      },
+      styles: {
+        fontSize: 10,
+        cellPadding: 4
+      }
+    });
+
+    // Footer summary
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total: ${itemsToExport.length} produtos • ${totalBoxes} caixas`, 14, finalY);
+    
+    const totalValue = itemsToExport.reduce((sum, item) => 
+      sum + (item.last_price ? item.suggested_qty * item.last_price : 0), 0
+    );
+    if (totalValue > 0) {
+      doc.text(`Valor Estimado: R$ ${totalValue.toFixed(2)}`, 14, finalY + 7);
+    }
+
+    // Save
+    const fileName = `pedido_${supplierName.toLowerCase().replace(/\s+/g, '_')}_${date.replace(/\//g, '-')}.pdf`;
+    doc.save(fileName);
+    toast.success('PDF gerado com sucesso!');
   };
 
   const totalBoxes = suggestions.reduce((sum, s) => sum + s.suggested_qty, 0);
@@ -366,18 +487,45 @@ export function SuggestedOrderDialog({
   const FooterContent = () => (
     <>
       {selectedSupplier && suggestions.length > 0 && (
-        <div className="flex justify-between items-center w-full gap-3">
-          <div className="text-sm text-muted-foreground">
-            {itemsWithSuggestion.length} produtos • {totalBoxes} caixas
+        <div className="flex flex-col gap-3 w-full">
+          {/* Export buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportWhatsApp}
+              disabled={totalBoxes === 0}
+              className="flex-1 h-10 gap-2"
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPDF}
+              disabled={totalBoxes === 0}
+              className="flex-1 h-10 gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              PDF
+            </Button>
           </div>
-          <Button 
-            onClick={handleApply} 
-            disabled={totalBoxes === 0}
-            className="h-12 px-6 gap-2"
-          >
-            <Check className="h-5 w-5" />
-            Aplicar
-          </Button>
+          
+          {/* Apply button */}
+          <div className="flex justify-between items-center gap-3">
+            <div className="text-sm text-muted-foreground">
+              {itemsWithSuggestion.length} produtos • {totalBoxes} caixas
+            </div>
+            <Button 
+              onClick={handleApply} 
+              disabled={totalBoxes === 0}
+              className="h-12 px-6 gap-2"
+            >
+              <Check className="h-5 w-5" />
+              Aplicar
+            </Button>
+          </div>
         </div>
       )}
     </>

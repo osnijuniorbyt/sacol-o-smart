@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 
 /**
- * Hook global para minimizar o teclado virtual ao pressionar Enter
- * em campos de input/textarea em dispositivos móveis
+ * Hook global para minimizar o teclado virtual:
+ * - Ao pressionar Enter em campos de input
+ * - Ao tocar fora do campo de input (tap outside)
  */
 export function useDismissKeyboardOnEnter() {
   useEffect(() => {
@@ -10,7 +11,7 @@ export function useDismissKeyboardOnEnter() {
       if (e.key === 'Enter') {
         const target = e.target as HTMLElement;
         
-        // Only blur if it's an input or textarea (not multiline textarea that needs Enter)
+        // Only blur if it's an input (not multiline textarea that needs Enter)
         if (target.tagName === 'INPUT') {
           target.blur();
         }
@@ -26,7 +27,30 @@ export function useDismissKeyboardOnEnter() {
       }
     };
 
+    const handleTouchStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      const activeElement = document.activeElement as HTMLElement;
+      
+      // If there's a focused input/textarea and the tap is outside of it
+      if (
+        activeElement &&
+        (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') &&
+        !activeElement.contains(target) &&
+        target.tagName !== 'INPUT' &&
+        target.tagName !== 'TEXTAREA' &&
+        !target.closest('input') &&
+        !target.closest('textarea')
+      ) {
+        activeElement.blur();
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('touchstart', handleTouchStart);
+    };
   }, []);
 }

@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -27,6 +25,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { NumericInputModal } from '@/components/ui/numeric-input-modal';
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -40,6 +39,7 @@ import { PurchaseOrder } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Input } from '@/components/ui/input';
 
 type QualityStatus = 'ok' | 'parcial' | 'recusado';
 
@@ -73,6 +73,48 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   const [items, setItems] = useState<ItemReceiving[]>([]);
   const [generalNotes, setGeneralNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Numeric keypad modal state
+  const [numericModal, setNumericModal] = useState<{
+    open: boolean;
+    itemId: string;
+    field: 'quantity_received' | 'unit_cost_actual';
+    value: string;
+    title: string;
+    unit: string;
+    maxDecimals: number;
+  }>({
+    open: false,
+    itemId: '',
+    field: 'quantity_received',
+    value: '',
+    title: '',
+    unit: '',
+    maxDecimals: 2,
+  });
+
+  const openNumericModal = (
+    itemId: string, 
+    field: 'quantity_received' | 'unit_cost_actual',
+    currentValue: number,
+    productName: string
+  ) => {
+    const isQuantity = field === 'quantity_received';
+    setNumericModal({
+      open: true,
+      itemId,
+      field,
+      value: currentValue > 0 ? currentValue.toString().replace('.', ',') : '',
+      title: isQuantity ? `Qtd: ${productName}` : `Custo: ${productName}`,
+      unit: isQuantity ? 'kg' : 'R$',
+      maxDecimals: isQuantity ? 1 : 2,
+    });
+  };
+
+  const handleNumericConfirm = (value: string) => {
+    const numValue = parseFloat(value.replace(',', '.')) || 0;
+    updateItem(numericModal.itemId, numericModal.field, numValue);
+  };
 
   useEffect(() => {
     if (order?.items) {
@@ -224,14 +266,24 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                         <Scale className="h-3 w-3" />
                         Recebido
                       </Label>
-                      <Input
-                        type="number"
-                        value={item.quantity_received}
-                        onChange={(e) => updateItem(item.id, 'quantity_received', parseFloat(e.target.value) || 0)}
-                        className="h-12 text-lg font-mono mt-1"
-                        min="0"
-                        step="0.1"
-                      />
+                      {isMobile ? (
+                        <button
+                          type="button"
+                          onClick={() => openNumericModal(item.id, 'quantity_received', item.quantity_received, item.product_name)}
+                          className="w-full h-12 mt-1 px-3 rounded-md border border-input bg-background text-left font-mono text-lg hover:bg-accent transition-colors"
+                        >
+                          {item.quantity_received} <span className="text-sm text-muted-foreground">kg</span>
+                        </button>
+                      ) : (
+                        <Input
+                          type="number"
+                          value={item.quantity_received}
+                          onChange={(e) => updateItem(item.id, 'quantity_received', parseFloat(e.target.value) || 0)}
+                          className="h-12 text-lg font-mono mt-1"
+                          min="0"
+                          step="0.1"
+                        />
+                      )}
                     </div>
                   </div>
 
@@ -240,16 +292,26 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                     <div>
                       <Label className="text-xs text-muted-foreground flex items-center gap-1">
                         <DollarSign className="h-3 w-3" />
-                        Custo Real (R$)
+                        Custo Real
                       </Label>
-                      <Input
-                        type="number"
-                        value={item.unit_cost_actual}
-                        onChange={(e) => updateItem(item.id, 'unit_cost_actual', parseFloat(e.target.value) || 0)}
-                        className="h-12 text-lg font-mono mt-1"
-                        min="0"
-                        step="0.01"
-                      />
+                      {isMobile ? (
+                        <button
+                          type="button"
+                          onClick={() => openNumericModal(item.id, 'unit_cost_actual', item.unit_cost_actual, item.product_name)}
+                          className="w-full h-12 mt-1 px-3 rounded-md border border-input bg-background text-left font-mono text-lg hover:bg-accent transition-colors"
+                        >
+                          R$ {item.unit_cost_actual.toFixed(2)}
+                        </button>
+                      ) : (
+                        <Input
+                          type="number"
+                          value={item.unit_cost_actual}
+                          onChange={(e) => updateItem(item.id, 'unit_cost_actual', parseFloat(e.target.value) || 0)}
+                          className="h-12 text-lg font-mono mt-1"
+                          min="0"
+                          step="0.01"
+                        />
+                      )}
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Qualidade</Label>
@@ -367,22 +429,36 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   // Mobile: use Drawer
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="h-[95vh] flex flex-col">
-          <DrawerHeader className="border-b pb-3">
-            <DrawerTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Conferência de Recebimento
-            </DrawerTitle>
-          </DrawerHeader>
-          
-          <ReceivingContent />
-          
-          <DrawerFooter className="border-t pt-3">
-            <FooterButtons />
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+      <>
+        <Drawer open={open} onOpenChange={onOpenChange}>
+          <DrawerContent className="h-[95vh] flex flex-col">
+            <DrawerHeader className="border-b pb-3">
+              <DrawerTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Conferência de Recebimento
+              </DrawerTitle>
+            </DrawerHeader>
+            
+            <ReceivingContent />
+            
+            <DrawerFooter className="border-t pt-3">
+              <FooterButtons />
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+        
+        <NumericInputModal
+          open={numericModal.open}
+          onOpenChange={(open) => setNumericModal(prev => ({ ...prev, open }))}
+          value={numericModal.value}
+          onChange={(value) => setNumericModal(prev => ({ ...prev, value }))}
+          onConfirm={handleNumericConfirm}
+          title={numericModal.title}
+          unit={numericModal.unit}
+          maxDecimals={numericModal.maxDecimals}
+          allowDecimal={true}
+        />
+      </>
     );
   }
 

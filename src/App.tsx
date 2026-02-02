@@ -18,20 +18,22 @@ import NotFound from "@/pages/NotFound";
 const queryClient = new QueryClient();
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  // TODO: Re-enable authentication after testing
+  // const { user, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  //     </div>
+  //   );
+  // }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  // if (!user) {
+  //   return <Navigate to="/login" replace />;
+  // }
 
+  // TEMPORÁRIO: Bypass de autenticação para testes
   return <Layout>{children}</Layout>;
 }
 

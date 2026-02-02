@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,6 +28,40 @@ import { BreakageReason, BREAKAGE_REASON_LABELS } from '@/types/database';
 import { Trash2, Plus, AlertTriangle, Barcode, Scale } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+
+// Separate component for notes to prevent scroll jumping during typing
+function NotesTextarea({ 
+  value, 
+  onChange 
+}: { 
+  value: string; 
+  onChange: (value: string) => void;
+}) {
+  const [localValue, setLocalValue] = useState(value);
+  
+  // Sync local value when parent value changes (e.g., form reset)
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+  
+  const handleBlur = () => {
+    if (localValue !== value) {
+      onChange(localValue);
+    }
+  };
+  
+  return (
+    <Textarea
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={handleBlur}
+      placeholder="Detalhes adicionais (opcional)..."
+      rows={2}
+      className="text-base"
+      style={{ fontSize: '16px' }} // Prevent iOS zoom
+    />
+  );
+}
 
 export default function Quebras() {
   const { breakages, createBreakage, isLoading, getTotalLoss } = useBreakages();
@@ -388,11 +422,9 @@ export default function Quebras() {
             {/* Notes */}
             <div className="space-y-2">
               <Label>Observações</Label>
-              <Textarea
+              <NotesTextarea
                 value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Detalhes adicionais (opcional)..."
-                rows={2}
+                onChange={(notes) => setFormData(prev => ({ ...prev, notes }))}
               />
             </div>
 

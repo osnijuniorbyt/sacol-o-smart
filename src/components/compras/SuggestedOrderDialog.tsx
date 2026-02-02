@@ -210,6 +210,26 @@ export function SuggestedOrderDialog({
     return suppliers.find(s => s.id === selectedSupplier)?.name || 'Fornecedor';
   };
 
+  const getSupplierPhone = () => {
+    const supplier = suppliers.find(s => s.id === selectedSupplier);
+    if (!supplier?.phone) return null;
+    
+    // Remove tudo que não é número
+    const cleanPhone = supplier.phone.replace(/\D/g, '');
+    
+    // Se já tem 55 no início, retorna como está
+    if (cleanPhone.startsWith('55') && cleanPhone.length >= 12) {
+      return cleanPhone;
+    }
+    
+    // Adiciona 55 se necessário
+    if (cleanPhone.length >= 10) {
+      return `55${cleanPhone}`;
+    }
+    
+    return null;
+  };
+
   const handleExportWhatsApp = () => {
     const itemsToExport = suggestions.filter(s => s.suggested_qty > 0);
     if (itemsToExport.length === 0) {
@@ -218,28 +238,40 @@ export function SuggestedOrderDialog({
     }
 
     const supplierName = getSupplierName();
+    const supplierPhone = getSupplierPhone();
     const date = new Date().toLocaleDateString('pt-BR');
+    const storeName = 'Hortifruti'; // Nome da loja
     
-    let message = `🛒 *PEDIDO - ${supplierName}*\n`;
-    message += `📅 ${date}\n`;
-    message += `━━━━━━━━━━━━━━━━\n\n`;
+    // Cabeçalho limpo
+    let message = `*PEDIDO DE COMPRA*\n`;
+    message += `${storeName} • ${date}\n`;
+    message += `Fornecedor: ${supplierName}\n`;
+    message += `─────────────────\n\n`;
     
+    // Lista numerada de produtos
     itemsToExport.forEach((item, index) => {
-      message += `${index + 1}. *${item.product_name}*\n`;
-      message += `   📦 ${item.suggested_qty} cx`;
-      if (item.last_price) {
-        message += ` • R$ ${item.last_price.toFixed(2)}/cx`;
-      }
-      message += `\n\n`;
+      message += `${index + 1}. ${item.product_name} — ${item.suggested_qty} cx\n`;
     });
     
-    message += `━━━━━━━━━━━━━━━━\n`;
-    message += `📦 *Total: ${totalBoxes} caixas*\n`;
-    message += `🏷️ *${itemsToExport.length} produtos*`;
+    // Total de caixas
+    message += `\n─────────────────\n`;
+    message += `*TOTAL: ${totalBoxes} caixas*\n`;
+    message += `(${itemsToExport.length} produtos)\n\n`;
+    
+    // Rodapé pedindo confirmação
+    message += `Por favor, confirme disponibilidade e previsão de entrega. Obrigado!`;
 
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
-    toast.success('Pedido pronto para enviar no WhatsApp');
+    
+    // Se tem telefone cadastrado, abre direto para o número
+    if (supplierPhone) {
+      window.open(`https://wa.me/${supplierPhone}?text=${encodedMessage}`, '_blank');
+      toast.success('Abrindo WhatsApp do fornecedor');
+    } else {
+      // Sem telefone, abre WhatsApp para usuário escolher contato
+      window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+      toast.info('Fornecedor sem telefone cadastrado - selecione o contato');
+    }
   };
 
   const handleExportPDF = () => {

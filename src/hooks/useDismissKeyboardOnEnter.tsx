@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 /**
  * Hook global para minimizar o teclado virtual:
- * - Ao pressionar Enter em campos de input
+ * - Ao pressionar Enter em campos de input (após executar a ação)
  * - Ao tocar fora do campo de input (tap outside)
  */
 export function useDismissKeyboardOnEnter() {
@@ -13,7 +13,11 @@ export function useDismissKeyboardOnEnter() {
         
         // Only blur if it's an input (not multiline textarea that needs Enter)
         if (target.tagName === 'INPUT') {
-          target.blur();
+          // Use setTimeout to allow any onKeyDown/onChange handlers to execute first
+          // This ensures search/form actions complete before dismissing keyboard
+          setTimeout(() => {
+            target.blur();
+          }, 10);
         }
         
         // For textarea, only blur if it's a single-line textarea or if Shift isn't pressed
@@ -21,7 +25,9 @@ export function useDismissKeyboardOnEnter() {
           const textarea = target as HTMLTextAreaElement;
           // Check if it's configured as single-line (by checking rows attribute)
           if (textarea.rows === 1) {
-            target.blur();
+            setTimeout(() => {
+              target.blur();
+            }, 10);
           }
         }
       }

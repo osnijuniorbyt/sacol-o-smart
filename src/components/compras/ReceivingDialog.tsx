@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -25,6 +24,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { NumericInputModal } from '@/components/ui/numeric-input-modal';
 import { 
   CheckCircle2, 
@@ -33,7 +42,8 @@ import {
   Loader2,
   Package,
   Scale,
-  DollarSign
+  DollarSign,
+  Save
 } from 'lucide-react';
 import { PurchaseOrder } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,6 +51,7 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from '@/components/ui/input';
 import { ReceivingPhotos } from './ReceivingPhotos';
+import { useReceivingDraft, DraftItemData } from '@/hooks/useReceivingDraft';
 
 interface ReceivingPhoto {
   id?: string;
@@ -78,7 +89,6 @@ const QUALITY_OPTIONS = [
 ];
 
 // Separate component for notes input to prevent scroll jumping
-// Uses local state and only syncs on blur
 function ItemNotesInput({ 
   itemId, 
   initialValue, 
@@ -97,6 +107,11 @@ function ItemNotesInput({
       onUpdate(itemId, 'quality_notes', localValue);
     }
   };
+
+  // Update local value when initialValue changes (e.g., draft restore)
+  useEffect(() => {
+    setLocalValue(initialValue);
+  }, [initialValue]);
   
   return (
     <Input
@@ -106,7 +121,7 @@ function ItemNotesInput({
       onBlur={handleBlur}
       className="h-11 text-base"
       placeholder="Observação do item..."
-      style={{ fontSize: '16px' }} // Prevent iOS zoom
+      style={{ fontSize: '16px' }}
     />
   );
 }
@@ -117,6 +132,11 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   const [generalNotes, setGeneralNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [photos, setPhotos] = useState<ReceivingPhoto[]>([]);
+  const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Auto-save hook
+  const { hasDraft, lastSaved, loadDraft, saveDraft, clearDraft } = useReceivingDraft(order?.id);
   
   // Ref for scroll container to preserve position
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -166,25 +186,110 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
     updateItem(numericModal.itemId, numericModal.field, numValue);
   };
 
-  useEffect(() => {
-    if (order?.items) {
-      const newItems = order.items.map(item => ({
-        id: item.id,
-        product_id: item.product_id,
-        product_name: item.product?.name || 'Produto',
-        quantity_ordered: item.quantity,
-        quantity_received: item.quantity,
-        unit_cost_estimated: item.unit_cost_estimated || 0,
-        unit_cost_actual: item.unit_cost_estimated || 0,
+  // Initialize items from order
+  const initializeFromOrder = useCallback(() => {
+    if (!order?.items) return [];
+    
+    return order.items.map(item => ({
+      id: item.id,
+      product_id: item.product_id,
+      product_name: item.product?.name || 'Produto',
+      quantity_ordered: item.quantity,
+      quantity_received: item.quantity,
+      unit_cost_estimated: item.unit_cost_estimated || 0,
+      unit_cost_actual: item.unit_cost_estimated || 0,
+      quality_status: 'ok' as QualityStatus,
+      quality_notes: '',
+    }));
+  }, [order]);
+
+  // Restore from draft
+  const restoreFromDraft = useCallback(() => {
+    const draft = loadDraft();
+    if (!draft || !order?.items) return;
+    
+    // Map draft data to items while preserving product info from order
+    const restoredItems = order.items.map(orderItem => {
+      const draftItem = draft.items.find(d => d.id === orderItem.id);
+      
+      if (draftItem) {
+        return {
+          id: orderItem.id,
+          product_id: orderItem.product_id,
+          product_name: orderItem.product?.name || 'Produto',
+          quantity_ordered: orderItem.quantity,
+          quantity_received: draftItem.quantity_received,
+          unit_cost_estimated: orderItem.unit_cost_estimated || 0,
+          unit_cost_actual: draftItem.unit_cost_actual,
+          quality_status: draftItem.quality_status,
+          quality_notes: draftItem.quality_notes,
+        };
+      }
+      
+      // If item not in draft, use order defaults
+      return {
+        id: orderItem.id,
+        product_id: orderItem.product_id,
+        product_name: orderItem.product?.name || 'Produto',
+        quantity_ordered: orderItem.quantity,
+        quantity_received: orderItem.quantity,
+        unit_cost_estimated: orderItem.unit_cost_estimated || 0,
+        unit_cost_actual: orderItem.unit_cost_estimated || 0,
         quality_status: 'ok' as QualityStatus,
         quality_notes: '',
-      }));
-      setItems(newItems);
-      setGeneralNotes('');
-      setPhotos([]);
-      localNotesRef.current.clear();
+      };
+    });
+    
+    setItems(restoredItems);
+    setGeneralNotes(draft.generalNotes || '');
+    setIsInitialized(true);
+    setShowDraftDialog(false);
+    toast.success('Rascunho restaurado!');
+  }, [loadDraft, order]);
+
+  // Start fresh (discard draft)
+  const startFresh = useCallback(() => {
+    clearDraft();
+    setItems(initializeFromOrder());
+    setGeneralNotes('');
+    setPhotos([]);
+    localNotesRef.current.clear();
+    setIsInitialized(true);
+    setShowDraftDialog(false);
+  }, [clearDraft, initializeFromOrder]);
+
+  // Handle dialog open
+  useEffect(() => {
+    if (open && order?.items) {
+      setIsInitialized(false);
+      
+      // Check if there's a draft for this order
+      if (hasDraft) {
+        setShowDraftDialog(true);
+      } else {
+        startFresh();
+      }
     }
-  }, [order]);
+    
+    if (!open) {
+      setIsInitialized(false);
+    }
+  }, [open, order, hasDraft]);
+
+  // Auto-save when items or notes change
+  useEffect(() => {
+    if (!isInitialized || !order?.id) return;
+    
+    const draftItems: DraftItemData[] = items.map(item => ({
+      id: item.id,
+      quantity_received: item.quantity_received,
+      unit_cost_actual: item.unit_cost_actual,
+      quality_status: item.quality_status,
+      quality_notes: item.quality_notes,
+    }));
+    
+    saveDraft(draftItems, generalNotes);
+  }, [items, generalNotes, isInitialized, order?.id, saveDraft]);
 
   // Memoized update function that preserves scroll position
   const updateItem = useCallback((id: string, field: keyof ItemReceiving, value: any) => {
@@ -290,9 +395,11 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
 
         if (photosError) {
           console.error('Erro ao salvar referências das fotos:', photosError);
-          // Don't fail the whole operation for photo errors
         }
       }
+
+      // Clear draft after successful save
+      clearDraft();
 
       toast.success('Recebimento confirmado! Estoque atualizado.');
       onSuccess();
@@ -315,18 +422,39 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   );
   const difference = totalActual - totalEstimated;
 
+  // Format last saved time
+  const formatLastSaved = (date: Date | null) => {
+    if (!date) return null;
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    
+    if (diffSec < 5) return 'agora';
+    if (diffSec < 60) return `${diffSec}s atrás`;
+    const diffMin = Math.floor(diffSec / 60);
+    return `${diffMin}min atrás`;
+  };
+
   if (!order) return null;
 
   // Content shared between Dialog and Drawer
   const ReceivingContent = () => (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header info */}
-      <div className="px-4 py-2 bg-muted/50 text-sm flex-shrink-0">
-        <span className="text-muted-foreground">Fornecedor: </span>
-        <strong>{order.supplier?.name}</strong>
+      <div className="px-4 py-2 bg-muted/50 text-sm flex-shrink-0 flex items-center justify-between">
+        <div>
+          <span className="text-muted-foreground">Fornecedor: </span>
+          <strong>{order.supplier?.name}</strong>
+        </div>
+        {lastSaved && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Save className="h-3 w-3" />
+            <span>Salvo {formatLastSaved(lastSaved)}</span>
+          </div>
+        )}
       </div>
 
-      {/* Items List - Custom scroll container to preserve scroll position */}
+      {/* Items List */}
       <div 
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto overflow-x-hidden px-4 overscroll-contain"
@@ -437,7 +565,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                     </div>
                   </div>
 
-                  {/* Notes - Using uncontrolled input to prevent scroll jumping */}
+                  {/* Notes */}
                   <ItemNotesInput
                     itemId={item.id}
                     initialValue={item.quality_notes}
@@ -450,7 +578,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
         </div>
       </div>
 
-      {/* Totals Summary - Fixed at bottom */}
+      {/* Totals Summary */}
       <div className="border-t bg-card p-4 space-y-3 pb-safe">
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="p-2 bg-muted rounded-lg">
@@ -498,7 +626,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
           placeholder="Observações gerais do recebimento..."
           className="min-h-[60px] text-base"
           rows={2}
-          style={{ fontSize: '16px' }} // Prevent iOS zoom
+          style={{ fontSize: '16px' }}
         />
       </div>
     </div>
@@ -534,11 +662,38 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
     </div>
   );
 
+  // Draft recovery dialog
+  const DraftRecoveryDialog = () => (
+    <AlertDialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Save className="h-5 w-5 text-primary" />
+            Conferência em andamento
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Você tem uma conferência não finalizada para este pedido. Deseja continuar de onde parou ou começar do zero?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+          <AlertDialogCancel onClick={startFresh} className="w-full sm:w-auto">
+            Começar do zero
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={restoreFromDraft} className="w-full sm:w-auto">
+            Continuar conferência
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
   // Mobile: use Drawer
   if (isMobile) {
     return (
       <>
-        <Drawer open={open} onOpenChange={onOpenChange}>
+        <DraftRecoveryDialog />
+        
+        <Drawer open={open && isInitialized} onOpenChange={onOpenChange}>
           <DrawerContent className="h-[95vh] flex flex-col">
             <DrawerHeader className="border-b pb-3">
               <DrawerTitle className="flex items-center gap-2">
@@ -572,21 +727,25 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
 
   // Desktop: use Dialog
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="p-4 border-b">
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Conferência de Recebimento
-          </DialogTitle>
-        </DialogHeader>
-        
-        <ReceivingContent />
-        
-        <DialogFooter className="p-4 border-t">
-          <FooterButtons />
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <>
+      <DraftRecoveryDialog />
+      
+      <Dialog open={open && isInitialized} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Conferência de Recebimento
+            </DialogTitle>
+          </DialogHeader>
+          
+          <ReceivingContent />
+          
+          <DialogFooter className="p-4 border-t">
+            <FooterButtons />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

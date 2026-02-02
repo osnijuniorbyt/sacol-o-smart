@@ -206,7 +206,7 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
                   <div className="text-sm text-muted-foreground">
                     Recebido em: {format(new Date(order.received_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </div>
-                  <PhotoGallery orderId={order.id} compact />
+                  <PhotoGallery orderId={order.id} order={order} compact />
                 </div>
               )}
             </CardContent>

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -12,18 +11,21 @@ import {
   ChevronLeft, 
   ChevronRight, 
   X,
-  ImageIcon,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { ReceivingPhoto } from '@/types/database';
+import { PurchaseOrder, ReceivingPhoto } from '@/types/database';
+import { generateReceivingPdf } from '@/lib/generateReceivingPdf';
+import { toast } from 'sonner';
 
 interface PhotoGalleryProps {
   orderId: string;
+  order?: PurchaseOrder;
   compact?: boolean;
 }
 
-export function PhotoGallery({ orderId, compact = false }: PhotoGalleryProps) {
+export function PhotoGallery({ orderId, order, compact = false }: PhotoGalleryProps) {
   const [photos, setPhotos] = useState<ReceivingPhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -51,6 +53,8 @@ export function PhotoGallery({ orderId, compact = false }: PhotoGalleryProps) {
     fetchPhotos();
   }, [orderId]);
 
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
   const openLightbox = (index: number) => {
     setCurrentIndex(index);
     setLightboxOpen(true);
@@ -62,6 +66,24 @@ export function PhotoGallery({ orderId, compact = false }: PhotoGalleryProps) {
 
   const goToNext = () => {
     setCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0));
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!order) {
+      toast.error('Informações do pedido não disponíveis');
+      return;
+    }
+    
+    setIsGeneratingPdf(true);
+    try {
+      await generateReceivingPdf({ order, photos });
+      toast.success('PDF gerado com sucesso!');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Erro ao gerar PDF');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   // Handle keyboard navigation
@@ -95,13 +117,32 @@ export function PhotoGallery({ orderId, compact = false }: PhotoGalleryProps) {
   if (compact) {
     return (
       <>
-        <button
-          onClick={() => openLightbox(0)}
-          className="flex items-center gap-2 text-sm text-primary hover:underline"
-        >
-          <Camera className="h-4 w-4" />
-          <span>{photos.length} foto{photos.length > 1 ? 's' : ''} do recebimento</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => openLightbox(0)}
+            className="flex items-center gap-2 text-sm text-primary hover:underline"
+          >
+            <Camera className="h-4 w-4" />
+            <span>{photos.length} foto{photos.length > 1 ? 's' : ''} do recebimento</span>
+          </button>
+          
+          {order && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadPdf}
+              disabled={isGeneratingPdf}
+              className="h-7"
+            >
+              {isGeneratingPdf ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <Download className="h-3 w-3 mr-1" />
+              )}
+              PDF
+            </Button>
+          )}
+        </div>
 
         <Lightbox
           photos={photos}

@@ -70,6 +70,7 @@ export interface Product {
   supplier_id: string | null;
   shelf_life: number;
   fator_conversao: number;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
   supplier?: Supplier;

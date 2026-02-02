@@ -21,6 +21,8 @@ import {
 import { useProducts } from '@/hooks/useProducts';
 import { useStock } from '@/hooks/useStock';
 import { useSuppliers } from '@/hooks/useSuppliers';
+import { ProductImage } from '@/components/ui/product-image';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Product, 
   ProductCategory, 
@@ -28,16 +30,18 @@ import {
   CATEGORY_LABELS, 
   UNIT_LABELS 
 } from '@/types/database';
-import { Apple, Plus, Pencil, Search, Building2 } from 'lucide-react';
+import { Apple, Plus, Pencil, Search, Building2, Sparkles, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Produtos() {
-  const { products, createProduct, updateProduct, isLoading } = useProducts();
+  const { products, createProduct, updateProduct, isLoading, refresh } = useProducts();
   const { getProductStock } = useStock();
   const { suppliers } = useSuppliers();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   
   const [formData, setFormData] = useState({
     plu: '',
@@ -94,6 +98,45 @@ export default function Produtos() {
     });
     setEditingProduct(product);
     setDialogOpen(true);
+  };
+
+  const handleGenerateImage = async () => {
+    if (!editingProduct) {
+      toast.error('Salve o produto primeiro antes de gerar a imagem');
+      return;
+    }
+    
+    if (!formData.name.trim()) {
+      toast.error('Nome do produto é obrigatório para gerar imagem');
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-product-image', {
+        body: {
+          productName: formData.name,
+          productId: editingProduct.id,
+          category: CATEGORY_LABELS[formData.category]
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast.success('Ilustração gerada com sucesso!');
+        refresh();
+        // Update the editing product with the new image
+        setEditingProduct(prev => prev ? { ...prev, image_url: data.imageUrl } : null);
+      } else {
+        throw new Error(data?.error || 'Erro desconhecido');
+      }
+    } catch (error: any) {
+      console.error('Error generating image:', error);
+      toast.error('Erro ao gerar ilustração: ' + (error.message || 'Erro desconhecido'));
+    } finally {
+      setIsGeneratingImage(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -335,6 +378,47 @@ export default function Produtos() {
                 </div>
               </div>
 
+              {/* Image section - only show when editing */}
+              {editingProduct && (
+                <div className="space-y-3 p-4 rounded-lg border border-border">
+                  <Label>Imagem do Produto</Label>
+                  <div className="flex items-center gap-4">
+                    <ProductImage 
+                      src={editingProduct.image_url}
+                      alt={editingProduct.name}
+                      category={editingProduct.category}
+                      size="xl"
+                    />
+                    <div className="flex-1 space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        {editingProduct.image_url 
+                          ? 'Ilustração atual do produto'
+                          : 'Nenhuma ilustração cadastrada'}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-12"
+                        onClick={handleGenerateImage}
+                        disabled={isGeneratingImage}
+                      >
+                        {isGeneratingImage ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Gerando...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            Gerar Ilustração com IA
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
                 <Label htmlFor="is_active" className="cursor-pointer">Produto Ativo</Label>
                 <Switch
@@ -417,9 +501,17 @@ export default function Produtos() {
               >
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-medium line-clamp-1">{product.name}</h3>
-                      <p className="text-sm text-muted-foreground">PLU: {product.plu}</p>
+                    <div className="flex items-center gap-3">
+                      <ProductImage 
+                        src={product.image_url}
+                        alt={product.name}
+                        category={product.category}
+                        size="lg"
+                      />
+                      <div>
+                        <h3 className="font-medium line-clamp-1">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground">PLU: {product.plu}</p>
+                      </div>
                     </div>
                     <Button
                       variant="ghost"

@@ -181,6 +181,7 @@ export type Database = {
           custo_compra: number | null
           fator_conversao: number | null
           id: string
+          image_url: string | null
           is_active: boolean
           min_stock: number
           name: string
@@ -199,6 +200,7 @@ export type Database = {
           custo_compra?: number | null
           fator_conversao?: number | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           min_stock?: number
           name: string
@@ -217,6 +219,7 @@ export type Database = {
           custo_compra?: number | null
           fator_conversao?: number | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           min_stock?: number
           name?: string

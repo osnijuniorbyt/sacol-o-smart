@@ -30,6 +30,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { Supplier } from '@/hooks/useSuppliers';
 import { Product } from '@/types/database';
+import { ProductImage } from '@/components/ui/product-image';
 import { 
   Lightbulb, 
   Loader2, 
@@ -48,10 +49,13 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { ProductCategory } from '@/types/database';
 
 interface SuggestedItem {
   product_id: string;
   product_name: string;
+  product_image: string | null;
+  product_category: ProductCategory;
   avg_daily_sales: number;
   current_stock: number;
   days_of_stock: number;
@@ -147,6 +151,8 @@ export function SuggestedOrderDialog({
         return {
           product_id: product.id,
           product_name: product.name,
+          product_image: product.image_url || null,
+          product_category: product.category,
           avg_daily_sales: avgDaily,
           current_stock: currentStock,
           days_of_stock: daysOfStock,
@@ -464,6 +470,13 @@ export function SuggestedOrderDialog({
               >
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
+                    {/* Product image */}
+                    <ProductImage 
+                      src={item.product_image}
+                      alt={item.product_name}
+                      category={item.product_category}
+                      size="xs"
+                    />
                     {/* Product info */}
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">{item.product_name}</div>

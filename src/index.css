@@ -137,3 +137,68 @@ All colors MUST be HSL.
     display: none;
   }
 }
+
+/* Drawer bounce animation when reaching top limit */
+@keyframes drawer-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(8px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+  75% {
+    transform: translateY(2px);
+  }
+}
+
+.drawer-bounce {
+  animation: drawer-bounce 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* Drawer handle pulse animation */
+@keyframes handle-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scaleX(1.1);
+  }
+}
+
+.drawer-handle-pulse {
+  animation: handle-pulse 1.5s ease-in-out infinite;
+}
+
+/* Rubber band effect for drawer */
+@keyframes rubber-band {
+  0% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-12px);
+  }
+  40% {
+    transform: translateY(6px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+  65% {
+    transform: translateY(2px);
+  }
+  75% {
+    transform: translateY(-1px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.drawer-rubber-band {
+  animation: rubber-band 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}

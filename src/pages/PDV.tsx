@@ -156,28 +156,28 @@ export default function PDV() {
 
   return (
     <FocusTrap enabled={true}>
-      <div className="grid grid-cols-10 gap-4 h-[calc(100vh-120px)]">
-        {/* Left Panel - Cart Items (70%) */}
-        <div className="col-span-7 flex flex-col gap-4">
+      <div className="flex flex-col lg:grid lg:grid-cols-10 gap-4 h-[calc(100vh-120px)] lg:h-[calc(100vh-120px)]">
+        {/* Left Panel - Cart Items (70% on desktop, full on mobile) */}
+        <div className="col-span-7 flex flex-col gap-4 flex-1 lg:flex-none min-h-0">
           {/* Scanner status indicator */}
-          <Card className="bg-card">
-            <CardContent className="p-4">
+          <Card className="bg-card flex-shrink-0">
+            <CardContent className="p-3 lg:p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Barcode className="h-6 w-6 text-primary" />
+                  <div className="h-10 w-10 lg:h-12 lg:w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Barcode className="h-5 w-5 lg:h-6 lg:w-6 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">Scanner Ativo</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground text-sm lg:text-base">Scanner Ativo</p>
+                    <p className="text-xs lg:text-sm text-muted-foreground hidden sm:block">
                       Aguardando leitura do código de barras...
                     </p>
                   </div>
                 </div>
                 {lastScannedCode && (
                   <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Último código:</p>
-                    <p className="font-mono text-sm">{lastScannedCode}</p>
+                    <p className="text-xs text-muted-foreground">Último:</p>
+                    <p className="font-mono text-xs lg:text-sm">{lastScannedCode}</p>
                   </div>
                 )}
               </div>
@@ -185,8 +185,8 @@ export default function PDV() {
           </Card>
 
           {/* Cart Items List */}
-          <Card className="flex-1 overflow-hidden flex flex-col bg-card">
-            <CardHeader className="pb-2 border-b">
+          <Card className="flex-1 overflow-hidden flex flex-col bg-card min-h-0">
+            <CardHeader className="pb-2 border-b flex-shrink-0">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5" />
                 <span className="font-semibold">Itens do Carrinho</span>
@@ -196,15 +196,15 @@ export default function PDV() {
               </div>
             </CardHeader>
             <ScrollArea className="flex-1">
-              <div className="p-4">
+              <div className="p-3 lg:p-4">
                 {cart.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                    <ShoppingCart className="h-16 w-16 mb-4 opacity-50" />
-                    <p className="text-lg">Carrinho vazio</p>
+                  <div className="flex flex-col items-center justify-center py-12 lg:py-16 text-muted-foreground">
+                    <ShoppingCart className="h-12 w-12 lg:h-16 lg:w-16 mb-4 opacity-50" />
+                    <p className="text-base lg:text-lg">Carrinho vazio</p>
                     <p className="text-sm">Escaneie um produto para começar</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2 lg:space-y-3">
                     {cart.map(item => (
                       <CartItemRow
                         key={item.product.id}
@@ -221,8 +221,8 @@ export default function PDV() {
           </Card>
         </div>
 
-        {/* Right Panel - Totals (30%) */}
-        <div className="col-span-3">
+        {/* Right Panel - Totals (30% on desktop, fixed bottom on mobile) */}
+        <div className="lg:col-span-3 flex-shrink-0">
           <TotalsPanel
             itemsCount={cart.length}
             total={total}

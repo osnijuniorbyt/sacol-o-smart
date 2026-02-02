@@ -19,16 +19,25 @@ import {
 } from '@/components/ui/dialog';
 import { useStock } from '@/hooks/useStock';
 import { useProducts } from '@/hooks/useProducts';
-import { Package, Plus, AlertTriangle, Clock } from 'lucide-react';
+import { OfflineStatus } from '@/components/OfflineStatus';
+import { Package, Plus, AlertTriangle, Clock, Loader2 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 export default function Estoque() {
-  const { batches, addBatch, isLoading } = useStock();
+  const { 
+    batches, 
+    addBatch, 
+    isLoading, 
+    isOnline, 
+    isFromCache, 
+    lastUpdated, 
+    refresh 
+  } = useStock();
   const { products, activeProducts } = useProducts();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState('');
   const [filterProduct, setFilterProduct] = useState('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const [formData, setFormData] = useState({
     product_id: '',
@@ -36,6 +45,12 @@ export default function Estoque() {
     cost_per_unit: '',
     expiry_date: ''
   });
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refresh();
+    setIsRefreshing(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,10 +82,10 @@ export default function Estoque() {
 
   const getExpiryColor = (status: string) => {
     switch (status) {
-      case 'expired': return 'bg-red-100 border-red-300 text-red-800';
-      case 'critical': return 'bg-orange-100 border-orange-300 text-orange-800';
-      case 'warning': return 'bg-yellow-100 border-yellow-300 text-yellow-800';
-      default: return 'bg-green-50 border-green-200';
+      case 'expired': return 'bg-red-100 border-red-300 text-red-800 dark:bg-red-900/30 dark:border-red-700 dark:text-red-200';
+      case 'critical': return 'bg-orange-100 border-orange-300 text-orange-800 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-200';
+      case 'warning': return 'bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-200';
+      default: return 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800';
     }
   };
 
@@ -96,17 +111,17 @@ export default function Estoque() {
   }, {} as Record<string, typeof batches>);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 pb-24">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Estoque</h1>
-          <p className="text-muted-foreground">Controle de lotes por FIFO</p>
+          <h1 className="text-2xl font-bold">Estoque</h1>
+          <p className="text-sm text-muted-foreground">Controle de lotes por FIFO</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="h-14 px-6">
+            <Button className="h-12 px-5" disabled={!isOnline}>
               <Plus className="mr-2 h-5 w-5" />
-              Entrada de Mercadoria
+              Entrada
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
@@ -121,12 +136,12 @@ export default function Estoque() {
                   onValueChange={(value) => setFormData(prev => ({ ...prev, product_id: value }))}
                   required
                 >
-                  <SelectTrigger className="h-14">
+                  <SelectTrigger className="h-12">
                     <SelectValue placeholder="Selecione o produto" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover z-50">
                     {activeProducts.map(product => (
-                      <SelectItem key={product.id} value={product.id}>
+                      <SelectItem key={product.id} value={product.id} className="py-3">
                         {product.name} (PLU: {product.plu})
                       </SelectItem>
                     ))}
@@ -142,7 +157,7 @@ export default function Estoque() {
                     value={formData.quantity}
                     onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
                     placeholder="0.000"
-                    className="h-14"
+                    className="h-12"
                     required
                   />
                 </div>
@@ -154,7 +169,7 @@ export default function Estoque() {
                     value={formData.cost_per_unit}
                     onChange={(e) => setFormData(prev => ({ ...prev, cost_per_unit: e.target.value }))}
                     placeholder="0.00"
-                    className="h-14"
+                    className="h-12"
                     required
                   />
                 </div>
@@ -165,10 +180,10 @@ export default function Estoque() {
                   type="date"
                   value={formData.expiry_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, expiry_date: e.target.value }))}
-                  className="h-14"
+                  className="h-12"
                 />
               </div>
-              <Button type="submit" className="w-full h-14" disabled={addBatch.isPending}>
+              <Button type="submit" className="w-full h-12" disabled={addBatch.isPending}>
                 {addBatch.isPending ? 'Salvando...' : 'Adicionar Lote'}
               </Button>
             </form>
@@ -176,58 +191,66 @@ export default function Estoque() {
         </Dialog>
       </div>
 
+      {/* Offline Status */}
+      <OfflineStatus
+        isOnline={isOnline}
+        isFromCache={isFromCache}
+        lastUpdated={lastUpdated}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+      />
+
       {/* Filter */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <Label className="mb-2 block">Filtrar por Produto</Label>
-              <Select value={filterProduct} onValueChange={setFilterProduct}>
-                <SelectTrigger className="h-14">
-                  <SelectValue placeholder="Todos os produtos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os produtos</SelectItem>
-                  {products.map(product => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        <CardContent className="p-3">
+          <Label className="mb-2 block text-sm">Filtrar por Produto</Label>
+          <Select value={filterProduct} onValueChange={setFilterProduct}>
+            <SelectTrigger className="h-12">
+              <SelectValue placeholder="Todos os produtos" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              <SelectItem value="all" className="py-3">Todos os produtos</SelectItem>
+              {products.map(product => (
+                <SelectItem key={product.id} value={product.id} className="py-3">
+                  {product.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
       {/* Stock by product */}
       {isLoading ? (
-        <p className="text-center text-muted-foreground py-8">Carregando...</p>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Carregando...</span>
+        </div>
       ) : Object.keys(groupedBatches).length === 0 ? (
         <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
+          <CardContent className="py-12 text-center text-muted-foreground">
             <Package className="mx-auto h-12 w-12 mb-4 opacity-50" />
             <p>Nenhum lote em estoque</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {Object.entries(groupedBatches).map(([productId, productBatches]) => {
             const product = products.find(p => p.id === productId);
             const totalQuantity = productBatches.reduce((sum, b) => sum + Number(b.quantity), 0);
             
             return (
               <Card key={productId}>
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-2 px-4 pt-4">
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg">{product?.name || 'Produto'}</CardTitle>
+                    <CardTitle className="text-base">{product?.name || 'Produto'}</CardTitle>
                     <div className="text-right">
-                      <p className="font-bold text-lg">{totalQuantity.toFixed(3)} {product?.unit}</p>
-                      <p className="text-xs text-muted-foreground">Total em estoque</p>
+                      <p className="font-bold text-lg font-mono">{totalQuantity.toFixed(1)}</p>
+                      <p className="text-xs text-muted-foreground">{product?.unit}</p>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-4 pb-4">
                   <div className="space-y-2">
                     {productBatches.map((batch, index) => {
                       const status = getExpiryStatus(batch.expiry_date);
@@ -240,15 +263,15 @@ export default function Estoque() {
                           )}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-background text-sm font-medium">
+                            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-background text-sm font-medium">
                               {index + 1}
                             </div>
                             <div>
-                              <p className="font-medium">
-                                {Number(batch.quantity).toFixed(3)} {product?.unit}
+                              <p className="font-medium font-mono">
+                                {Number(batch.quantity).toFixed(1)} {product?.unit}
                               </p>
-                              <p className="text-sm opacity-75">
-                                Custo: {formatCurrency(Number(batch.cost_per_unit))}/{product?.unit}
+                              <p className="text-xs opacity-75">
+                                {formatCurrency(Number(batch.cost_per_unit))}/{product?.unit}
                               </p>
                             </div>
                           </div>
@@ -258,14 +281,14 @@ export default function Estoque() {
                                 {status === 'expired' && <AlertTriangle className="h-4 w-4" />}
                                 {(status === 'critical' || status === 'warning') && <Clock className="h-4 w-4" />}
                                 <span className="text-sm font-medium">
-                                  {format(new Date(batch.expiry_date), 'dd/MM/yyyy')}
+                                  {format(new Date(batch.expiry_date), 'dd/MM')}
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-sm text-muted-foreground">Sem validade</span>
+                              <span className="text-xs text-muted-foreground">Sem val.</span>
                             )}
                             <p className="text-xs opacity-75">
-                              Entrada: {format(new Date(batch.received_at), 'dd/MM/yyyy')}
+                              {format(new Date(batch.received_at), 'dd/MM')}
                             </p>
                           </div>
                         </div>

@@ -72,9 +72,12 @@ export function NumericInputModal({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="px-4 pb-safe">
+        <DrawerContent className="px-4 pb-safe max-h-[85vh]">
           <DrawerHeader className="pb-2">
-            <DrawerTitle className="text-center">{title}</DrawerTitle>
+            <DrawerTitle className="text-center text-lg">{title}</DrawerTitle>
+            <p className="text-xs text-muted-foreground text-center mt-1">
+              Arraste para baixo para fechar
+            </p>
           </DrawerHeader>
           {content}
         </DrawerContent>

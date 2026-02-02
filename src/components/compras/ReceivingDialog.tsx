@@ -40,6 +40,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from '@/components/ui/input';
+import { ReceivingPhotos } from './ReceivingPhotos';
+
+interface ReceivingPhoto {
+  id?: string;
+  url: string;
+  fileName: string;
+  isUploading?: boolean;
+  isNew?: boolean;
+}
 
 type QualityStatus = 'ok' | 'parcial' | 'recusado';
 
@@ -107,6 +116,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   const [items, setItems] = useState<ItemReceiving[]>([]);
   const [generalNotes, setGeneralNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [photos, setPhotos] = useState<ReceivingPhoto[]>([]);
   
   // Ref for scroll container to preserve position
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -171,6 +181,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
       }));
       setItems(newItems);
       setGeneralNotes('');
+      setPhotos([]);
       localNotesRef.current.clear();
     }
   }, [order]);
@@ -262,6 +273,26 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
         .eq('id', order.id);
 
       if (orderError) throw orderError;
+
+      // Save photo references to database
+      const newPhotos = photos.filter(p => p.isNew && !p.isUploading);
+      if (newPhotos.length > 0) {
+        const photoRecords = newPhotos.map(photo => ({
+          order_id: order.id,
+          photo_url: photo.url,
+          file_name: photo.fileName,
+          captured_at: new Date().toISOString(),
+        }));
+
+        const { error: photosError } = await supabase
+          .from('receiving_photos')
+          .insert(photoRecords);
+
+        if (photosError) {
+          console.error('Erro ao salvar referências das fotos:', photosError);
+          // Don't fail the whole operation for photo errors
+        }
+      }
 
       toast.success('Recebimento confirmado! Estoque atualizado.');
       onSuccess();
@@ -449,6 +480,16 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
             </p>
           </div>
         </div>
+
+        {/* Receiving Photos */}
+        {order && (
+          <ReceivingPhotos
+            orderId={order.id}
+            photos={photos}
+            onPhotosChange={setPhotos}
+            disabled={isSaving}
+          />
+        )}
 
         {/* General Notes */}
         <Textarea

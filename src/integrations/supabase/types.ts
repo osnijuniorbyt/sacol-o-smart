@@ -355,6 +355,47 @@ export type Database = {
           },
         ]
       }
+      receiving_photos: {
+        Row: {
+          captured_at: string
+          created_at: string
+          file_name: string
+          file_size: number | null
+          id: string
+          notes: string | null
+          order_id: string
+          photo_url: string
+        }
+        Insert: {
+          captured_at?: string
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          id?: string
+          notes?: string | null
+          order_id: string
+          photo_url: string
+        }
+        Update: {
+          captured_at?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          notes?: string | null
+          order_id?: string
+          photo_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receiving_photos_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sale_items: {
         Row: {
           batch_id: string | null

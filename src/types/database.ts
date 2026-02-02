@@ -134,6 +134,18 @@ export interface BarcodeData {
   weight: number; // in kg
 }
 
+// Receiving Photos
+export interface ReceivingPhoto {
+  id: string;
+  order_id: string;
+  photo_url: string;
+  file_name: string;
+  file_size: number | null;
+  captured_at: string;
+  notes: string | null;
+  created_at: string;
+}
+
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   frutas: 'Frutas',
   verduras: 'Verduras',

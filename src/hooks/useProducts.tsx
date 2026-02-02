@@ -1,23 +1,40 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory, UnitType } from '@/types/database';
 import { toast } from 'sonner';
+import { useOfflineCache, useOnlineStatus } from './useOfflineCache';
+import { useCallback, useMemo } from 'react';
 
 export function useProducts() {
   const queryClient = useQueryClient();
+  const isOnline = useOnlineStatus();
 
-  const { data: products = [], isLoading, error } = useQuery({
-    queryKey: ['products'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data as Product[];
-    }
+  // Fetch function for products
+  const fetchProducts = async (): Promise<Product[]> => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('name');
+    
+    if (error) throw error;
+    return data as Product[];
+  };
+
+  // Use offline cache for products
+  const {
+    data: products,
+    isLoading,
+    error,
+    isFromCache,
+    lastUpdated,
+    refresh,
+  } = useOfflineCache<Product[]>({
+    key: 'products',
+    fetchFn: fetchProducts,
+    ttlMinutes: 60, // Cache products for 1 hour
   });
+
+  const safeProducts = products || [];
 
   const createProduct = useMutation({
     mutationFn: async (product: {
@@ -39,6 +56,7 @@ export function useProducts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      refresh();
       toast.success('Produto criado com sucesso!');
     },
     onError: (error: Error) => {
@@ -60,6 +78,7 @@ export function useProducts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      refresh();
       toast.success('Produto atualizado com sucesso!');
     },
     onError: (error: Error) => {
@@ -78,6 +97,7 @@ export function useProducts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      refresh();
       toast.success('Produto excluído com sucesso!');
     },
     onError: (error: Error) => {
@@ -85,17 +105,24 @@ export function useProducts() {
     }
   });
 
-  const getProductByPlu = (plu: string) => {
-    return products.find(p => p.plu === plu);
-  };
+  const getProductByPlu = useCallback((plu: string) => {
+    return safeProducts.find(p => p.plu === plu);
+  }, [safeProducts]);
 
-  const activeProducts = products.filter(p => p.is_active);
+  const activeProducts = useMemo(() => 
+    safeProducts.filter(p => p.is_active), 
+    [safeProducts]
+  );
 
   return {
-    products,
+    products: safeProducts,
     activeProducts,
     isLoading,
     error,
+    isOnline,
+    isFromCache,
+    lastUpdated,
+    refresh,
     createProduct,
     updateProduct,
     deleteProduct,

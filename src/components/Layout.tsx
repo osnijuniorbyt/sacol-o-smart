@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -14,10 +14,11 @@ import {
   X,
   Leaf,
   Truck,
-  Building2
+  Building2,
+  WifiOff
 } from 'lucide-react';
-import { useState } from 'react';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useOnlineStatus } from '@/hooks/useOfflineCache';
 
 interface LayoutProps {
   children: ReactNode;
@@ -37,6 +38,7 @@ export default function Layout({ children }: LayoutProps) {
   const { signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isOnline = useOnlineStatus();
   
   // Global keyboard shortcuts
   useKeyboardShortcuts();
@@ -48,6 +50,12 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex items-center gap-2">
           <Leaf className="h-6 w-6 text-primary" />
           <span className="font-semibold">HortiFruti</span>
+          {!isOnline && (
+            <span className="flex items-center gap-1 text-xs text-destructive bg-destructive/10 px-2 py-1 rounded">
+              <WifiOff className="h-3 w-3" />
+              Offline
+            </span>
+          )}
         </div>
         <Button
           variant="ghost"

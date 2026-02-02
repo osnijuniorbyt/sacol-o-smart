@@ -131,7 +131,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <main className="lg:ml-64 min-h-screen">
-        <div className="p-4 lg:p-6">
+        <div className="p-4 lg:p-6 pb-safe">
           {children}
         </div>
       </main>

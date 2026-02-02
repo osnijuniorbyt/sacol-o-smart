@@ -160,24 +160,24 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
               {type === 'pending' && (
                 <div className="flex gap-2 mt-4">
                   <Button 
-                    className="flex-1"
+                    className="flex-1 h-12"
                     onClick={() => setReceivingOrder(order)}
                   >
-                    <ClipboardCheck className="mr-2 h-4 w-4" />
+                    <ClipboardCheck className="mr-2 h-5 w-5" />
                     Conferir Recebimento
                   </Button>
                   {onDelete && (
                     <Button 
                       variant="outline" 
                       size="icon"
-                      className="text-destructive"
+                      className="text-destructive h-12 w-12"
                       onClick={() => onDelete(order.id)}
                       disabled={isDeleting}
                     >
                       {isDeleting ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-5 w-5 animate-spin" />
                       ) : (
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-5 w-5" />
                       )}
                     </Button>
                   )}

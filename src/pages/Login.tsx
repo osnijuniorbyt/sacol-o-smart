@@ -43,7 +43,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 pt-safe pb-safe">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
@@ -54,9 +54,9 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="login" className="h-14 text-base">Entrar</TabsTrigger>
-              <TabsTrigger value="register" className="h-14 text-base">Cadastrar</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-4 h-12">
+              <TabsTrigger value="login" className="h-10 text-base">Entrar</TabsTrigger>
+              <TabsTrigger value="register" className="h-10 text-base">Cadastrar</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
@@ -69,7 +69,8 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="seu@email.com"
-                    className="h-14 text-base"
+                    className="h-12"
+                    autoComplete="email"
                     required
                   />
                 </div>
@@ -81,7 +82,8 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="h-14 text-base"
+                    className="h-12"
+                    autoComplete="current-password"
                     required
                   />
                 </div>
@@ -102,7 +104,8 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="seu@email.com"
-                    className="h-14 text-base"
+                    className="h-12"
+                    autoComplete="email"
                     required
                   />
                 </div>
@@ -114,7 +117,8 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="h-14 text-base"
+                    className="h-12"
+                    autoComplete="new-password"
                     minLength={6}
                     required
                   />

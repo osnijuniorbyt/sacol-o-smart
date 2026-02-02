@@ -1,16 +1,11 @@
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -19,13 +14,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter,
+} from '@/components/ui/drawer';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -35,9 +36,10 @@ import {
   Scale,
   DollarSign
 } from 'lucide-react';
-import { PurchaseOrder, PurchaseOrderItem } from '@/types/database';
+import { PurchaseOrder } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type QualityStatus = 'ok' | 'parcial' | 'recusado';
 
@@ -60,13 +62,14 @@ interface ReceivingDialogProps {
   onSuccess: () => void;
 }
 
-const QUALITY_LABELS: Record<QualityStatus, { label: string; color: string }> = {
-  ok: { label: 'OK', color: 'bg-green-500' },
-  parcial: { label: 'Parcial', color: 'bg-yellow-500' },
-  recusado: { label: 'Recusado', color: 'bg-red-500' },
-};
+const QUALITY_OPTIONS = [
+  { value: 'ok', label: 'OK', icon: CheckCircle2, color: 'text-green-500' },
+  { value: 'parcial', label: 'Parcial', icon: AlertTriangle, color: 'text-yellow-500' },
+  { value: 'recusado', label: 'Recusado', icon: XCircle, color: 'text-red-500' },
+];
 
 export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: ReceivingDialogProps) {
+  const isMobile = useIsMobile();
   const [items, setItems] = useState<ItemReceiving[]>([]);
   const [generalNotes, setGeneralNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -78,9 +81,9 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
         product_id: item.product_id,
         product_name: item.product?.name || 'Produto',
         quantity_ordered: item.quantity,
-        quantity_received: item.quantity, // Default to ordered quantity
+        quantity_received: item.quantity,
         unit_cost_estimated: item.unit_cost_estimated || 0,
-        unit_cost_actual: item.unit_cost_estimated || 0, // Default to estimated
+        unit_cost_actual: item.unit_cost_estimated || 0,
         quality_status: 'ok' as QualityStatus,
         quality_notes: '',
       })));
@@ -97,7 +100,6 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   const handleConfirmReceiving = async () => {
     if (!order) return;
 
-    // Validate
     const hasInvalidItems = items.some(item => 
       item.quantity_received < 0 || item.unit_cost_actual < 0
     );
@@ -108,7 +110,6 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
 
     setIsSaving(true);
     try {
-      // 1. Update each item with received quantities and actual costs
       for (const item of items) {
         const { error: itemError } = await supabase
           .from('purchase_order_items')
@@ -120,7 +121,6 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
         
         if (itemError) throw itemError;
 
-        // 2. Create stock_batch for each item that was received
         if (item.quantity_received > 0 && item.quality_status !== 'recusado') {
           const product = order.items?.find(i => i.id === item.id)?.product;
           const shelfLife = product?.shelf_life || 7;
@@ -141,13 +141,11 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
         }
       }
 
-      // 3. Calculate total received
       const totalReceived = items.reduce(
         (sum, item) => sum + (item.quantity_received * item.unit_cost_actual),
         0
       );
 
-      // 4. Update order status
       const { error: orderError } = await supabase
         .from('purchase_orders')
         .update({
@@ -183,190 +181,226 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
 
   if (!order) return null;
 
+  // Content shared between Dialog and Drawer
+  const ReceivingContent = () => (
+    <div className="flex flex-col h-full">
+      {/* Header info */}
+      <div className="px-4 py-2 bg-muted/50 text-sm">
+        <span className="text-muted-foreground">Fornecedor: </span>
+        <strong>{order.supplier?.name}</strong>
+      </div>
+
+      {/* Items List - Mobile optimized cards */}
+      <ScrollArea className="flex-1 px-4">
+        <div className="space-y-3 py-4">
+          {items.map(item => {
+            const qtyDiff = item.quantity_received - item.quantity_ordered;
+            const hasDiscrepancy = qtyDiff !== 0 || item.quality_status !== 'ok';
+            
+            return (
+              <Card 
+                key={item.id}
+                className={hasDiscrepancy ? 'border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-900/10' : ''}
+              >
+                <CardContent className="p-4 space-y-3">
+                  {/* Product name */}
+                  <div className="font-semibold text-base">
+                    {item.product_name}
+                  </div>
+                  
+                  {/* Quantity row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Scale className="h-3 w-3" />
+                        Pedido
+                      </Label>
+                      <div className="font-mono text-lg mt-1">
+                        {item.quantity_ordered} <span className="text-sm text-muted-foreground">kg</span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Scale className="h-3 w-3" />
+                        Recebido
+                      </Label>
+                      <Input
+                        type="number"
+                        value={item.quantity_received}
+                        onChange={(e) => updateItem(item.id, 'quantity_received', parseFloat(e.target.value) || 0)}
+                        className="h-12 text-lg font-mono mt-1"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Cost and Quality row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <DollarSign className="h-3 w-3" />
+                        Custo Real (R$)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={item.unit_cost_actual}
+                        onChange={(e) => updateItem(item.id, 'unit_cost_actual', parseFloat(e.target.value) || 0)}
+                        className="h-12 text-lg font-mono mt-1"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Qualidade</Label>
+                      <Select
+                        value={item.quality_status}
+                        onValueChange={(v) => updateItem(item.id, 'quality_status', v as QualityStatus)}
+                      >
+                        <SelectTrigger className="h-12 mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          {QUALITY_OPTIONS.map(opt => {
+                            const Icon = opt.icon;
+                            return (
+                              <SelectItem key={opt.value} value={opt.value} className="py-3">
+                                <div className="flex items-center gap-2">
+                                  <Icon className={`h-5 w-5 ${opt.color}`} />
+                                  {opt.label}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <Input
+                    value={item.quality_notes}
+                    onChange={(e) => updateItem(item.id, 'quality_notes', e.target.value)}
+                    className="h-11"
+                    placeholder="Observação do item..."
+                  />
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </ScrollArea>
+
+      {/* Totals Summary - Fixed at bottom */}
+      <div className="border-t bg-card p-4 space-y-3 pb-safe">
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="p-2 bg-muted rounded-lg">
+            <p className="text-xs text-muted-foreground">Estimado</p>
+            <p className="text-sm font-bold font-mono">
+              R$ {totalEstimated.toFixed(2)}
+            </p>
+          </div>
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <p className="text-xs text-muted-foreground">Real</p>
+            <p className="text-sm font-bold font-mono text-primary">
+              R$ {totalActual.toFixed(2)}
+            </p>
+          </div>
+          <div className={`p-2 rounded-lg ${
+            difference > 0 
+              ? 'bg-red-100 dark:bg-red-900/20' 
+              : difference < 0 
+                ? 'bg-green-100 dark:bg-green-900/20'
+                : 'bg-muted'
+          }`}>
+            <p className="text-xs text-muted-foreground">Diferença</p>
+            <p className={`text-sm font-bold font-mono ${
+              difference > 0 ? 'text-red-600' : difference < 0 ? 'text-green-600' : ''
+            }`}>
+              {difference > 0 ? '+' : ''}{difference.toFixed(2)}
+            </p>
+          </div>
+        </div>
+
+        {/* General Notes */}
+        <Textarea
+          value={generalNotes}
+          onChange={(e) => setGeneralNotes(e.target.value)}
+          placeholder="Observações gerais do recebimento..."
+          className="min-h-[60px]"
+          rows={2}
+        />
+      </div>
+    </div>
+  );
+
+  // Footer buttons
+  const FooterButtons = () => (
+    <div className="flex gap-2 w-full">
+      <Button 
+        variant="outline" 
+        onClick={() => onOpenChange(false)}
+        className="flex-1 h-14"
+      >
+        Cancelar
+      </Button>
+      <Button 
+        onClick={handleConfirmReceiving} 
+        disabled={isSaving}
+        className="flex-1 h-14"
+      >
+        {isSaving ? (
+          <>
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Salvando...
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="mr-2 h-5 w-5" />
+            Confirmar
+          </>
+        )}
+      </Button>
+    </div>
+  );
+
+  // Mobile: use Drawer
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="h-[95vh] flex flex-col">
+          <DrawerHeader className="border-b pb-3">
+            <DrawerTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Conferência de Recebimento
+            </DrawerTitle>
+          </DrawerHeader>
+          
+          <ReceivingContent />
+          
+          <DrawerFooter className="border-t pt-3">
+            <FooterButtons />
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  // Desktop: use Dialog
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="p-4 border-b">
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
             Conferência de Recebimento
           </DialogTitle>
-          <div className="text-sm text-muted-foreground">
-            Fornecedor: <strong>{order.supplier?.name}</strong> | 
-            Pedido: <strong>#{order.id.slice(0, 8)}</strong>
-          </div>
         </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Items Table */}
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Produto</TableHead>
-                  <TableHead className="text-center w-28">
-                    <div className="flex items-center justify-center gap-1">
-                      <Scale className="h-4 w-4" />
-                      Pedido
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-center w-32">
-                    <div className="flex items-center justify-center gap-1">
-                      <Scale className="h-4 w-4" />
-                      Recebido
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-center w-32">
-                    <div className="flex items-center justify-center gap-1">
-                      <DollarSign className="h-4 w-4" />
-                      Custo Real
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-center w-32">Qualidade</TableHead>
-                  <TableHead>Observação</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map(item => {
-                  const qtyDiff = item.quantity_received - item.quantity_ordered;
-                  const hasDiscrepancy = qtyDiff !== 0 || item.quality_status !== 'ok';
-                  
-                  return (
-                    <TableRow 
-                      key={item.id}
-                      className={hasDiscrepancy ? 'bg-yellow-50 dark:bg-yellow-900/10' : ''}
-                    >
-                      <TableCell className="font-medium">
-                        {item.product_name}
-                      </TableCell>
-                      <TableCell className="text-center font-mono">
-                        {item.quantity_ordered} kg
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={item.quantity_received}
-                          onChange={(e) => updateItem(item.id, 'quantity_received', parseFloat(e.target.value) || 0)}
-                          className="h-9 text-center font-mono"
-                          min="0"
-                          step="0.1"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={item.unit_cost_actual}
-                          onChange={(e) => updateItem(item.id, 'unit_cost_actual', parseFloat(e.target.value) || 0)}
-                          className="h-9 text-center font-mono"
-                          min="0"
-                          step="0.01"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={item.quality_status}
-                          onValueChange={(v) => updateItem(item.id, 'quality_status', v as QualityStatus)}
-                        >
-                          <SelectTrigger className="h-9">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ok">
-                              <div className="flex items-center gap-2">
-                                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                OK
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="parcial">
-                              <div className="flex items-center gap-2">
-                                <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                                Parcial
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="recusado">
-                              <div className="flex items-center gap-2">
-                                <XCircle className="h-4 w-4 text-red-500" />
-                                Recusado
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={item.quality_notes}
-                          onChange={(e) => updateItem(item.id, 'quality_notes', e.target.value)}
-                          className="h-9"
-                          placeholder="Ex: Veio machucado"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Totals Summary */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="p-4 bg-muted rounded-lg text-center">
-              <p className="text-sm text-muted-foreground">Estimado</p>
-              <p className="text-xl font-bold font-mono">
-                R$ {totalEstimated.toFixed(2)}
-              </p>
-            </div>
-            <div className="p-4 bg-primary/10 rounded-lg text-center">
-              <p className="text-sm text-muted-foreground">Valor Real</p>
-              <p className="text-xl font-bold font-mono text-primary">
-                R$ {totalActual.toFixed(2)}
-              </p>
-            </div>
-            <div className={`p-4 rounded-lg text-center ${
-              difference > 0 
-                ? 'bg-red-100 dark:bg-red-900/20' 
-                : difference < 0 
-                  ? 'bg-green-100 dark:bg-green-900/20'
-                  : 'bg-muted'
-            }`}>
-              <p className="text-sm text-muted-foreground">Diferença</p>
-              <p className={`text-xl font-bold font-mono ${
-                difference > 0 ? 'text-red-600' : difference < 0 ? 'text-green-600' : ''
-              }`}>
-                {difference > 0 ? '+' : ''} R$ {difference.toFixed(2)}
-              </p>
-            </div>
-          </div>
-
-          {/* General Notes */}
-          <div>
-            <Label>Observações Gerais do Recebimento</Label>
-            <Textarea
-              value={generalNotes}
-              onChange={(e) => setGeneralNotes(e.target.value)}
-              placeholder="Notas sobre o recebimento em geral..."
-              className="mt-1"
-              rows={2}
-            />
-          </div>
-        </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={handleConfirmReceiving} disabled={isSaving}>
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processando...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Confirmar Recebimento
-              </>
-            )}
-          </Button>
+        
+        <ReceivingContent />
+        
+        <DialogFooter className="p-4 border-t">
+          <FooterButtons />
         </DialogFooter>
       </DialogContent>
     </Dialog>

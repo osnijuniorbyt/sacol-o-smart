@@ -266,23 +266,23 @@ export default function Compras() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="novo" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 h-12">
+          <TabsTrigger value="novo" className="flex items-center gap-1.5 h-10 text-sm">
             <Plus className="h-4 w-4" />
-            Novo
+            <span className="hidden sm:inline">Novo</span>
           </TabsTrigger>
-          <TabsTrigger value="enviados" className="flex items-center gap-2">
+          <TabsTrigger value="enviados" className="flex items-center gap-1.5 h-10 text-sm">
             <Truck className="h-4 w-4" />
-            Enviados
+            <span className="hidden sm:inline">Enviados</span>
             {pendingOrders.length > 0 && (
-              <Badge variant="secondary" className="ml-1">
+              <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                 {pendingOrders.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="recebidos" className="flex items-center gap-2">
+          <TabsTrigger value="recebidos" className="flex items-center gap-1.5 h-10 text-sm">
             <CheckCircle2 className="h-4 w-4" />
-            Recebidos
+            <span className="hidden sm:inline">Recebidos</span>
           </TabsTrigger>
         </TabsList>
 

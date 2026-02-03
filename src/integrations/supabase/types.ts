@@ -781,6 +781,27 @@ export type Database = {
           product_name: string
         }[]
       }
+      get_critical_stock_products: {
+        Args: never
+        Returns: {
+          current_stock: number
+          deficit: number
+          min_stock: number
+          product_id: string
+          product_name: string
+        }[]
+      }
+      get_expiring_batches: {
+        Args: { p_days?: number }
+        Returns: {
+          batch_id: string
+          days_until_expiry: number
+          expiry_date: string
+          product_id: string
+          product_name: string
+          quantity: number
+        }[]
+      }
       get_supplier_products: {
         Args: { p_supplier_id: string }
         Returns: {

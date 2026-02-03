@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import logoVertical from '@/assets/logo-hortii-vertical.jpeg';
+import logoLogin from '@/assets/logo-hortii-login.png';
 import {
   Dialog,
   DialogContent,
@@ -98,19 +98,16 @@ export default function Login() {
           }} />
           
           <div className="relative p-4 sm:p-6">
-            {/* Logo Container Premium - Logo com fundo original */}
+            {/* Logo Container Premium - Container maior com logo integrada */}
             <div className="relative mb-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 overflow-hidden rounded-t-2xl">
-              {/* Container da logo que preenche toda a área superior */}
-              <div className="relative h-[220px] sm:h-[260px]">
-                {/* Logo com fundo original preenchendo até as bordas */}
+              {/* Container maior para a logo */}
+              <div className="relative h-[200px] sm:h-[220px]">
+                {/* Logo com fundo gradiente harmonizado */}
                 <img 
-                  src={logoVertical}
+                  src={logoLogin}
                   alt="Horti Campos - Hortifruti e Produtos Naturais"
-                  className="absolute inset-0 w-full h-full object-cover object-top"
+                  className="absolute inset-0 w-full h-full object-cover object-center"
                 />
-                
-                {/* Gradiente suave na parte inferior para transição com o card */}
-                <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[hsl(40,30%,94%)] to-transparent" />
                 
                 {/* Borda metálica inferior com shimmer */}
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(36,70%,55%)] to-transparent z-10" />

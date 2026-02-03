@@ -9,10 +9,10 @@ interface BrandLogoProps {
 }
 
 const sizeConfig = {
-  sm: { icon: 48, full: 160 },
-  md: { icon: 56, full: 200 },
-  lg: { icon: 80, full: 280 },
-  xl: { icon: 100, full: 320 },
+  sm: { icon: 48, full: 180 },
+  md: { icon: 56, full: 220 },
+  lg: { icon: 80, full: 320 },
+  xl: { icon: 100, full: 400 },
 };
 
 export function BrandLogo({ size = 'md', variant = 'full', className }: BrandLogoProps) {

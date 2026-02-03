@@ -1,50 +1,35 @@
 
-# Plano: Integrar Nova Logo com Container Proporcional
+# Plano: Aplicar Fundo Harmonizado na Nova Logo
 
-## Análise da Situação Atual
-- Container da logo: `h-[200px] sm:h-[220px]`
-- Imagem usando `object-cover` que corta a logo
-- A nova imagem (IMG_8216.jpeg) tem fundo cinza claro que combina naturalmente com o card
+## Referência da Memória
+Conforme registrado anteriormente, a técnica usada foi aplicar um **gradiente vertical creme** (`#F9F6F0` no topo → `#EDE8DD` na base) ou um **fundo sólido creme** (`#F5F0E6`) para integração perfeita com o card.
 
-## Mudanças Propostas
+## Mudanças a Realizar
 
-### 1. Atualizar Asset da Logo
-- Copiar `user-uploads://IMG_8216.jpeg` para `src/assets/logo-hortii-login.png`
-- Esta imagem já tem o fundo ideal que harmoniza com o card
+### 1. Processar Nova Imagem
+- Pegar a imagem `user-uploads://IMG_8217.jpeg`
+- Aplicar fundo com gradiente vertical harmonizado:
+  - Topo: `#F9F6F0` (creme claro)
+  - Base: `#EDE8DD` (creme mais escuro)
+- Salvar como `src/assets/logo-hortii-login.png`
 
-### 2. Aumentar Container da Logo
-Ajustar a altura para ser mais proporcional ao mobile:
-- Mobile: `h-[280px]` (aumentado de 200px)
-- Desktop: `h-[320px]` (aumentado de 220px)
+### 2. Manter Container Atual
+O container já está configurado corretamente:
+- Altura: `h-[280px]` mobile / `h-[320px]` desktop
+- `object-contain` para exibir a logo inteira
+- Padding `p-4` para respiro visual
 
-### 3. Ajustar Exibição da Imagem
-- Mudar de `object-cover` para `object-contain` 
-- Isso garante que a logo apareça inteira e proporcionalmente
-- Centralizar verticalmente com `object-center`
+### 3. Ajustar Fundo do Container
+Remover o `bg-[hsl(40,15%,92%)]` pois a imagem já terá o fundo correto integrado.
 
-### 4. Harmonização do Fundo
-- Adicionar um background sutil atrás da imagem que combine com as bordas do card
-- Cor: `bg-[hsl(40,15%,92%)]` (cinza claro semelhante ao fundo da imagem)
-
-## Código a Modificar
-
-**Arquivo:** `src/pages/Login.tsx` (linhas 102-122)
-
+## Arquivo a Modificar
+**`src/pages/Login.tsx`** - Apenas ajuste no container:
 ```tsx
-// Container maior para a logo - ANTES
-<div className="relative h-[200px] sm:h-[220px]">
-
-// Container maior para a logo - DEPOIS
-<div className="relative h-[280px] sm:h-[320px] bg-[hsl(40,15%,92%)]">
-  <img 
-    src={logoLogin}
-    alt="Horti Campos - Hortifruti e Produtos Naturais"
-    className="absolute inset-0 w-full h-full object-contain object-center p-4"
-  />
+// Remover bg do container pois a imagem já tem fundo harmonizado
+<div className="relative h-[280px] sm:h-[320px]">
 ```
 
 ## Resultado Esperado
-- Logo visível e proporcional em telas mobile
-- Fundo da imagem integrado perfeitamente com o card
-- Container maior para dar destaque à marca
-- Padding interno (`p-4`) para respiro visual
+- Logo com fundo perfeitamente integrado ao card
+- Transição suave entre logo e formulário
+- Visual premium e profissional em mobile

@@ -75,9 +75,9 @@ export default function Login() {
       {/* Background premium com gradiente verde escuro */}
       <div className="absolute inset-0 bg-gradient-to-br from-[hsl(150,50%,12%)] via-[hsl(150,45%,16%)] to-[hsl(150,50%,10%)]" />
       
-      {/* Decoração lateral - faixa laranja */}
-      <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-primary via-[hsl(36,90%,45%)] to-primary" />
-      <div className="absolute right-0 top-0 bottom-0 w-2 bg-gradient-to-b from-primary via-[hsl(36,90%,45%)] to-primary" />
+      {/* Decoração lateral - faixa pôr do sol */}
+      <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-[hsl(45,80%,70%)] via-[hsl(38,85%,55%)] to-[hsl(25,80%,40%)]" />
+      <div className="absolute right-0 top-0 bottom-0 w-2 bg-gradient-to-b from-[hsl(45,80%,70%)] via-[hsl(38,85%,55%)] to-[hsl(25,80%,40%)]" />
       
       {/* Efeito de brilho sutil */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(36,90%,50%,0.1)_0%,_transparent_50%)]" />

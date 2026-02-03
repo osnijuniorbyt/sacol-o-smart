@@ -98,12 +98,15 @@ export default function Login() {
           }} />
           
           <div className="relative p-4 sm:p-6">
-            {/* Logo Container Premium - Fundo cinza integrado ao xadrez */}
+            {/* Logo Container Premium - Fundo creme harmonizado */}
             <div className="relative mb-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
-              {/* Fundo que combina com o padrão xadrez cinza da imagem (#808080 e #C0C0C0) */}
-              <div className="relative py-6 px-4" style={{ backgroundColor: '#a0a0a0' }}>
+              {/* Fundo creme claro que harmoniza com o card */}
+              <div className="relative bg-gradient-to-b from-[hsl(40,30%,96%)] via-[hsl(40,25%,93%)] to-[hsl(40,20%,90%)] py-8 px-4">
                 {/* Borda metálica inferior */}
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(36,70%,55%)] to-transparent" />
+                
+                {/* Efeito de luz sutil no topo */}
+                <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-white/50 to-transparent" />
                 
                 {/* Logo centralizada */}
                 <div className="relative flex justify-center">

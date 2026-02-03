@@ -1,174 +1,45 @@
 
-# Correção do Email de Recuperação de Senha
 
-## Problema Identificado
+# Solução Simplificada: Email de Reset com Link Visível
 
-O email de recuperação está chegando **sem o botão de reset**. O texto aparece, mas o link/botão para redefinir a senha não é exibido.
+## Abordagem
 
-```text
-[Email Atual]
-┌─────────────────────────────────────┐
-│ Reset your password                 │
-│                                     │
-│ "Click the button below..."         │
-│                                     │
-│ ← BOTÃO AUSENTE!                    │
-│                                     │
-│ "If you didn't request this..."     │
-└─────────────────────────────────────┘
-```
+Em vez de configurar um serviço externo de email (Resend), vamos aproveitar o sistema de email nativo já existente, mas garantindo que o link seja sempre visível.
 
-## Causa
+## O que será feito
 
-O template de email padrão do sistema não está renderizando o botão corretamente. Isso pode ser devido a:
-1. Template de email mal configurado
-2. Problema na geração do HTML do botão
+### 1. Manter o método atual de reset
+O Supabase já envia o email - vamos apenas garantir que o usuário consiga usar o link mesmo que o botão não apareça.
 
-## Solução Proposta
+### 2. Melhorar a página de Login
+Adicionar instruções claras na tela de "Esqueci minha senha" informando que:
+- O link pode aparecer como texto no email
+- Copiar e colar o link funciona se o botão não aparecer
 
-Criar um **Edge Function customizado** para enviar emails de recuperação de senha com um template HTML completo e bem formatado.
+### 3. Criar página de fallback
+Uma página simples onde o usuário pode colar o link manualmente se necessário.
 
-### Arquitetura da Solução
+## Arquivos a Modificar
 
-```text
-[Usuário]          [App]           [Edge Function]       [Usuário]
-    │                │                    │                   │
-    │ Esqueci senha  │                    │                   │
-    ├───────────────►│                    │                   │
-    │                │ Gera token único   │                   │
-    │                │ Chama edge func    │                   │
-    │                ├───────────────────►│                   │
-    │                │                    │ Envia email       │
-    │                │                    │ com botão visível │
-    │                │                    ├──────────────────►│
-    │                │◄───────────────────┤                   │
-    │◄───────────────┤                    │                   │
-    │ "Email enviado"│                    │                   │
-```
+### src/pages/Login.tsx
+- Melhorar mensagem de sucesso ao enviar email de reset
+- Adicionar dica sobre verificar spam e procurar o link no corpo do email
 
-### Arquivos a Criar/Modificar
+### src/pages/ResetPassword.tsx  
+- Adicionar campo para colar link manualmente (fallback)
+- Melhorar instruções para o usuário
 
-#### 1. Nova Edge Function: `supabase/functions/send-password-reset/index.ts`
-- Recebe email do usuário
-- Gera link de recuperação usando Supabase Admin
-- Envia email formatado com template HTML bonito
-- Usa Resend (se disponível) ou serviço de email nativo
+## Vantagens desta Solução
 
-#### 2. Modificar: `src/hooks/useAuth.tsx`
-- Alterar `resetPassword` para chamar a edge function ao invés de `supabase.auth.resetPasswordForEmail`
+- Sem necessidade de criar conta em serviço externo
+- Sem custo adicional
+- Funciona imediatamente
+- Não sobrecarrega o sistema
 
-### Template de Email Proposto
+## Fluxo do Usuário
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    .button {
-      background-color: #10b981;
-      color: white;
-      padding: 16px 32px;
-      text-decoration: none;
-      border-radius: 8px;
-      display: inline-block;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-  <div style="text-align: center; padding: 40px;">
-    <h1>🔐 Redefinir Senha</h1>
-    <p>Você solicitou a redefinição de senha da sua conta Sacolo-Smart.</p>
-    <p>Clique no botão abaixo para criar uma nova senha:</p>
-    
-    <a href="{{RESET_LINK}}" class="button">
-      Redefinir Minha Senha
-    </a>
-    
-    <p style="margin-top: 20px; color: #666; font-size: 12px;">
-      Se você não solicitou isso, ignore este email.
-    </p>
-  </div>
-</body>
-</html>
-```
+1. Usuário clica "Esqueci minha senha"
+2. Recebe email do sistema
+3. **Se botão aparecer**: clica e vai direto para o formulário
+4. **Se botão não aparecer**: copia o link do email e cola na página de reset
 
-### Detalhes Técnicos
-
-#### Edge Function (send-password-reset/index.ts)
-
-```typescript
-// Estrutura básica
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-serve(async (req) => {
-  const { email } = await req.json();
-  
-  // Criar cliente admin Supabase
-  const supabaseAdmin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
-  
-  // Gerar link de recuperação
-  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-    type: "recovery",
-    email,
-    options: {
-      redirectTo: `${req.headers.get("origin")}/reset-password`,
-    },
-  });
-  
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 400 });
-  }
-  
-  // Enviar email com template customizado
-  // Pode usar Resend, SendGrid, ou outro serviço
-  
-  return new Response(JSON.stringify({ success: true }), { status: 200 });
-});
-```
-
-#### Modificação no useAuth.tsx
-
-```typescript
-const resetPassword = async (email: string) => {
-  try {
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-password-reset`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email }),
-    });
-    
-    if (!response.ok) {
-      const data = await response.json();
-      return { error: new Error(data.error || 'Erro ao enviar email') };
-    }
-    
-    return { error: null };
-  } catch (err) {
-    return { error: err as Error };
-  }
-};
-```
-
-### Opção Alternativa (Mais Simples)
-
-Se preferir não criar uma edge function, podemos usar o método `generateLink` do Supabase Admin e enviar o link diretamente no email padrão, mas isso requer configurar um serviço de email externo como Resend.
-
-### Próximos Passos
-
-1. **Verificar se Resend está configurado** - Se não, configurar ou usar alternativa
-2. **Criar a edge function** com template de email bonito
-3. **Modificar o frontend** para usar a edge function
-4. **Testar o fluxo completo**
-
-### Resultado Esperado
-
-- Email chega com botão grande e visível
-- Usuário clica → abre formulário de nova senha
-- Template em português com visual profissional

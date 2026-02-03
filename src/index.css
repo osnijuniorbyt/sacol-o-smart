@@ -2,108 +2,112 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Premium Design System - Horti Campos
+   Inspired by 3D metallic logo aesthetic
+   All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    --background: 45 20% 96%;
-    --foreground: 150 30% 15%;
+    /* Premium cream/beige background matching logo style */
+    --background: 40 30% 94%;
+    --foreground: 150 35% 12%;
 
-    --card: 45 25% 98%;
-    --card-foreground: 150 30% 15%;
+    /* Card with subtle warm tone */
+    --card: 40 25% 97%;
+    --card-foreground: 150 35% 12%;
 
-    --popover: 45 25% 98%;
-    --popover-foreground: 150 30% 15%;
+    --popover: 40 25% 97%;
+    --popover-foreground: 150 35% 12%;
 
-    /* Bronze metallic primary */
-    --primary: 35 55% 45%;
-    --primary-foreground: 45 30% 98%;
+    /* Orange/Gold metallic primary - matches logo */
+    --primary: 36 90% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 45 15% 90%;
-    --secondary-foreground: 150 30% 20%;
+    --secondary: 40 20% 90%;
+    --secondary-foreground: 150 35% 15%;
 
-    --muted: 45 15% 92%;
-    --muted-foreground: 150 15% 40%;
+    --muted: 40 15% 92%;
+    --muted-foreground: 150 20% 40%;
 
-    /* Green accent for hortifruti */
-    --accent: 150 40% 92%;
-    --accent-foreground: 150 50% 25%;
+    /* Green accent - matches logo green */
+    --accent: 150 45% 30%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 70% 55%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 45 20% 85%;
-    --input: 45 20% 88%;
-    --ring: 35 55% 50%;
+    --border: 40 25% 82%;
+    --input: 40 20% 88%;
+    --ring: 36 90% 50%;
 
     --radius: 0.75rem;
     
-    /* Metallic brand palette */
-    --brand-gold: 40 65% 50%;
-    --brand-gold-light: 42 70% 65%;
-    --brand-gold-dark: 38 60% 35%;
-    --brand-green: 150 45% 35%;
-    --brand-green-light: 150 40% 50%;
-    --brand-green-dark: 150 50% 20%;
+    /* Brand Palette - Metallic 3D Logo Colors */
+    --brand-orange: 36 90% 50%;
+    --brand-orange-light: 38 85% 60%;
+    --brand-orange-dark: 34 95% 40%;
+    --brand-green: 150 100% 20%;
+    --brand-green-light: 150 60% 35%;
+    --brand-green-dark: 150 100% 12%;
+    --brand-cream: 40 30% 94%;
+    --brand-dark: 220 15% 15%;
 
-    --sidebar-background: 150 25% 18%;
-    --sidebar-foreground: 45 30% 95%;
-    --sidebar-primary: 40 65% 55%;
-    --sidebar-primary-foreground: 150 30% 10%;
-    --sidebar-accent: 150 20% 25%;
-    --sidebar-accent-foreground: 45 30% 95%;
-    --sidebar-border: 150 20% 25%;
-    --sidebar-ring: 40 65% 55%;
+    /* Sidebar - Dark green premium */
+    --sidebar-background: 150 50% 14%;
+    --sidebar-foreground: 40 30% 95%;
+    --sidebar-primary: 36 90% 55%;
+    --sidebar-primary-foreground: 150 35% 10%;
+    --sidebar-accent: 150 35% 22%;
+    --sidebar-accent-foreground: 40 30% 95%;
+    --sidebar-border: 150 30% 20%;
+    --sidebar-ring: 36 90% 55%;
   }
 
   .dark {
-    --background: 150 25% 8%;
-    --foreground: 45 25% 95%;
+    --background: 220 15% 10%;
+    --foreground: 40 25% 95%;
 
-    --card: 150 20% 12%;
-    --card-foreground: 45 25% 95%;
+    --card: 220 15% 14%;
+    --card-foreground: 40 25% 95%;
 
-    --popover: 150 20% 12%;
-    --popover-foreground: 45 25% 95%;
+    --popover: 220 15% 14%;
+    --popover-foreground: 40 25% 95%;
 
-    /* Bronze metallic primary dark */
-    --primary: 40 60% 55%;
-    --primary-foreground: 150 30% 10%;
+    --primary: 36 85% 55%;
+    --primary-foreground: 220 15% 10%;
 
-    --secondary: 150 15% 18%;
-    --secondary-foreground: 45 25% 90%;
+    --secondary: 220 12% 20%;
+    --secondary-foreground: 40 25% 90%;
 
-    --muted: 150 15% 18%;
-    --muted-foreground: 45 15% 60%;
+    --muted: 220 12% 20%;
+    --muted-foreground: 40 15% 60%;
 
-    --accent: 150 25% 22%;
-    --accent-foreground: 45 25% 90%;
+    --accent: 150 40% 35%;
+    --accent-foreground: 40 25% 95%;
 
     --destructive: 0 60% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 150 15% 22%;
-    --input: 150 15% 22%;
-    --ring: 40 60% 55%;
+    --border: 220 12% 22%;
+    --input: 220 12% 22%;
+    --ring: 36 85% 55%;
     
-    /* Metallic brand palette dark */
-    --brand-gold: 40 60% 55%;
-    --brand-gold-light: 42 65% 65%;
-    --brand-gold-dark: 38 55% 45%;
-    --brand-green: 150 40% 45%;
-    --brand-green-light: 150 35% 55%;
-    --brand-green-dark: 150 45% 30%;
+    --brand-orange: 36 85% 55%;
+    --brand-orange-light: 38 80% 65%;
+    --brand-orange-dark: 34 90% 45%;
+    --brand-green: 150 50% 40%;
+    --brand-green-light: 150 45% 50%;
+    --brand-green-dark: 150 55% 25%;
     
-    --sidebar-background: 150 25% 10%;
-    --sidebar-foreground: 45 25% 92%;
-    --sidebar-primary: 40 60% 55%;
-    --sidebar-primary-foreground: 150 30% 10%;
-    --sidebar-accent: 150 20% 18%;
-    --sidebar-accent-foreground: 45 25% 92%;
-    --sidebar-border: 150 20% 18%;
-    --sidebar-ring: 40 60% 55%;
+    --sidebar-background: 220 15% 8%;
+    --sidebar-foreground: 40 25% 92%;
+    --sidebar-primary: 36 85% 55%;
+    --sidebar-primary-foreground: 220 15% 10%;
+    --sidebar-accent: 220 12% 16%;
+    --sidebar-accent-foreground: 40 25% 92%;
+    --sidebar-border: 220 12% 16%;
+    --sidebar-ring: 36 85% 55%;
   }
 }
 
@@ -120,7 +124,7 @@ All colors MUST be HSL.
 
   /* PWA touch optimizations */
   input, textarea, select, button {
-    font-size: 16px; /* Prevents iOS zoom on focus */
+    font-size: 16px;
   }
 
   /* Safe area padding utility */
@@ -130,6 +134,37 @@ All colors MUST be HSL.
   
   .pt-safe {
     padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+}
+
+/* Premium gradient utilities */
+@layer utilities {
+  .gradient-brand {
+    background: linear-gradient(135deg, hsl(var(--brand-green-dark)) 0%, hsl(var(--brand-green)) 50%, hsl(var(--brand-green-dark)) 100%);
+  }
+  
+  .gradient-orange {
+    background: linear-gradient(180deg, hsl(var(--brand-orange-light)) 0%, hsl(var(--brand-orange)) 50%, hsl(var(--brand-orange-dark)) 100%);
+  }
+  
+  .gradient-premium {
+    background: linear-gradient(145deg, hsl(40 35% 96%) 0%, hsl(40 30% 92%) 50%, hsl(40 25% 88%) 100%);
+  }
+  
+  .shadow-premium {
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -2px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .border-metallic {
+    border: 1px solid;
+    border-image: linear-gradient(180deg, hsl(36 60% 70%), hsl(36 50% 50%), hsl(36 40% 35%)) 1;
+  }
+  
+  .glow-orange {
+    box-shadow: 0 0 20px -5px hsl(36 90% 50% / 0.4);
   }
 }
 
@@ -151,67 +186,54 @@ All colors MUST be HSL.
   }
 }
 
-/* Drawer bounce animation when reaching top limit */
+/* Drawer animations */
 @keyframes drawer-bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  25% {
-    transform: translateY(8px);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
-  75% {
-    transform: translateY(2px);
-  }
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(8px); }
+  50% { transform: translateY(-4px); }
+  75% { transform: translateY(2px); }
 }
 
 .drawer-bounce {
   animation: drawer-bounce 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
-/* Drawer handle pulse animation */
 @keyframes handle-pulse {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scaleX(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scaleX(1.1);
-  }
+  0%, 100% { opacity: 0.3; transform: scaleX(1); }
+  50% { opacity: 0.6; transform: scaleX(1.1); }
 }
 
 .drawer-handle-pulse {
   animation: handle-pulse 1.5s ease-in-out infinite;
 }
 
-/* Rubber band effect for drawer */
 @keyframes rubber-band {
-  0% {
-    transform: translateY(0);
-  }
-  30% {
-    transform: translateY(-12px);
-  }
-  40% {
-    transform: translateY(6px);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
-  65% {
-    transform: translateY(2px);
-  }
-  75% {
-    transform: translateY(-1px);
-  }
-  100% {
-    transform: translateY(0);
-  }
+  0% { transform: translateY(0); }
+  30% { transform: translateY(-12px); }
+  40% { transform: translateY(6px); }
+  50% { transform: translateY(-3px); }
+  65% { transform: translateY(2px); }
+  75% { transform: translateY(-1px); }
+  100% { transform: translateY(0); }
 }
 
 .drawer-rubber-band {
   animation: rubber-band 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Premium shimmer effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
 }

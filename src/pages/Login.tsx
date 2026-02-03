@@ -96,7 +96,11 @@ export default function Login() {
                   />
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
-                <Button type="submit" className="w-full h-14 text-base" disabled={loading}>
+                <Button 
+                  type="submit" 
+                  className="w-full h-14 text-base font-semibold shadow-lg shadow-primary/25 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30" 
+                  disabled={loading}
+                >
                   {loading ? 'Entrando...' : 'Entrar'}
                 </Button>
               </form>
@@ -132,7 +136,11 @@ export default function Login() {
                   />
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
-                <Button type="submit" className="w-full h-14 text-base" disabled={loading}>
+                <Button 
+                  type="submit" 
+                  className="w-full h-14 text-base font-semibold shadow-lg shadow-primary/25 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30" 
+                  disabled={loading}
+                >
                   {loading ? 'Cadastrando...' : 'Cadastrar'}
                 </Button>
               </form>

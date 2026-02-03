@@ -102,8 +102,15 @@ export default function Login() {
             <div className="relative mb-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
               {/* Fundo creme claro que harmoniza com o card */}
               <div className="relative bg-gradient-to-b from-[hsl(40,30%,96%)] via-[hsl(40,25%,93%)] to-[hsl(40,20%,90%)] py-8 px-4">
-                {/* Borda metálica inferior */}
+                {/* Borda metálica inferior com shimmer */}
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(36,70%,55%)] to-transparent" />
+                <div 
+                  className="absolute bottom-0 left-0 right-0 h-[3px] animate-shimmer"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent, hsl(36,80%,70%), hsl(40,30%,95%), hsl(36,80%,70%), transparent)',
+                    backgroundSize: '200% 100%',
+                  }}
+                />
                 
                 {/* Efeito de luz sutil no topo */}
                 <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-white/50 to-transparent" />
@@ -114,9 +121,24 @@ export default function Login() {
                 </div>
               </div>
               
-              {/* Detalhes laterais metálicos */}
+              {/* Detalhes laterais metálicos com shimmer */}
               <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[hsl(36,60%,65%)] via-[hsl(36,50%,50%)] to-[hsl(36,40%,40%)]" />
+              <div 
+                className="absolute left-0 top-0 bottom-0 w-[3px] animate-shimmer-vertical"
+                style={{
+                  background: 'linear-gradient(180deg, transparent, hsl(36,80%,70%), hsl(40,30%,95%), hsl(36,80%,70%), transparent)',
+                  backgroundSize: '100% 200%',
+                }}
+              />
               <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[hsl(36,60%,65%)] via-[hsl(36,50%,50%)] to-[hsl(36,40%,40%)]" />
+              <div 
+                className="absolute right-0 top-0 bottom-0 w-[3px] animate-shimmer-vertical"
+                style={{
+                  background: 'linear-gradient(180deg, transparent, hsl(36,80%,70%), hsl(40,30%,95%), hsl(36,80%,70%), transparent)',
+                  backgroundSize: '100% 200%',
+                  animationDelay: '1.5s',
+                }}
+              />
             </div>
             
             {/* Tabs com estilo premium */}

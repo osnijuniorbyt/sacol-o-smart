@@ -97,14 +97,26 @@ export default function Login() {
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
           }} />
           
-          <div className="relative p-6 sm:p-8">
-            {/* Logo */}
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                {/* Sombra premium atrás da logo */}
-                <div className="absolute inset-0 blur-xl bg-[hsl(36,90%,50%,0.2)] scale-110" />
-                <BrandLogoLight size="lg" />
+          <div className="relative p-4 sm:p-6">
+            {/* Logo Container Premium - Preenche largura com borda metálica */}
+            <div className="relative mb-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
+              {/* Fundo creme claro que combina com a logo */}
+              <div className="relative bg-gradient-to-b from-[hsl(40,25%,96%)] via-[hsl(40,20%,94%)] to-[hsl(40,25%,92%)] py-6 px-4">
+                {/* Borda metálica inferior */}
+                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(36,70%,55%)] to-transparent" />
+                
+                {/* Efeito de luz sutil no topo */}
+                <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-white/40 to-transparent" />
+                
+                {/* Logo centralizada */}
+                <div className="relative flex justify-center">
+                  <BrandLogoLight size="xl" />
+                </div>
               </div>
+              
+              {/* Detalhes laterais metálicos */}
+              <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[hsl(36,60%,65%)] via-[hsl(36,50%,50%)] to-[hsl(36,40%,40%)]" />
+              <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[hsl(36,60%,65%)] via-[hsl(36,50%,50%)] to-[hsl(36,40%,40%)]" />
             </div>
             
             {/* Tabs com estilo premium */}

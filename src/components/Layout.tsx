@@ -169,20 +169,33 @@ export default function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo completa profissional */}
-          <div className="p-5 border-b border-emerald-700/30 bg-gradient-to-br from-emerald-800/50 to-emerald-900/50">
-            <div className="flex items-center justify-between gap-2">
-              <BrandLogo size="md" variant="full" />
+          {/* Logo com fundo premium que combina com estética metálica */}
+          <div className="p-4 border-b border-amber-500/20">
+            {/* Container com gradiente que realça a logo metálica */}
+            <div className="relative rounded-xl overflow-hidden">
+              {/* Fundo gradiente premium */}
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
               
-              {/* Close button for mobile */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSidebarOpen(false)}
-                className="lg:hidden h-10 w-10 text-amber-100 hover:text-white hover:bg-emerald-700/50 flex-shrink-0"
-              >
-                <X className="h-5 w-5" />
-              </Button>
+              {/* Brilho sutil dourado */}
+              <div className="absolute inset-0 bg-gradient-to-t from-amber-900/20 via-transparent to-amber-500/10" />
+              
+              {/* Borda metálica sutil */}
+              <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-amber-400/20" />
+              
+              {/* Conteúdo */}
+              <div className="relative flex items-center justify-between gap-2 p-4">
+                <BrandLogo size="md" variant="full" />
+                
+                {/* Close button for mobile */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSidebarOpen(false)}
+                  className="lg:hidden h-10 w-10 text-amber-100 hover:text-white hover:bg-white/10 flex-shrink-0"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </div>
 

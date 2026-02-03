@@ -114,7 +114,7 @@ export default function Login() {
                 <div 
                   className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
                   style={{
-                    background: 'linear-gradient(to bottom, transparent 0%, hsl(36,28%,82%) 100%)',
+                    background: 'linear-gradient(to bottom, transparent 0%, hsl(36,25%,82%) 100%)',
                   }}
                 />
                 

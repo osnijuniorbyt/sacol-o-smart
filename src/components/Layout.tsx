@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ChevronRight } from 'lucide-react';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -128,12 +129,30 @@ export default function Layout({ children }: LayoutProps) {
         <SyncStatusIndicator />
       </header>
 
-      {/* Swipe indicator - visual hint */}
-      <div className="lg:hidden fixed left-0 top-1/2 -translate-y-1/2 z-30 pointer-events-none">
-        <div className={cn(
-          "w-1 h-16 bg-gradient-to-b from-amber-400/60 via-amber-500/40 to-amber-400/60 rounded-r-full transition-opacity duration-300",
-          sidebarOpen ? "opacity-0" : "opacity-60"
-        )} />
+      {/* Swipe indicator - visual hint melhorado */}
+      <div 
+        className={cn(
+          "lg:hidden fixed left-0 top-1/2 -translate-y-1/2 z-30 transition-all duration-500",
+          sidebarOpen ? "opacity-0 -translate-x-full" : "opacity-100"
+        )}
+      >
+        <div className="relative flex items-center">
+          {/* Glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-400/40 to-transparent blur-lg w-8 h-20 rounded-r-full" />
+          
+          {/* Main indicator */}
+          <div className="relative bg-gradient-to-b from-emerald-800 via-emerald-700 to-emerald-800 rounded-r-2xl shadow-lg border-y border-r border-amber-500/30 overflow-hidden">
+            <div className="px-1.5 py-4 flex flex-col items-center gap-1">
+              {/* Animated chevrons */}
+              <ChevronRight className="h-4 w-4 text-amber-400 animate-[pulse_1.5s_ease-in-out_infinite]" />
+              <ChevronRight className="h-4 w-4 text-amber-300/70 animate-[pulse_1.5s_ease-in-out_0.2s_infinite]" />
+              <ChevronRight className="h-4 w-4 text-amber-200/50 animate-[pulse_1.5s_ease-in-out_0.4s_infinite]" />
+            </div>
+            
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent pointer-events-none" />
+          </div>
+        </div>
       </div>
 
       {/* Sidebar overlay for mobile */}

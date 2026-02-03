@@ -45,8 +45,11 @@ export default function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-background">
       {/* Mobile header */}
       <header className="lg:hidden flex items-center justify-between p-4 border-b bg-card">
-        <div className="flex items-center gap-2">
-          <img src={logoHorticampos} alt="Horti Campos" className="h-8 w-auto object-contain" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white shadow-md flex items-center justify-center p-1.5 ring-1 ring-primary/20">
+            <img src={logoHorticampos} alt="Horti Campos" className="w-full h-full object-contain" />
+          </div>
+          <span className="font-semibold text-foreground">Horti Campos</span>
           <SyncStatusIndicator />
         </div>
         <Button
@@ -76,13 +79,19 @@ export default function Layout({ children }: LayoutProps) {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-4 border-b">
-            <div className="flex items-center justify-center">
-              <img 
-                src={logoHorticampos} 
-                alt="Horti Campos - Hortifruti e Produtos Naturais" 
-                className="h-16 w-auto object-contain"
-              />
+          <div className="p-6 border-b bg-gradient-to-br from-primary/10 to-primary/5">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-20 h-20 rounded-2xl bg-white shadow-lg flex items-center justify-center p-2 ring-2 ring-primary/20">
+                <img 
+                  src={logoHorticampos} 
+                  alt="Horti Campos" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="text-center">
+                <h1 className="font-bold text-lg text-foreground">Horti Campos</h1>
+                <p className="text-xs text-muted-foreground">Hortifruti & Naturais</p>
+              </div>
             </div>
           </div>
 

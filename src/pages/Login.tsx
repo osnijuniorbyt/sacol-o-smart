@@ -45,16 +45,20 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 pt-safe pb-safe">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4">
-            <img 
-              src={logoHorticampos} 
-              alt="Horti Campos - Hortifruti e Produtos Naturais" 
-              className="h-32 w-auto object-contain"
-            />
+        <CardHeader className="text-center pb-2">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg flex items-center justify-center p-3 ring-2 ring-primary/20">
+              <img 
+                src={logoHorticampos} 
+                alt="Horti Campos" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold">Horti Campos</CardTitle>
+              <CardDescription className="text-sm mt-1">Hortifruti & Produtos Naturais</CardDescription>
+            </div>
           </div>
-          <CardTitle className="text-2xl">Horti Campos</CardTitle>
-          <CardDescription>Sistema de Gestão</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login">

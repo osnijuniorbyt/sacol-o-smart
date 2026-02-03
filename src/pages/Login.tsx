@@ -101,12 +101,12 @@ export default function Login() {
             {/* Logo Container Premium - Container maior com logo integrada */}
             <div className="relative mb-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 overflow-hidden rounded-t-2xl">
               {/* Container maior para a logo */}
-              <div className="relative h-[200px] sm:h-[220px]">
-                {/* Logo com fundo gradiente harmonizado */}
+              <div className="relative h-[280px] sm:h-[320px] bg-[hsl(40,15%,92%)]">
+                {/* Logo com fundo harmonizado */}
                 <img 
                   src={logoLogin}
                   alt="Horti Campos - Hortifruti e Produtos Naturais"
-                  className="absolute inset-0 w-full h-full object-cover object-center"
+                  className="absolute inset-0 w-full h-full object-contain object-center p-4"
                 />
                 
                 {/* Borda metálica inferior com shimmer */}

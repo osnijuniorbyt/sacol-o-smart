@@ -502,12 +502,10 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                         </button>
                       ) : (
                         <Input
-                          type="number"
+                          inputMode="decimal"
                           value={item.quantity_received}
                           onChange={(e) => updateItem(item.id, 'quantity_received', parseFloat(e.target.value) || 0)}
                           className="h-12 text-lg font-mono mt-1"
-                          min="0"
-                          step="0.1"
                         />
                       )}
                     </div>
@@ -530,12 +528,10 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                         </button>
                       ) : (
                         <Input
-                          type="number"
+                          inputMode="decimal"
                           value={item.unit_cost_actual}
                           onChange={(e) => updateItem(item.id, 'unit_cost_actual', parseFloat(e.target.value) || 0)}
                           className="h-12 text-lg font-mono mt-1"
-                          min="0"
-                          step="0.01"
                         />
                       )}
                     </div>
@@ -704,7 +700,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
             
             <ReceivingContent />
             
-            <DrawerFooter className="border-t pt-3">
+            <DrawerFooter className="border-t pt-3 fixed-bottom-safe">
               <FooterButtons />
             </DrawerFooter>
           </DrawerContent>

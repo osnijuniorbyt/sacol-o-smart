@@ -260,7 +260,7 @@ export default function Compras() {
   }
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-4 pb-36">
       <h1 className="text-2xl font-bold">Compras</h1>
 
       {/* Botão Pedido Sugerido */}
@@ -496,13 +496,11 @@ export default function Compras() {
                             </TableCell>
                             <TableCell className="text-right">
                               <Input
-                                type="number"
+                                inputMode="decimal"
                                 value={item.unit_cost ?? ''}
                                 onChange={(e) => handleUpdatePrice(item.product_id, e.target.value)}
                                 className="h-8 w-24 text-right font-mono text-sm"
                                 placeholder="0,00"
-                                min="0"
-                                step="0.01"
                               />
                             </TableCell>
                             <TableCell className="text-right font-mono">
@@ -562,9 +560,9 @@ export default function Compras() {
         </TabsContent>
       </Tabs>
 
-      {/* BOTÃO ENVIAR - FIXO NO RODAPÉ (apenas na aba Novo) */}
+      {/* BOTÃO ENVIAR - FIXO NO RODAPÉ (apenas na aba Novo) - Com safe areas */}
       {activeTab === 'novo' && isSupplierSelected && items.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg z-50">
+        <div className="fixed bottom-0 left-0 right-0 p-4 fixed-bottom-safe pl-safe pr-safe bg-background border-t shadow-lg z-50">
           <div className="max-w-md mx-auto">
             <div className="flex justify-between mb-2 text-sm">
               <span>Fornecedor: <strong>{selectedSupplierData?.name}</strong></span>

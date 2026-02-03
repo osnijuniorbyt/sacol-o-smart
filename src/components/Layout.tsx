@@ -111,8 +111,8 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-[hsl(42,35%,95%)] via-[hsl(40,30%,93%)] to-[hsl(38,40%,90%)]">
-      {/* Mobile header - Premium com tema pôr do sol */}
-      <header className="lg:hidden flex items-center justify-between p-4 pt-safe border-b-2 border-[hsl(38,80%,55%,0.4)] bg-gradient-to-r from-[hsl(150,50%,12%)] via-[hsl(150,45%,16%)] to-[hsl(150,50%,12%)] shadow-lg shadow-[hsl(30,60%,30%,0.3)]">
+      {/* Mobile header - Premium com tema pôr do sol - Otimizado para Dynamic Island */}
+      <header className="lg:hidden flex items-center justify-between p-4 header-mobile pl-safe pr-safe border-b-2 border-[hsl(38,80%,55%,0.4)] bg-gradient-to-r from-[hsl(150,50%,12%)] via-[hsl(150,45%,16%)] to-[hsl(150,50%,12%)] shadow-lg shadow-[hsl(30,60%,30%,0.3)]">
         <Button
           variant="ghost"
           size="icon"

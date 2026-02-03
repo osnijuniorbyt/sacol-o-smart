@@ -127,13 +127,33 @@
     font-size: 16px;
   }
 
-  /* Safe area padding utility */
+  /* Safe area padding utilities - Optimized for Dynamic Island / Notch */
   .pb-safe {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
   
   .pt-safe {
-    padding-top: max(0.5rem, env(safe-area-inset-top));
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+
+  /* Safe areas laterais para bordas curvas (iPhone 11+, Pixel, etc) */
+  .pl-safe {
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+  }
+  
+  .pr-safe {
+    padding-right: max(0.5rem, env(safe-area-inset-right));
+  }
+
+  /* Header mobile otimizado para Dynamic Island */
+  .header-mobile {
+    min-height: calc(3.5rem + env(safe-area-inset-top));
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+
+  /* Fixed bottom container com safe area */
+  .fixed-bottom-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }
 

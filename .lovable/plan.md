@@ -1,124 +1,174 @@
 
-# Correção Definitiva: Fluxo de Redefinição de Senha
+# Correção do Email de Recuperação de Senha
 
-## Diagnóstico Confirmado pelos Logs
+## Problema Identificado
 
-Os logs de autenticação mostram claramente o problema:
-```
-05:36:36 - Login via "implicit" (token processado)
-05:36:36 - /verify retorna 303 (redirect)
-```
-
-O Supabase processa o token e cria a sessão **instantaneamente**, ANTES do React ter chance de detectar o evento `PASSWORD_RECOVERY`.
-
-## Solução: Detecção Pré-React
+O email de recuperação está chegando **sem o botão de reset**. O texto aparece, mas o link/botão para redefinir a senha não é exibido.
 
 ```text
-[Email Link] ──► [main.tsx] ──► [sessionStorage] ──► [React App]
-                    │                                    │
-            Detecta tokens                        Lê flag do storage
-            ANTES do mount                        para permitir acesso
+[Email Atual]
+┌─────────────────────────────────────┐
+│ Reset your password                 │
+│                                     │
+│ "Click the button below..."         │
+│                                     │
+│ ← BOTÃO AUSENTE!                    │
+│                                     │
+│ "If you didn't request this..."     │
+└─────────────────────────────────────┘
 ```
 
-## Arquivos a Modificar
+## Causa
 
-### 1. src/main.tsx
-**Adicionar detecção de tokens de recuperação ANTES de montar o React:**
-- Verificar se URL contém `type=recovery` no hash ou search
-- Salvar flag em `sessionStorage`
-- Garantir que o usuário seja direcionado para `/reset-password`
+O template de email padrão do sistema não está renderizando o botão corretamente. Isso pode ser devido a:
+1. Template de email mal configurado
+2. Problema na geração do HTML do botão
 
-### 2. src/hooks/useAuth.tsx
-**Persistir estado de recuperação:**
-- Inicializar `isPasswordRecovery` lendo do `sessionStorage`
-- Manter sincronização entre estado React e storage
-- Limpar storage SOMENTE após senha ser atualizada com sucesso
+## Solução Proposta
 
-### 3. src/pages/ResetPassword.tsx
-**Simplificar lógica:**
-- Remover timeout de 3 segundos
-- Confiar no flag persistido para mostrar formulário
-- Não redirecionar para login se está em modo recovery
+Criar um **Edge Function customizado** para enviar emails de recuperação de senha com um template HTML completo e bem formatado.
 
-## Fluxo Corrigido
+### Arquitetura da Solução
 
-1. Usuário clica no link do email
-2. `main.tsx` executa ANTES do React → detecta `type=recovery` → salva em `sessionStorage`
-3. React monta → `AuthProvider` lê storage → `isPasswordRecovery = true`
-4. Route guards permitem acesso a `/reset-password`
-5. Supabase processa token em paralelo → cria sessão
-6. `ResetPassword` mostra formulário de nova senha
-7. Usuário define senha → limpa `sessionStorage` → redireciona para app
+```text
+[Usuário]          [App]           [Edge Function]       [Usuário]
+    │                │                    │                   │
+    │ Esqueci senha  │                    │                   │
+    ├───────────────►│                    │                   │
+    │                │ Gera token único   │                   │
+    │                │ Chama edge func    │                   │
+    │                ├───────────────────►│                   │
+    │                │                    │ Envia email       │
+    │                │                    │ com botão visível │
+    │                │                    ├──────────────────►│
+    │                │◄───────────────────┤                   │
+    │◄───────────────┤                    │                   │
+    │ "Email enviado"│                    │                   │
+```
 
-## Detalhes Técnicos
+### Arquivos a Criar/Modificar
 
-### main.tsx - Código a Adicionar
+#### 1. Nova Edge Function: `supabase/functions/send-password-reset/index.ts`
+- Recebe email do usuário
+- Gera link de recuperação usando Supabase Admin
+- Envia email formatado com template HTML bonito
+- Usa Resend (se disponível) ou serviço de email nativo
+
+#### 2. Modificar: `src/hooks/useAuth.tsx`
+- Alterar `resetPassword` para chamar a edge function ao invés de `supabase.auth.resetPasswordForEmail`
+
+### Template de Email Proposto
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .button {
+      background-color: #10b981;
+      color: white;
+      padding: 16px 32px;
+      text-decoration: none;
+      border-radius: 8px;
+      display: inline-block;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div style="text-align: center; padding: 40px;">
+    <h1>🔐 Redefinir Senha</h1>
+    <p>Você solicitou a redefinição de senha da sua conta Sacolo-Smart.</p>
+    <p>Clique no botão abaixo para criar uma nova senha:</p>
+    
+    <a href="{{RESET_LINK}}" class="button">
+      Redefinir Minha Senha
+    </a>
+    
+    <p style="margin-top: 20px; color: #666; font-size: 12px;">
+      Se você não solicitou isso, ignore este email.
+    </p>
+  </div>
+</body>
+</html>
+```
+
+### Detalhes Técnicos
+
+#### Edge Function (send-password-reset/index.ts)
 
 ```typescript
-// Detectar recuperação de senha ANTES do React
-const hash = window.location.hash;
-const search = window.location.search;
+// Estrutura básica
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-if (hash.includes('type=recovery') || search.includes('type=recovery')) {
-  sessionStorage.setItem('password_recovery_mode', 'true');
+serve(async (req) => {
+  const { email } = await req.json();
   
-  // Redirecionar para /reset-password se não estiver lá
-  if (!window.location.pathname.includes('reset-password')) {
-    window.history.replaceState(null, '', '/reset-password' + hash);
+  // Criar cliente admin Supabase
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+  
+  // Gerar link de recuperação
+  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+    options: {
+      redirectTo: `${req.headers.get("origin")}/reset-password`,
+    },
+  });
+  
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 400 });
   }
-}
-
-// Depois monta o React normalmente
-createRoot(document.getElementById("root")!).render(<App />);
+  
+  // Enviar email com template customizado
+  // Pode usar Resend, SendGrid, ou outro serviço
+  
+  return new Response(JSON.stringify({ success: true }), { status: 200 });
+});
 ```
 
-### useAuth.tsx - Alterações
+#### Modificação no useAuth.tsx
 
 ```typescript
-// Inicializar do sessionStorage
-const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
-  return sessionStorage.getItem('password_recovery_mode') === 'true';
-});
-
-// No evento PASSWORD_RECOVERY (backup)
-if (event === 'PASSWORD_RECOVERY') {
-  sessionStorage.setItem('password_recovery_mode', 'true');
-  setIsPasswordRecovery(true);
-}
-
-// Ao atualizar senha
-const updatePassword = async (newPassword: string) => {
-  const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (!error) {
-    sessionStorage.removeItem('password_recovery_mode');
-    setIsPasswordRecovery(false);
+const resetPassword = async (email: string) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-password-reset`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    
+    if (!response.ok) {
+      const data = await response.json();
+      return { error: new Error(data.error || 'Erro ao enviar email') };
+    }
+    
+    return { error: null };
+  } catch (err) {
+    return { error: err as Error };
   }
-  return { error };
 };
 ```
 
-### ResetPassword.tsx - Simplificação
+### Opção Alternativa (Mais Simples)
 
-```typescript
-// Remover o timer de 3 segundos
-// Confiar apenas no estado isPasswordRecovery
+Se preferir não criar uma edge function, podemos usar o método `generateLink` do Supabase Admin e enviar o link diretamente no email padrão, mas isso requer configurar um serviço de email externo como Resend.
 
-// Mostrar loading apenas enquanto auth carrega
-if (authLoading) {
-  return <LoadingSpinner />;
-}
+### Próximos Passos
 
-// Se não tem sessão E não está em modo recovery → login
-if (!session && !isPasswordRecovery) {
-  return <Navigate to="/login" replace />;
-}
+1. **Verificar se Resend está configurado** - Se não, configurar ou usar alternativa
+2. **Criar a edge function** com template de email bonito
+3. **Modificar o frontend** para usar a edge function
+4. **Testar o fluxo completo**
 
-// Caso contrário, mostrar o formulário
-```
+### Resultado Esperado
 
-## Resultado Esperado
-
-- Link do email abre diretamente o formulário de nova senha
-- Sem tela preta
-- Sem redirecionamento indesejado para login ou dashboard
-- Funciona mesmo se usuário já estava logado antes
+- Email chega com botão grande e visível
+- Usuário clica → abre formulário de nova senha
+- Template em português com visual profissional

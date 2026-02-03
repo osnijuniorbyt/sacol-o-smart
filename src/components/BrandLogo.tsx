@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import logoFull from '@/assets/logo-hortii-cream.png';
+import logoTransparent from '@/assets/logo-hortii-transparent.png';
 import logoIcon from '@/assets/logo-hortii-3d.png';
 
 interface BrandLogoProps {
@@ -45,14 +46,14 @@ export function BrandLogo({ size = 'md', variant = 'full', className }: BrandLog
   );
 }
 
-// Version for light backgrounds (Login page) - uses full logo
+// Version for light backgrounds (Login page) - uses transparent logo
 export function BrandLogoLight({ size = 'lg', className }: Omit<BrandLogoProps, 'variant'>) {
   const config = sizeConfig[size];
 
   return (
     <div className={cn("flex flex-col items-center", className)}>
       <img 
-        src={logoFull} 
+        src={logoTransparent} 
         alt="Horti Campos - Hortifruti e Produtos Naturais" 
         style={{ width: config.full, height: 'auto' }}
         className="object-contain"

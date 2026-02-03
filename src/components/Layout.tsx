@@ -110,19 +110,19 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-emerald-50/30">
-      {/* Mobile header - Logo centralizada */}
-      <header className="lg:hidden flex items-center justify-between p-3 border-b bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
+      {/* Mobile header - Logo centralizada com safe area */}
+      <header className="lg:hidden flex items-center justify-between p-4 pt-safe border-b bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="h-12 w-12 text-amber-100 hover:text-white hover:bg-emerald-700/50"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-6 w-6" />
         </Button>
         
-        {/* Logo centralizada */}
-        <BrandLogo size="sm" />
+        {/* Logo centralizada - maior destaque */}
+        <BrandLogo size="sm" variant="icon-only" />
         
         <SyncStatusIndicator />
       </header>
@@ -169,8 +169,8 @@ export default function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo with 3D Metallic Effect */}
-          <div className="p-4 border-b border-emerald-700/30 bg-gradient-to-br from-emerald-800/50 to-emerald-900/50">
+          {/* Logo with more space */}
+          <div className="p-6 border-b border-emerald-700/30 bg-gradient-to-br from-emerald-800/50 to-emerald-900/50">
             <div className="flex items-center justify-between">
               <BrandLogo size="md" />
               

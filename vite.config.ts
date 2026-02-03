@@ -20,9 +20,9 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt"],
       manifest: {
-        name: "Sacolão Compras",
-        short_name: "Sacolão",
-        description: "Sistema de gestão para hortifruti com compras CEASA offline",
+        name: "Horti Campos",
+        short_name: "Horti Campos",
+        description: "Hortifruti e Produtos Naturais - Sistema de Gestão",
         theme_color: "#1a1a1a",
         background_color: "#1a1a1a",
         display: "standalone",

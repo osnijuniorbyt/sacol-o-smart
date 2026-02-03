@@ -170,16 +170,16 @@ export default function Layout({ children }: LayoutProps) {
       >
         <div className="flex flex-col h-full">
           {/* Logo completa profissional */}
-          <div className="p-4 border-b border-emerald-700/30 bg-gradient-to-br from-emerald-800/50 to-emerald-900/50">
-            <div className="flex items-center justify-between">
-              <BrandLogo size="sm" variant="full" />
+          <div className="p-5 border-b border-emerald-700/30 bg-gradient-to-br from-emerald-800/50 to-emerald-900/50">
+            <div className="flex items-center justify-between gap-2">
+              <BrandLogo size="md" variant="full" />
               
               {/* Close button for mobile */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden h-10 w-10 text-amber-100 hover:text-white hover:bg-emerald-700/50"
+                className="lg:hidden h-10 w-10 text-amber-100 hover:text-white hover:bg-emerald-700/50 flex-shrink-0"
               >
                 <X className="h-5 w-5" />
               </Button>

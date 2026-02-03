@@ -4,13 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProducts } from '@/hooks/useProducts';
 import { useSuppliers } from '@/hooks/useSuppliers';
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders';
-import { useOrderForm } from '@/hooks/useOrderForm';
 import { OrdersList } from '@/components/compras/OrdersList';
 import { SuggestedOrderDialog } from '@/components/compras/SuggestedOrderDialog';
-import { SupplierSelector } from '@/components/compras/SupplierSelector';
-import { ProductGrid } from '@/components/compras/ProductGrid';
-import { OrderItemsTable } from '@/components/compras/OrderItemsTable';
-import { OrderFooter } from '@/components/compras/OrderFooter';
+import { NewOrderForm } from '@/components/compras/NewOrderForm';
 import { 
   Plus, 
   Truck,
@@ -29,31 +25,11 @@ export default function Compras() {
   } = usePurchaseOrders();
   
   const [activeTab, setActiveTab] = useState('novo');
-  
-  const {
-    selectedSupplier,
-    setSelectedSupplier,
-    items,
-    isSupplierSelected,
-    isSaving,
-    totalPedido,
-    totalItens,
-    hasItemsWithoutPrice,
-    handleAddProduct,
-    handleDecrement,
-    handleUpdatePrice,
-    handleRemoveItem,
-    getQuantity,
-    handleApplySuggestion,
-    handleEnviarPedido,
-  } = useOrderForm();
 
   // Scroll to top when changing tabs
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeTab]);
-
-  const selectedSupplierData = activeSuppliers.find(s => s.id === selectedSupplier);
 
   const handleDeleteOrder = async (id: string) => {
     if (confirm('Excluir este pedido?')) {
@@ -62,7 +38,11 @@ export default function Compras() {
   };
 
   const handleRefresh = () => {
-    // Query invalidation happens automatically via usePurchaseOrders
+    // Query invalidation happens automatically
+  };
+
+  const handleOrderSent = () => {
+    setActiveTab('enviados');
   };
 
   if (loadingSuppliers || loadingProducts || loadingOrders) {
@@ -76,14 +56,17 @@ export default function Compras() {
 
   return (
     <div className="space-y-4 pb-36">
-      <h1 className="text-2xl font-bold">Compras</h1>
-
-      {/* Botão Pedido Sugerido */}
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Compras</h1>
+        
+        {/* Botão Pedido Sugerido */}
         <SuggestedOrderDialog
           suppliers={activeSuppliers}
           products={activeProducts}
-          onApplySuggestion={handleApplySuggestion}
+          onApplySuggestion={() => {
+            // A sugestão agora é aplicada diretamente no NewOrderForm
+            setActiveTab('novo');
+          }}
         />
       </div>
 
@@ -109,35 +92,11 @@ export default function Compras() {
         </TabsList>
 
         {/* ============ ABA: NOVO PEDIDO ============ */}
-        <TabsContent value="novo" className="mt-4 space-y-4">
-          {/* PASSO 1: FORNECEDOR */}
-          <SupplierSelector
+        <TabsContent value="novo" className="mt-4">
+          <NewOrderForm
             suppliers={activeSuppliers}
-            selectedSupplier={selectedSupplier}
-            onSupplierChange={setSelectedSupplier}
-          />
-
-          {/* PASSO 2: GRID DE PRODUTOS */}
-          <ProductGrid
-            products={activeProducts}
-            selectedSupplierId={selectedSupplier}
-            getQuantity={getQuantity}
-            onAddProduct={handleAddProduct}
-            onDecrement={handleDecrement}
-            isSupplierSelected={isSupplierSelected}
-          />
-
-          {/* PASSO 3: LISTA DE ITENS */}
-          <OrderItemsTable
-            items={items}
-            products={activeProducts}
-            totalItens={totalItens}
-            totalPedido={totalPedido}
-            hasItemsWithoutPrice={hasItemsWithoutPrice}
-            onAddProduct={handleAddProduct}
-            onDecrement={handleDecrement}
-            onUpdatePrice={handleUpdatePrice}
-            onRemoveItem={handleRemoveItem}
+            allProducts={activeProducts}
+            onOrderSent={handleOrderSent}
           />
         </TabsContent>
 
@@ -161,17 +120,6 @@ export default function Compras() {
           />
         </TabsContent>
       </Tabs>
-
-      {/* BOTÃO ENVIAR - FIXO NO RODAPÉ */}
-      {activeTab === 'novo' && isSupplierSelected && items.length > 0 && (
-        <OrderFooter
-          supplierName={selectedSupplierData?.name || ''}
-          totalItens={totalItens}
-          totalPedido={totalPedido}
-          isSaving={isSaving}
-          onEnviarPedido={handleEnviarPedido}
-        />
-      )}
     </div>
   );
 }

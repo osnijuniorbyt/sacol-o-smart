@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import logoFull from '@/assets/logo-hortii-transparent.png';
+import logoFull from '@/assets/logo-hortii-cream.png';
 import logoIcon from '@/assets/logo-hortii-3d.png';
 
 interface BrandLogoProps {

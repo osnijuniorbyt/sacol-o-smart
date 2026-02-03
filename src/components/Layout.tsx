@@ -20,6 +20,7 @@ import {
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
 import { BrandLogo } from '@/components/BrandLogo';
+import logoFull from '@/assets/logo-hortii-cream.png';
 
 interface LayoutProps {
   children: ReactNode;
@@ -169,38 +170,38 @@ export default function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo com fundo premium - tema pôr do sol integrado */}
-          <div className="p-4 border-b border-[hsl(40,70%,55%,0.25)]">
-            {/* Container sem fundo - a logo já tem o gradiente de pôr do sol */}
-            <div className="relative rounded-xl overflow-hidden">
-              {/* Borda metálica dourada */}
-              <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-[hsl(40,80%,60%,0.5)]" />
+          {/* Logo preenchendo o container - tema pôr do sol sutil */}
+          <div className="relative border-b border-[hsl(40,50%,55%,0.15)]">
+            {/* Container da logo - sem padding */}
+            <div className="relative overflow-hidden">
+              {/* Borda metálica sutil */}
+              <div className="absolute inset-0 ring-1 ring-inset ring-[hsl(40,60%,60%,0.3)]" />
               
-              {/* Shimmer na borda inferior */}
+              {/* Shimmer sutil na borda inferior */}
               <div 
-                className="absolute bottom-0 left-0 right-0 h-[2px] animate-shimmer z-10"
+                className="absolute bottom-0 left-0 right-0 h-[1px] animate-shimmer z-10 opacity-60"
                 style={{
-                  background: 'linear-gradient(90deg, transparent, hsl(40,85%,65%), hsl(45,40%,90%), hsl(40,85%,65%), transparent)',
+                  background: 'linear-gradient(90deg, transparent, hsl(40,70%,65%), hsl(45,30%,85%), hsl(40,70%,65%), transparent)',
                   backgroundSize: '200% 100%',
                 }}
               />
               
-              {/* Conteúdo - logo preenche o container */}
-              <div className="relative flex items-center justify-between">
-                <div className="flex-1">
-                  <BrandLogo size="md" variant="full" className="w-full" />
-                </div>
-                
-                {/* Close button for mobile */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSidebarOpen(false)}
-                  className="lg:hidden absolute top-2 right-2 h-10 w-10 text-[hsl(30,50%,35%)] hover:text-[hsl(30,60%,25%)] hover:bg-[hsl(40,40%,80%,0.5)] flex-shrink-0 z-20"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
+              {/* Logo preenchendo totalmente */}
+              <img 
+                src={logoFull}
+                alt="Horti Campos"
+                className="w-full h-auto block"
+              />
+              
+              {/* Close button for mobile - posicionado sobre a logo */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden absolute top-3 right-3 h-9 w-9 text-[hsl(30,40%,40%)] hover:text-[hsl(30,50%,30%)] hover:bg-[hsl(40,30%,85%,0.7)] flex-shrink-0 z-20 rounded-full"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 

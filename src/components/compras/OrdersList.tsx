@@ -25,11 +25,13 @@ import {
   Calendar,
   Building2,
   Loader2,
-  Pencil
+  Pencil,
+  FileText
 } from 'lucide-react';
 import { PurchaseOrder, PURCHASE_ORDER_STATUS_LABELS } from '@/types/database';
 import { ReceivingDialog } from './ReceivingDialog';
 import { EditOrderDialog } from './EditOrderDialog';
+import { ClosingProtocolDialog } from './ClosingProtocolDialog';
 import { PhotoGallery } from './PhotoGallery';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -45,6 +47,7 @@ interface OrdersListProps {
 export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: OrdersListProps) {
   const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
+  const [closingOrder, setClosingOrder] = useState<PurchaseOrder | null>(null);
 
   const statusColors: Record<string, string> = {
     rascunho: 'bg-muted text-muted-foreground',
@@ -167,37 +170,49 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
               </Accordion>
 
               {type === 'pending' && (
-                <div className="flex gap-2 mt-4">
-                  <Button 
-                    className="flex-1 h-12"
-                    onClick={() => setReceivingOrder(order)}
-                  >
-                    <ClipboardCheck className="mr-2 h-5 w-5" />
-                    Conferir Recebimento
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-12 w-12"
-                    onClick={() => setEditingOrder(order)}
-                  >
-                    <Pencil className="h-5 w-5" />
-                  </Button>
-                  {onDelete && (
+                <div className="space-y-2 mt-4">
+                  <div className="flex gap-2">
                     <Button 
-                      variant="outline" 
-                      size="icon"
-                      className="text-destructive h-12 w-12"
-                      onClick={() => onDelete(order.id)}
-                      disabled={isDeleting}
+                      className="flex-1 h-12"
+                      onClick={() => setReceivingOrder(order)}
                     >
-                      {isDeleting ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-5 w-5" />
-                      )}
+                      <ClipboardCheck className="mr-2 h-5 w-5" />
+                      Conferir Item a Item
                     </Button>
-                  )}
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-12"
+                      onClick={() => setClosingOrder(order)}
+                    >
+                      <FileText className="mr-2 h-5 w-5" />
+                      Protocolo Fechamento
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10"
+                      onClick={() => setEditingOrder(order)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    {onDelete && (
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        className="text-destructive h-10 w-10"
+                        onClick={() => onDelete(order.id)}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -225,6 +240,13 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
         order={editingOrder}
         open={!!editingOrder}
         onOpenChange={(open) => !open && setEditingOrder(null)}
+        onSuccess={onRefresh}
+      />
+
+      <ClosingProtocolDialog
+        order={closingOrder}
+        open={!!closingOrder}
+        onOpenChange={(open) => !open && setClosingOrder(null)}
         onSuccess={onRefresh}
       />
     </>

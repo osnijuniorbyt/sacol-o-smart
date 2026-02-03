@@ -553,6 +553,70 @@ export type Database = {
           },
         ]
       }
+      supplier_product_associations: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_purchase_at: string | null
+          preco_medio: number | null
+          product_id: string
+          quantidade_compras: number | null
+          supplier_id: string
+          total_kg_comprado: number | null
+          ultimo_preco: number | null
+          ultimo_vasilhame_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_purchase_at?: string | null
+          preco_medio?: number | null
+          product_id: string
+          quantidade_compras?: number | null
+          supplier_id: string
+          total_kg_comprado?: number | null
+          ultimo_preco?: number | null
+          ultimo_vasilhame_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_purchase_at?: string | null
+          preco_medio?: number | null
+          product_id?: string
+          quantidade_compras?: number | null
+          supplier_id?: string
+          total_kg_comprado?: number | null
+          ultimo_preco?: number | null
+          ultimo_vasilhame_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_product_associations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_product_associations_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_product_associations_ultimo_vasilhame_id_fkey"
+            columns: ["ultimo_vasilhame_id"]
+            isOneToOne: false
+            referencedRelation: "packagings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           cnpj: string | null
@@ -660,8 +724,77 @@ export type Database = {
           },
         ]
       }
+      supplier_product_ranking: {
+        Row: {
+          category: Database["public"]["Enums"]["product_category"] | null
+          last_purchase_at: string | null
+          preco_medio: number | null
+          product_id: string | null
+          product_name: string | null
+          quantidade_compras: number | null
+          rank: number | null
+          supplier_id: string | null
+          supplier_name: string | null
+          total_kg_comprado: number | null
+          ultimo_preco: number | null
+          ultimo_vasilhame_id: string | null
+          vasilhame_nome: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_product_associations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_product_associations_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_product_associations_ultimo_vasilhame_id_fkey"
+            columns: ["ultimo_vasilhame_id"]
+            isOneToOne: false
+            referencedRelation: "packagings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      calculate_real_cost: {
+        Args: {
+          p_custo_descarga?: number
+          p_order_id: string
+          p_valor_frete?: number
+        }
+        Returns: {
+          custo_kg_rateado: number
+          custo_real_kg: number
+          peso_liquido: number
+          preco_kg: number
+          product_id: string
+          product_name: string
+        }[]
+      }
+      get_supplier_products: {
+        Args: { p_supplier_id: string }
+        Returns: {
+          category: string
+          last_purchase_at: string
+          preco_medio: number
+          product_id: string
+          product_name: string
+          quantidade_compras: number
+          ultimo_preco: number
+          ultimo_vasilhame_id: string
+          vasilhame_nome: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -670,6 +803,14 @@ export type Database = {
         Returns: boolean
       }
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
+      update_supplier_product_packaging: {
+        Args: {
+          p_packaging_id: string
+          p_product_id: string
+          p_supplier_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

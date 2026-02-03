@@ -20,7 +20,7 @@ import {
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
 import { BrandLogo } from '@/components/BrandLogo';
-import logoSidebar from '@/assets/logo-hortii-sidebar.png';
+import logoFull from '@/assets/logo-hortii-cream.png';
 
 interface LayoutProps {
   children: ReactNode;
@@ -188,7 +188,7 @@ export default function Layout({ children }: LayoutProps) {
               
               {/* Logo preenchendo totalmente o container */}
               <img 
-                src={logoSidebar}
+                src={logoFull}
                 alt="Horti Campos"
                 className="w-full h-full object-cover object-center lg:rounded-t-2xl"
               />

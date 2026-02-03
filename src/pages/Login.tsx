@@ -5,14 +5,29 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import logoHorticampos from '@/assets/logo-horticampos.jpeg';
+import { BrandLogoLight } from '@/components/BrandLogo';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Mail } from 'lucide-react';
 
 export default function Login() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Reset password dialog
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,28 +57,27 @@ export default function Login() {
     setLoading(false);
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetMessage('');
+    
+    const { error } = await resetPassword(resetEmail);
+    
+    if (error) {
+      setResetMessage(error.message);
+    } else {
+      setResetMessage('E-mail enviado! Verifique sua caixa de entrada.');
+    }
+    setResetLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950 p-4 pt-safe pb-safe">
       <Card className="w-full max-w-md bg-gradient-to-b from-white to-amber-50/50 shadow-2xl shadow-black/40 border-0 ring-1 ring-amber-200/50">
         <CardHeader className="text-center pb-2">
           <div className="flex flex-col items-center gap-4">
-            {/* 3D Metallic Logo Container */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 rounded-3xl blur-md opacity-60 scale-105"></div>
-              <div className="relative w-32 h-32 rounded-3xl bg-gradient-to-b from-amber-100 via-white to-amber-50 shadow-xl flex items-center justify-center p-3 ring-4 ring-amber-400/50 border-t-2 border-amber-200">
-                <div className="w-full h-full rounded-2xl bg-gradient-to-br from-emerald-800 via-emerald-700 to-emerald-900 p-2 shadow-inner">
-                  <img 
-                    src={logoHorticampos} 
-                    alt="Horti Campos" 
-                    className="w-full h-full object-contain drop-shadow-lg"
-                  />
-                </div>
-              </div>
-            </div>
-            <div>
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 bg-clip-text text-transparent drop-shadow-sm">Horti Campos</CardTitle>
-              <CardDescription className="text-emerald-700 font-medium mt-1">Hortifruti & Produtos Naturais</CardDescription>
-            </div>
+            <BrandLogoLight size="lg" />
           </div>
         </CardHeader>
         <CardContent>
@@ -101,6 +115,20 @@ export default function Login() {
                     required
                   />
                 </div>
+                
+                {/* Forgot password link */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetEmail(email);
+                    setResetMessage('');
+                    setResetDialogOpen(true);
+                  }}
+                  className="text-sm text-emerald-600 hover:text-emerald-700 hover:underline"
+                >
+                  Esqueci minha senha
+                </button>
+                
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button 
                   type="submit" 
@@ -141,6 +169,13 @@ export default function Login() {
                     required
                   />
                 </div>
+                
+                <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                  <p className="text-xs text-amber-700">
+                    Após o cadastro, um administrador precisará aprovar seu acesso ao sistema.
+                  </p>
+                </div>
+                
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button 
                   type="submit" 
@@ -154,6 +189,59 @@ export default function Login() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-emerald-600" />
+              Recuperar Senha
+            </DialogTitle>
+            <DialogDescription>
+              Digite seu e-mail para receber o link de recuperação.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleResetPassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-email">E-mail</Label>
+              <Input
+                id="reset-email"
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                placeholder="seu@email.com"
+                className="h-12"
+                required
+              />
+            </div>
+            
+            {resetMessage && (
+              <p className={`text-sm ${resetMessage.includes('enviado') ? 'text-emerald-600' : 'text-destructive'}`}>
+                {resetMessage}
+              </p>
+            )}
+            
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setResetDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={resetLoading}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                {resetLoading ? 'Enviando...' : 'Enviar Link'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

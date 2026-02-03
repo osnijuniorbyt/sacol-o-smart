@@ -14,6 +14,9 @@ import Quebras from "@/pages/Quebras";
 import Produtos from "@/pages/Produtos";
 import Compras from "@/pages/Compras";
 import Fornecedores from "@/pages/Fornecedores";
+import PendingApproval from "@/pages/PendingApproval";
+import AdminUsers from "@/pages/AdminUsers";
+import ResetPassword from "@/pages/ResetPassword";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,29 +28,109 @@ function GlobalHooks({ children }: { children: React.ReactNode }) {
 }
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  // TODO: Re-enable authentication after testing
-  // const { user, loading } = useAuth();
+  const { user, loading, isApproved } = useAuth();
 
-  // if (loading) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-  //     </div>
-  //   );
-  // }
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+      </div>
+    );
+  }
 
-  // if (!user) {
-  //   return <Navigate to="/login" replace />;
-  // }
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-  // TEMPORÁRIO: Bypass de autenticação para testes
+  // Se está carregando o status de aprovação, mostrar loading
+  if (isApproved === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+      </div>
+    );
+  }
+
+  // Se não está aprovado, redirecionar para página de aguardando
+  if (!isApproved) {
+    return <Navigate to="/pending-approval" replace />;
+  }
+
+  return <Layout>{children}</Layout>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading, isApproved, isAdmin } = useAuth();
+
+  if (loading || isApproved === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isApproved) {
+    return <Navigate to="/pending-approval" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
   return <Layout>{children}</Layout>;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  // TODO: Re-enable authentication after testing
-  // TEMPORÁRIO: Sempre redireciona /login para o Dashboard
-  return <Navigate to="/" replace />;
+  const { user, loading, isApproved } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+      </div>
+    );
+  }
+
+  if (user) {
+    // Se está logado mas não aprovado, ir para pending
+    if (isApproved === false) {
+      return <Navigate to="/pending-approval" replace />;
+    }
+    // Se está logado e aprovado, ir para dashboard
+    if (isApproved === true) {
+      return <Navigate to="/" replace />;
+    }
+  }
+
+  return <>{children}</>;
+}
+
+function PendingRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading, isApproved } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Se já está aprovado, redirecionar para dashboard
+  if (isApproved === true) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
 }
 
 function AppRoutes() {
@@ -60,6 +143,18 @@ function AppRoutes() {
             <Login />
           </PublicRoute>
         }
+      />
+      <Route
+        path="/pending-approval"
+        element={
+          <PendingRoute>
+            <PendingApproval />
+          </PendingRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={<ResetPassword />}
       />
       <Route
         path="/"
@@ -115,6 +210,14 @@ function AppRoutes() {
           <PrivateRoute>
             <Fornecedores />
           </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/usuarios"
+        element={
+          <AdminRoute>
+            <AdminUsers />
+          </AdminRoute>
         }
       />
       <Route path="*" element={<NotFound />} />

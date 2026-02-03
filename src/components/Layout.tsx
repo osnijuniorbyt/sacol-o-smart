@@ -15,10 +15,11 @@ import {
   X,
   Truck,
   Building2,
+  Users,
 } from 'lucide-react';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
-import logoHorticampos from '@/assets/logo-horticampos.jpeg';
+import { BrandLogo } from '@/components/BrandLogo';
 
 interface LayoutProps {
   children: ReactNode;
@@ -35,7 +36,7 @@ const navItems = [
 ];
 
 export default function Layout({ children }: LayoutProps) {
-  const { signOut } = useAuth();
+  const { signOut, isAdmin } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
@@ -46,6 +47,11 @@ export default function Layout({ children }: LayoutProps) {
   
   // Global keyboard shortcuts
   useKeyboardShortcuts();
+
+  // Build nav items including admin route if user is admin
+  const allNavItems = isAdmin 
+    ? [...navItems, { path: '/admin/usuarios', label: 'Usuários', icon: Users }]
+    : navItems;
 
   // Handle swipe gesture to open/close sidebar
   useEffect(() => {
@@ -116,15 +122,7 @@ export default function Layout({ children }: LayoutProps) {
         </Button>
         
         {/* Logo centralizada */}
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <div className="absolute inset-0 bg-amber-400 rounded-xl blur opacity-40"></div>
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-b from-amber-100 to-amber-50 shadow-md flex items-center justify-center p-1 ring-2 ring-amber-400/60 border-t border-amber-200">
-              <img src={logoHorticampos} alt="Horti Campos" className="w-full h-full object-contain rounded-lg" />
-            </div>
-          </div>
-          <span className="font-bold text-amber-100 drop-shadow text-sm">Horti Campos</span>
-        </div>
+        <BrandLogo size="sm" />
         
         <SyncStatusIndicator />
       </header>
@@ -174,22 +172,7 @@ export default function Layout({ children }: LayoutProps) {
           {/* Logo with 3D Metallic Effect */}
           <div className="p-4 border-b border-emerald-700/30 bg-gradient-to-br from-emerald-800/50 to-emerald-900/50">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 rounded-xl blur-md opacity-50 scale-110"></div>
-                  <div className="relative w-14 h-14 rounded-xl bg-gradient-to-b from-amber-100 via-white to-amber-50 shadow-xl flex items-center justify-center p-1.5 ring-2 ring-amber-400/60 border-t border-amber-200">
-                    <img 
-                      src={logoHorticampos} 
-                      alt="Horti Campos" 
-                      className="w-full h-full object-contain rounded-lg"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <h1 className="font-bold text-base bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 bg-clip-text text-transparent">Horti Campos</h1>
-                  <p className="text-xs text-emerald-300/80">Hortifruti & Naturais</p>
-                </div>
-              </div>
+              <BrandLogo size="md" />
               
               {/* Close button for mobile */}
               <Button
@@ -205,7 +188,7 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Navigation */}
           <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
-            {navItems.map((item) => {
+            {allNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               return (
@@ -222,7 +205,7 @@ export default function Layout({ children }: LayoutProps) {
                 >
                   <Icon className="h-5 w-5" />
                   <span className="font-medium flex-1">{item.label}</span>
-                  {item.shortcut && (
+                  {'shortcut' in item && item.shortcut && (
                     <span className="text-xs opacity-60 hidden lg:inline">{item.shortcut}</span>
                   )}
                 </Link>

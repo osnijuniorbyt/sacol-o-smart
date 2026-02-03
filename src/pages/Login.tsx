@@ -101,7 +101,7 @@ export default function Login() {
             {/* Logo Container Premium - Fundo creme harmonizado */}
             <div className="relative mb-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
               {/* Fundo creme claro que harmoniza com o card */}
-              <div className="relative bg-[#F5F0E6] py-8 px-4">
+              <div className="relative bg-gradient-to-b from-[hsl(40,35%,96%)] via-[hsl(40,30%,94%)] to-[hsl(40,25%,90%)] py-8 px-4">
                 {/* Borda metálica inferior com shimmer */}
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(36,70%,55%)] to-transparent" />
                 <div 

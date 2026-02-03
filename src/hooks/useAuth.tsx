@@ -26,7 +26,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isApproved, setIsApproved] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  // Inicializar do sessionStorage para persistir entre recarregamentos
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
+    return sessionStorage.getItem('password_recovery_mode') === 'true';
+  });
 
   const checkApprovalStatus = useCallback(async () => {
     if (!user) {
@@ -64,8 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener BEFORE getting session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // Detectar evento de recuperação de senha
+        // Detectar evento de recuperação de senha e persistir no storage
         if (event === 'PASSWORD_RECOVERY') {
+          sessionStorage.setItem('password_recovery_mode', 'true');
           setIsPasswordRecovery(true);
         }
         
@@ -129,12 +133,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: newPassword
     });
     if (!error) {
+      // Limpar storage e estado após sucesso
+      sessionStorage.removeItem('password_recovery_mode');
       setIsPasswordRecovery(false);
     }
     return { error };
   };
 
   const clearPasswordRecovery = () => {
+    sessionStorage.removeItem('password_recovery_mode');
     setIsPasswordRecovery(false);
   };
 

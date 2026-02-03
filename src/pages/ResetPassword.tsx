@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,48 +10,15 @@ import { KeyRound, CheckCircle } from 'lucide-react';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { updatePassword, session, loading: authLoading, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [waitingForSession, setWaitingForSession] = useState(true);
 
-  // Verificar se a URL contém parâmetros de recuperação
-  const hasRecoveryParams = location.hash.includes('type=recovery') || 
-                            location.search.includes('type=recovery') ||
-                            isPasswordRecovery;
-
-  // Verificar se há sessão ativa (token do email)
-  useEffect(() => {
-    if (authLoading) return;
-    
-    // Se temos uma sessão válida e parâmetros de recuperação, mostrar formulário
-    if (session && hasRecoveryParams) {
-      setWaitingForSession(false);
-      return;
-    }
-    
-    if (session) {
-      setWaitingForSession(false);
-      return;
-    }
-
-    // Aguardar um pouco para o Supabase processar o token da URL
-    const timer = setTimeout(() => {
-      if (!session) {
-        navigate('/login');
-      }
-      setWaitingForSession(false);
-    }, 3000);
-    
-    return () => clearTimeout(timer);
-  }, [session, authLoading, navigate, hasRecoveryParams]);
-
-  // Mostrar loading enquanto aguarda sessão
-  if (authLoading || waitingForSession) {
+  // Mostrar loading apenas enquanto auth carrega
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950">
         <div className="flex flex-col items-center gap-4">
@@ -60,6 +27,11 @@ export default function ResetPassword() {
         </div>
       </div>
     );
+  }
+
+  // Se não tem sessão E não está em modo recovery → redirecionar para login
+  if (!session && !isPasswordRecovery) {
+    return <Navigate to="/login" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

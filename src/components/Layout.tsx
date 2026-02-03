@@ -165,7 +165,8 @@ export default function Layout({ children }: LayoutProps) {
       {/* Sidebar - Premium dark green com tema pôr do sol */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-64 bg-gradient-to-b from-[hsl(150,50%,14%)] via-[hsl(150,45%,12%)] to-[hsl(150,50%,10%)] transform transition-transform duration-300 ease-out lg:translate-x-0 lg:left-3 lg:top-3 lg:bottom-3 lg:h-auto lg:rounded-2xl shadow-2xl lg:border lg:border-[hsl(40,60%,55%,0.3)]",
+          "fixed top-0 left-0 z-50 h-full w-64 bg-gradient-to-b from-[hsl(150,50%,14%)] via-[hsl(150,45%,12%)] to-[hsl(150,50%,10%)] transform transition-transform duration-300 ease-out lg:translate-x-0 lg:left-3 lg:top-3 lg:bottom-3 lg:h-auto lg:rounded-2xl lg:border lg:border-[hsl(40,60%,55%,0.3)]",
+          "shadow-2xl lg:shadow-[0_8px_32px_-4px_hsl(38,70%,45%,0.35),0_4px_16px_-2px_hsl(30,60%,35%,0.25)]",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

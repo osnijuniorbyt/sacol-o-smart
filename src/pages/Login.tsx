@@ -75,10 +75,8 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950 p-4 pt-safe pb-safe">
       <Card className="w-full max-w-md bg-gradient-to-b from-white to-amber-50/50 shadow-2xl shadow-black/40 border-0 ring-1 ring-amber-200/50">
-        <CardHeader className="text-center pb-2">
-          <div className="flex flex-col items-center gap-4">
-            <BrandLogoLight size="lg" />
-          </div>
+        <CardHeader className="text-center pb-4 pt-6">
+          <BrandLogoLight size="lg" />
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login">

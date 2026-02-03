@@ -169,10 +169,10 @@ export default function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo with more space */}
-          <div className="p-6 border-b border-emerald-700/30 bg-gradient-to-br from-emerald-800/50 to-emerald-900/50">
+          {/* Logo completa profissional */}
+          <div className="p-4 border-b border-emerald-700/30 bg-gradient-to-br from-emerald-800/50 to-emerald-900/50">
             <div className="flex items-center justify-between">
-              <BrandLogo size="md" />
+              <BrandLogo size="sm" variant="full" />
               
               {/* Close button for mobile */}
               <Button

@@ -21,9 +21,14 @@ import {
   CheckCircle2,
   Loader2,
   ArrowLeft,
-  Phone
+  Phone,
+  FileQuestion,
+  DollarSign
 } from 'lucide-react';
 import { PurchaseOrder, PURCHASE_ORDER_STATUS_LABELS } from '@/types/database';
+
+// Status válidos para acessar o protocolo
+const ALLOWED_STATUSES = ['enviado'];
 
 export default function Protocolo() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -31,9 +36,11 @@ export default function Protocolo() {
   
   const [order, setOrder] = useState<PurchaseOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   
   // Custos adicionais
   const [valorFrete, setValorFrete] = useState<number>(0);
+  const [taxaDescarga, setTaxaDescarga] = useState<number>(0);
   const [outrosCustos, setOutrosCustos] = useState<number>(0);
   const [descricaoCustos, setDescricaoCustos] = useState('');
   
@@ -45,6 +52,9 @@ export default function Protocolo() {
   useEffect(() => {
     if (orderId) {
       loadOrder(orderId);
+    } else {
+      setNotFound(true);
+      setLoading(false);
     }
   }, [orderId]);
 
@@ -64,12 +74,24 @@ export default function Protocolo() {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
-      setOrder(data as unknown as PurchaseOrder);
+      if (error) {
+        console.error('Erro ao carregar pedido:', error);
+        setNotFound(true);
+        return;
+      }
+
+      const orderData = data as unknown as PurchaseOrder;
+      
+      // Verifica se o status permite acesso ao protocolo
+      if (!ALLOWED_STATUSES.includes(orderData.status)) {
+        setNotFound(true);
+        return;
+      }
+
+      setOrder(orderData);
     } catch (error: any) {
       console.error('Erro ao carregar pedido:', error);
-      toast.error('Pedido não encontrado');
-      navigate('/compras');
+      setNotFound(true);
     } finally {
       setLoading(false);
     }
@@ -87,13 +109,16 @@ export default function Protocolo() {
       (sum, i) => sum + (i.quantity * (i.estimated_kg || 1)), 0
     );
     
+    const totalCustosAdicionais = valorFrete + taxaDescarga + outrosCustos;
+    
     return {
       totalCaixas,
       valorProdutos,
       pesoNota,
-      valorTotal: valorProdutos + valorFrete + outrosCustos,
+      totalCustosAdicionais,
+      valorTotal: valorProdutos + totalCustosAdicionais,
     };
-  }, [order?.items, valorFrete, outrosCustos]);
+  }, [order?.items, valorFrete, taxaDescarga, outrosCustos]);
 
   const diferencaPeso = useMemo(() => {
     if (!resumo || !pesoBalancaReal) return null;
@@ -111,7 +136,12 @@ export default function Protocolo() {
     message += `Data Pedido: ${date}\n`;
     message += `─────────────────\n\n`;
     
-    message += `*RESUMO:*\n`;
+    message += `*ITENS:*\n`;
+    order.items?.forEach((item, idx) => {
+      message += `${idx + 1}. ${item.product?.name}: ${item.quantity} cx × R$${(item.unit_cost_estimated || 0).toFixed(2)}\n`;
+    });
+    
+    message += `\n*RESUMO:*\n`;
     message += `• ${resumo.totalCaixas} caixas\n`;
     message += `• Valor Produtos: R$ ${resumo.valorProdutos.toFixed(2)}\n`;
     message += `• Peso Nota: ${resumo.pesoNota.toFixed(1)} kg\n`;
@@ -120,20 +150,23 @@ export default function Protocolo() {
       message += `• Peso Balança: ${pesoBalancaReal.toFixed(1)} kg\n`;
       if (diferencaPeso !== null) {
         const diff = diferencaPeso >= 0 ? `+${diferencaPeso.toFixed(1)}` : diferencaPeso.toFixed(1);
-        message += `• Diferença: ${diff} kg\n`;
+        message += `• Diferença: ${diff} kg (${((diferencaPeso / resumo.pesoNota) * 100).toFixed(1)}%)\n`;
       }
     }
     
-    if (valorFrete > 0) {
-      message += `• Frete: R$ ${valorFrete.toFixed(2)}\n`;
-    }
-    if (outrosCustos > 0) {
-      message += `• Outros Custos: R$ ${outrosCustos.toFixed(2)}`;
-      if (descricaoCustos) message += ` (${descricaoCustos})`;
-      message += `\n`;
+    if (valorFrete > 0 || taxaDescarga > 0 || outrosCustos > 0) {
+      message += `\n*CUSTOS ADICIONAIS:*\n`;
+      if (valorFrete > 0) message += `• Frete: R$ ${valorFrete.toFixed(2)}\n`;
+      if (taxaDescarga > 0) message += `• Taxa Descarga: R$ ${taxaDescarga.toFixed(2)}\n`;
+      if (outrosCustos > 0) {
+        message += `• Outros: R$ ${outrosCustos.toFixed(2)}`;
+        if (descricaoCustos) message += ` (${descricaoCustos})`;
+        message += `\n`;
+      }
     }
     
-    message += `\n*TOTAL: R$ ${resumo.valorTotal.toFixed(2)}*`;
+    message += `\n─────────────────\n`;
+    message += `*TOTAL: R$ ${resumo.valorTotal.toFixed(2)}*`;
 
     const supplierPhone = order.supplier?.phone?.replace(/\D/g, '');
     const phoneWithCountry = supplierPhone?.startsWith('55') ? supplierPhone : `55${supplierPhone}`;
@@ -163,6 +196,17 @@ export default function Protocolo() {
           .eq('id', item.id);
       }
 
+      // Monta notas com custos
+      const notesArray: string[] = [];
+      if (valorFrete > 0) notesArray.push(`Frete: R$${valorFrete.toFixed(2)}`);
+      if (taxaDescarga > 0) notesArray.push(`Descarga: R$${taxaDescarga.toFixed(2)}`);
+      if (outrosCustos > 0) {
+        notesArray.push(`Outros: R$${outrosCustos.toFixed(2)}${descricaoCustos ? ` (${descricaoCustos})` : ''}`);
+      }
+      if (pesoBalancaReal > 0) {
+        notesArray.push(`Peso balança: ${pesoBalancaReal.toFixed(1)}kg`);
+      }
+
       // Atualiza pedido como recebido
       await supabase
         .from('purchase_orders')
@@ -170,7 +214,7 @@ export default function Protocolo() {
           status: 'recebido',
           total_received: resumo.valorTotal,
           received_at: new Date().toISOString(),
-          notes: descricaoCustos ? `Frete: R$${valorFrete} | Outros: R$${outrosCustos} (${descricaoCustos})` : null,
+          notes: notesArray.length > 0 ? notesArray.join(' | ') : null,
         })
         .eq('id', order.id);
 
@@ -185,6 +229,7 @@ export default function Protocolo() {
     }
   };
 
+  // Estado de loading
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -193,13 +238,18 @@ export default function Protocolo() {
     );
   }
 
-  if (!order || !resumo) {
+  // 404 - Pedido não encontrado ou status inválido
+  if (notFound || !order || !resumo) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground">Pedido não encontrado</p>
-          <Button variant="link" onClick={() => navigate('/compras')}>
+        <div className="text-center p-8">
+          <FileQuestion className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+          <h1 className="text-2xl font-bold mb-2">404</h1>
+          <p className="text-muted-foreground mb-6">
+            Pedido não encontrado ou não disponível para protocolo
+          </p>
+          <Button onClick={() => navigate('/compras')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar para Compras
           </Button>
         </div>
@@ -225,13 +275,7 @@ export default function Protocolo() {
               {order.supplier?.name}
             </p>
           </div>
-          <Badge className={
-            order.status === 'enviado' 
-              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-              : order.status === 'recebido'
-              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-              : 'bg-muted text-muted-foreground'
-          }>
+          <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
             {PURCHASE_ORDER_STATUS_LABELS[order.status]}
           </Badge>
         </div>
@@ -265,18 +309,18 @@ export default function Protocolo() {
               )}
             </div>
             <Separator className="my-2" />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <div>
-                <span className="text-muted-foreground">Caixas:</span>
-                <span className="ml-2 font-mono font-medium">{resumo.totalCaixas}</span>
+                <span className="text-muted-foreground text-xs">Caixas</span>
+                <p className="font-mono font-medium">{resumo.totalCaixas}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Valor:</span>
-                <span className="ml-2 font-mono font-medium">R$ {resumo.valorProdutos.toFixed(2)}</span>
+                <span className="text-muted-foreground text-xs">Valor</span>
+                <p className="font-mono font-medium">R$ {resumo.valorProdutos.toFixed(2)}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Peso Nota:</span>
-                <span className="ml-2 font-mono font-medium">{resumo.pesoNota.toFixed(1)} kg</span>
+                <span className="text-muted-foreground text-xs">Peso Nota</span>
+                <p className="font-mono font-medium">{resumo.pesoNota.toFixed(1)} kg</p>
               </div>
             </div>
 
@@ -297,22 +341,36 @@ export default function Protocolo() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <Truck className="h-4 w-4" />
+              <DollarSign className="h-4 w-4" />
               Custos Adicionais
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div>
-              <Label className="text-xs text-muted-foreground">Frete (R$)</Label>
-              <Input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                value={valorFrete || ''}
-                onChange={(e) => setValorFrete(parseFloat(e.target.value) || 0)}
-                className="h-12 font-mono text-lg"
-                placeholder="0,00"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Frete (R$)</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={valorFrete || ''}
+                  onChange={(e) => setValorFrete(parseFloat(e.target.value) || 0)}
+                  className="h-12 font-mono text-lg"
+                  placeholder="0,00"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Taxa Descarga (R$)</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={taxaDescarga || ''}
+                  onChange={(e) => setTaxaDescarga(parseFloat(e.target.value) || 0)}
+                  className="h-12 font-mono text-lg"
+                  placeholder="0,00"
+                />
+              </div>
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Outros Custos (R$)</Label>
@@ -328,12 +386,12 @@ export default function Protocolo() {
             </div>
             {outrosCustos > 0 && (
               <div>
-                <Label className="text-xs text-muted-foreground">Descrição dos custos</Label>
+                <Label className="text-xs text-muted-foreground">Descrição</Label>
                 <Input
                   value={descricaoCustos}
                   onChange={(e) => setDescricaoCustos(e.target.value)}
                   className="h-10"
-                  placeholder="Ex: Descarga, taxas..."
+                  placeholder="Ex: Pedágio, taxas..."
                 />
               </div>
             )}
@@ -349,17 +407,25 @@ export default function Protocolo() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div>
-              <Label className="text-xs text-muted-foreground">Peso Balança Real (kg)</Label>
-              <Input
-                type="number"
-                inputMode="decimal"
-                step="0.1"
-                value={pesoBalancaReal || ''}
-                onChange={(e) => setPesoBalancaReal(parseFloat(e.target.value) || 0)}
-                className="h-12 font-mono text-lg"
-                placeholder="0,0"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Peso Nota (kg)</Label>
+                <div className="h-12 flex items-center font-mono text-lg text-muted-foreground bg-muted/50 rounded-md px-3">
+                  {resumo.pesoNota.toFixed(1)}
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Peso Balança (kg)</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  value={pesoBalancaReal || ''}
+                  onChange={(e) => setPesoBalancaReal(parseFloat(e.target.value) || 0)}
+                  className="h-12 font-mono text-lg"
+                  placeholder="0,0"
+                />
+              </div>
             </div>
             
             {pesoBalancaReal > 0 && diferencaPeso !== null && (
@@ -369,9 +435,9 @@ export default function Protocolo() {
                   : 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
               }`}>
                 {Math.abs(diferencaPeso) > resumo.pesoNota * 0.05 ? (
-                  <AlertTriangle className="h-5 w-5" />
+                  <AlertTriangle className="h-5 w-5 flex-shrink-0" />
                 ) : (
-                  <CheckCircle2 className="h-5 w-5" />
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
                 )}
                 <div>
                   <div className="font-medium">
@@ -390,7 +456,14 @@ export default function Protocolo() {
         <Card className="bg-primary/5 border-primary">
           <CardContent className="py-4">
             <div className="flex justify-between items-center">
-              <span className="text-lg font-medium">Total a Pagar</span>
+              <div>
+                <span className="text-sm text-muted-foreground">Total a Pagar</span>
+                {resumo.totalCustosAdicionais > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    (Produtos R${resumo.valorProdutos.toFixed(2)} + Custos R${resumo.totalCustosAdicionais.toFixed(2)})
+                  </p>
+                )}
+              </div>
               <span className="text-2xl font-bold font-mono">
                 R$ {resumo.valorTotal.toFixed(2)}
               </span>
@@ -413,7 +486,7 @@ export default function Protocolo() {
           <Button
             className="flex-[2] h-12"
             onClick={handleAprovar}
-            disabled={isApproving || order.status === 'recebido'}
+            disabled={isApproving}
           >
             {isApproving ? (
               <Loader2 className="h-5 w-5 mr-2 animate-spin" />

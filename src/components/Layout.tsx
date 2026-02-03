@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -38,37 +38,108 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
+  // Swipe gesture handling
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
+  
   // Global keyboard shortcuts
   useKeyboardShortcuts();
 
+  // Handle swipe gesture to open/close sidebar
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX;
+      touchEndX.current = null;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      touchEndX.current = e.touches[0].clientX;
+    };
+
+    const handleTouchEnd = () => {
+      if (touchStartX.current === null || touchEndX.current === null) return;
+      
+      const swipeDistance = touchEndX.current - touchStartX.current;
+      const minSwipeDistance = 80;
+      
+      // Swipe right from left edge to open sidebar
+      if (touchStartX.current < 50 && swipeDistance > minSwipeDistance && !sidebarOpen) {
+        setSidebarOpen(true);
+      }
+      
+      // Swipe left to close sidebar
+      if (swipeDistance < -minSwipeDistance && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+      
+      touchStartX.current = null;
+      touchEndX.current = null;
+    };
+
+    const mainElement = mainRef.current;
+    if (mainElement) {
+      mainElement.addEventListener('touchstart', handleTouchStart, { passive: true });
+      mainElement.addEventListener('touchmove', handleTouchMove, { passive: true });
+      mainElement.addEventListener('touchend', handleTouchEnd);
+    }
+
+    // Also add to document for edge swipes
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      if (mainElement) {
+        mainElement.removeEventListener('touchstart', handleTouchStart);
+        mainElement.removeEventListener('touchmove', handleTouchMove);
+        mainElement.removeEventListener('touchend', handleTouchEnd);
+      }
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [sidebarOpen]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-emerald-50/30">
-      {/* Mobile header */}
-      <header className="lg:hidden flex items-center justify-between p-4 border-b bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="absolute inset-0 bg-amber-400 rounded-xl blur opacity-40"></div>
-            <div className="relative w-11 h-11 rounded-xl bg-gradient-to-b from-amber-100 to-amber-50 shadow-md flex items-center justify-center p-1.5 ring-2 ring-amber-400/60 border-t border-amber-200">
-              <img src={logoHorticampos} alt="Horti Campos" className="w-full h-full object-contain" />
-            </div>
-          </div>
-          <span className="font-bold text-amber-100 drop-shadow">Horti Campos</span>
-          <SyncStatusIndicator />
-        </div>
+    <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-emerald-50/30">
+      {/* Mobile header - Logo centralizada */}
+      <header className="lg:hidden flex items-center justify-between p-3 border-b bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="h-14 w-14 text-amber-100 hover:text-white hover:bg-emerald-700/50"
+          className="h-12 w-12 text-amber-100 hover:text-white hover:bg-emerald-700/50"
         >
-          {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          <Menu className="h-5 w-5" />
         </Button>
+        
+        {/* Logo centralizada */}
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <div className="absolute inset-0 bg-amber-400 rounded-xl blur opacity-40"></div>
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-b from-amber-100 to-amber-50 shadow-md flex items-center justify-center p-1 ring-2 ring-amber-400/60 border-t border-amber-200">
+              <img src={logoHorticampos} alt="Horti Campos" className="w-full h-full object-contain rounded-lg" />
+            </div>
+          </div>
+          <span className="font-bold text-amber-100 drop-shadow text-sm">Horti Campos</span>
+        </div>
+        
+        <SyncStatusIndicator />
       </header>
+
+      {/* Swipe indicator - visual hint */}
+      <div className="lg:hidden fixed left-0 top-1/2 -translate-y-1/2 z-30 pointer-events-none">
+        <div className={cn(
+          "w-1 h-16 bg-gradient-to-b from-amber-400/60 via-amber-500/40 to-amber-400/60 rounded-r-full transition-opacity duration-300",
+          sidebarOpen ? "opacity-0" : "opacity-60"
+        )} />
+      </div>
 
       {/* Sidebar overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -76,35 +147,45 @@ export default function Layout({ children }: LayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-64 bg-gradient-to-b from-emerald-900 via-emerald-850 to-emerald-950 border-r border-emerald-700/30 transform transition-transform duration-200 ease-in-out lg:translate-x-0 shadow-2xl",
+          "fixed top-0 left-0 z-50 h-full w-72 bg-gradient-to-b from-emerald-900 via-emerald-850 to-emerald-950 border-r border-emerald-700/30 transform transition-transform duration-300 ease-out lg:translate-x-0 shadow-2xl",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo with 3D Metallic Effect */}
-          <div className="p-6 border-b border-emerald-700/30 bg-gradient-to-br from-emerald-800/50 to-emerald-900/50">
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 rounded-2xl blur-md opacity-50 scale-110"></div>
-                <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-b from-amber-100 via-white to-amber-50 shadow-xl flex items-center justify-center p-2 ring-4 ring-amber-400/60 border-t-2 border-amber-200">
-                  <div className="w-full h-full rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-emerald-700/30 bg-gradient-to-br from-emerald-800/50 to-emerald-900/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 rounded-xl blur-md opacity-50 scale-110"></div>
+                  <div className="relative w-14 h-14 rounded-xl bg-gradient-to-b from-amber-100 via-white to-amber-50 shadow-xl flex items-center justify-center p-1.5 ring-2 ring-amber-400/60 border-t border-amber-200">
                     <img 
                       src={logoHorticampos} 
                       alt="Horti Campos" 
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain rounded-lg"
                     />
                   </div>
                 </div>
+                <div>
+                  <h1 className="font-bold text-base bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 bg-clip-text text-transparent">Horti Campos</h1>
+                  <p className="text-xs text-emerald-300/80">Hortifruti & Naturais</p>
+                </div>
               </div>
-              <div className="text-center">
-                <h1 className="font-bold text-lg bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 bg-clip-text text-transparent">Horti Campos</h1>
-                <p className="text-xs text-emerald-300/80">Hortifruti & Naturais</p>
-              </div>
+              
+              {/* Close button for mobile */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden h-10 w-10 text-amber-100 hover:text-white hover:bg-emerald-700/50"
+              >
+                <X className="h-5 w-5" />
+              </Button>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -114,10 +195,10 @@ export default function Layout({ children }: LayoutProps) {
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-4 rounded-xl transition-all h-14",
+                    "flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all",
                     isActive
                       ? "bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 text-white shadow-lg shadow-amber-900/50 border-t border-amber-300/30"
-                      : "hover:bg-emerald-800/50 text-emerald-200 hover:text-amber-200"
+                      : "hover:bg-emerald-800/50 text-emerald-200 hover:text-amber-200 active:bg-emerald-700/50"
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -131,15 +212,15 @@ export default function Layout({ children }: LayoutProps) {
           </nav>
 
           {/* Sync Status */}
-          <div className="px-4 pb-2">
+          <div className="px-3 pb-2">
             <SyncStatusIndicator showDetails />
           </div>
 
           {/* Logout button */}
-          <div className="p-4 border-t border-emerald-700/30">
+          <div className="p-3 border-t border-emerald-700/30">
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 h-14 text-emerald-300 hover:text-amber-200 hover:bg-emerald-800/50"
+              className="w-full justify-start gap-3 h-12 text-emerald-300 hover:text-amber-200 hover:bg-emerald-800/50"
               onClick={signOut}
             >
               <LogOut className="h-5 w-5" />
@@ -150,7 +231,7 @@ export default function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* Main content */}
-      <main className="lg:ml-64 min-h-screen bg-gradient-to-br from-amber-50/50 via-white to-emerald-50/30">
+      <main className="lg:ml-72 min-h-screen bg-gradient-to-br from-amber-50/50 via-white to-emerald-50/30">
         <div className="p-4 lg:p-6 pb-safe">
           {children}
         </div>

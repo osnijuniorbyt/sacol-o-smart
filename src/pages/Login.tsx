@@ -100,7 +100,7 @@ export default function Login() {
           }} />
           
           <div className="relative p-4 sm:p-6">
-            {/* Logo Container Premium - Simplificado com fundo integrado */}
+            {/* Logo Container Premium com gradiente "pôr do sol" */}
             <div className="relative mb-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 overflow-hidden rounded-t-2xl">
               <div className="relative h-[280px] sm:h-[320px]">
                 <img 
@@ -109,6 +109,9 @@ export default function Login() {
                   className="absolute inset-0 w-full h-full object-cover object-center"
                   loading="eager"
                 />
+                
+                {/* Gradiente "pôr do sol" - saturação aumentada na base */}
+                <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[hsl(36,80%,70%,0.4)] via-[hsl(40,60%,80%,0.2)] to-transparent pointer-events-none" />
                 
                 {/* Borda metálica inferior com shimmer */}
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(36,70%,55%)] to-transparent z-10" />

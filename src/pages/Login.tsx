@@ -110,6 +110,14 @@ export default function Login() {
                   loading="eager"
                 />
                 
+                {/* Gradiente pôr do sol na base */}
+                <div 
+                  className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(to bottom, transparent 0%, hsl(36,30%,82%) 100%)',
+                  }}
+                />
+                
                 {/* Borda metálica inferior com shimmer */}
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(36,70%,55%)] to-transparent z-10" />
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] animate-shimmer z-10" />

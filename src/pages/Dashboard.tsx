@@ -199,72 +199,72 @@ export default function Dashboard() {
         </Badge>
       </div>
 
-      {/* Main Metrics - 2x2 on mobile, 4 columns on desktop */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* Main Metrics - 2x2 on mobile, 4 columns on desktop - COMPACT */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {/* Lucro do Dia */}
         <Card className={metrics.todayProfit >= 0 ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs sm:text-sm font-medium">Lucro do Dia</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
+            <CardTitle className="text-[10px] sm:text-xs font-medium">Lucro do Dia</CardTitle>
             {metrics.todayProfit >= 0 ? (
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <TrendingUp className="h-3.5 w-3.5 text-green-600" />
             ) : (
-              <TrendingDown className="h-4 w-4 text-red-600" />
+              <TrendingDown className="h-3.5 w-3.5 text-red-600" />
             )}
           </CardHeader>
-          <CardContent>
-            <div className={`text-xl sm:text-2xl font-bold ${metrics.todayProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <CardContent className="p-3 pt-0">
+            <div className={`text-lg sm:text-xl font-bold ${metrics.todayProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatCurrency(metrics.todayProfit)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Receita - Custos - Quebras
+            <p className="text-[10px] text-muted-foreground">
+              Receita - Custos
             </p>
           </CardContent>
         </Card>
 
         {/* Margem Real */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs sm:text-sm font-medium">Margem Real</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
+            <CardTitle className="text-[10px] sm:text-xs font-medium">Margem Real</CardTitle>
+            <Target className="h-3.5 w-3.5 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className={`text-xl sm:text-2xl font-bold ${metrics.realMargin >= 0.3 ? 'text-green-600' : 'text-yellow-600'}`}>
+          <CardContent className="p-3 pt-0">
+            <div className={`text-lg sm:text-xl font-bold ${metrics.realMargin >= 0.3 ? 'text-green-600' : 'text-yellow-600'}`}>
               {formatPercent(metrics.realMargin)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Preço - Custo Dinâmico
+            <p className="text-[10px] text-muted-foreground">
+              Preço - Custo
             </p>
           </CardContent>
         </Card>
 
         {/* Estoque em Valor */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs sm:text-sm font-medium">Estoque (R$)</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
+            <CardTitle className="text-[10px] sm:text-xs font-medium">Estoque (R$)</CardTitle>
+            <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-foreground">
+          <CardContent className="p-3 pt-0">
+            <div className="text-lg sm:text-xl font-bold text-foreground">
               {formatCurrency(metrics.stockValue)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {batches.length} lotes ativos
+            <p className="text-[10px] text-muted-foreground">
+              {batches.length} lotes
             </p>
           </CardContent>
         </Card>
 
         {/* Vencendo em 3 dias */}
         <Card className={metrics.expiringCount > 0 ? 'border-orange-500/30 bg-orange-500/5' : ''}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs sm:text-sm font-medium">Vencendo</CardTitle>
-            <Clock className="h-4 w-4 text-orange-500" />
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
+            <CardTitle className="text-[10px] sm:text-xs font-medium">Vencendo</CardTitle>
+            <Clock className="h-3.5 w-3.5 text-orange-500" />
           </CardHeader>
-          <CardContent>
-            <div className={`text-xl sm:text-2xl font-bold ${metrics.expiringCount > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+          <CardContent className="p-3 pt-0">
+            <div className={`text-lg sm:text-xl font-bold ${metrics.expiringCount > 0 ? 'text-orange-600' : 'text-green-600'}`}>
               {metrics.expiringCount}
             </div>
-            <p className="text-xs text-muted-foreground">
-              lotes em 3 dias
+            <p className="text-[10px] text-muted-foreground">
+              em 3 dias
             </p>
           </CardContent>
         </Card>
@@ -279,7 +279,7 @@ export default function Dashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[250px] sm:h-[300px]">
+          <div className="h-[200px] sm:h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stackedBarData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -353,7 +353,7 @@ export default function Dashboard() {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="h-[280px] sm:h-[350px]">
+          <div className="h-[220px] sm:h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

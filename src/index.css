@@ -127,13 +127,21 @@
     font-size: 16px;
   }
 
-  /* Safe area padding utility */
+  /* Safe area padding utilities */
   .pb-safe {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
   
   .pt-safe {
     padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+  
+  .pl-safe {
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+  }
+  
+  .pr-safe {
+    padding-right: max(0.5rem, env(safe-area-inset-right));
   }
 }
 
@@ -233,6 +241,20 @@
     transparent 0%,
     rgba(255, 255, 255, 0.1) 50%,
     transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Animate shimmer - for metallic border effects */
+.animate-shimmer {
+  background: linear-gradient(
+    90deg, 
+    transparent, 
+    hsl(36 80% 70%), 
+    hsl(40 30% 95%), 
+    hsl(36 80% 70%), 
+    transparent
   );
   background-size: 200% 100%;
   animation: shimmer 3s ease-in-out infinite;

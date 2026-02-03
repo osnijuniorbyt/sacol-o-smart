@@ -83,7 +83,7 @@ export default function Login() {
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(36,90%,50%,0.1)_0%,_transparent_50%)]" />
       
       {/* Container scrollável para suportar teclado virtual */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden flex items-center justify-center p-4 pt-safe pb-safe min-h-[100dvh]">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden flex items-center justify-center p-4 pt-safe pb-safe pl-safe pr-safe min-h-[100dvh]">
         {/* Card principal com estética premium */}
         <div className="relative w-full max-w-md my-auto">
         {/* Borda metálica externa */}
@@ -100,34 +100,19 @@ export default function Login() {
           }} />
           
           <div className="relative p-4 sm:p-6">
-            {/* Logo Container Premium - Container maior com logo integrada */}
+            {/* Logo Container Premium - Simplificado com fundo integrado */}
             <div className="relative mb-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 overflow-hidden rounded-t-2xl">
-              {/* Container maior para a logo */}
               <div className="relative h-[280px] sm:h-[320px]">
-                {/* Logo preenchendo o container */}
                 <img 
                   src={logoLogin}
                   alt="Horti Campos - Hortifruti e Produtos Naturais"
                   className="absolute inset-0 w-full h-full object-cover object-center"
-                />
-                
-                {/* Gradiente sutil na base */}
-                <div 
-                  className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(to bottom, transparent 0%, hsl(36,30%,82%) 100%)',
-                  }}
+                  loading="eager"
                 />
                 
                 {/* Borda metálica inferior com shimmer */}
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(36,70%,55%)] to-transparent z-10" />
-                <div 
-                  className="absolute bottom-0 left-0 right-0 h-[3px] animate-shimmer z-10"
-                  style={{
-                    background: 'linear-gradient(90deg, transparent, hsl(36,80%,70%), hsl(40,30%,95%), hsl(36,80%,70%), transparent)',
-                    backgroundSize: '200% 100%',
-                  }}
-                />
+                <div className="absolute bottom-0 left-0 right-0 h-[3px] animate-shimmer z-10" />
               </div>
             </div>
             

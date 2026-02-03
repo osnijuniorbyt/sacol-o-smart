@@ -1,110 +1,40 @@
 
-# Implementacao da Logo Profissional Completa
+# Plano: Integração Perfeita da Logo com o Container Premium
 
-## Problema Identificado
+## Diagnóstico do Problema
 
-O sistema esta usando apenas o **icone isolado** da logo, quando deveria usar a **versao completa profissional** que inclui:
+A logo foi gerada com um fundo creme sólido (`#F5F0E6`), mas o container usa um gradiente diferente. Isso cria uma "caixa" visível ao redor da logo porque as cores não coincidem exatamente.
 
-- Simbolo laranja metalico 3D com "H" estilizado
-- Folhas verdes metalicas
-- Texto "HORTII" em verde metalico 3D
-- "campos" em laranja metalico
-- Tagline "HORTIFRUTI E PRODUTOS NATURAIS"
+## Solução
 
-## Solucao
+Alinhar o fundo do container da logo com a cor exata do fundo da imagem (`#F5F0E6`), removendo o gradiente na área da logo.
 
-Usar duas versoes da logo conforme o contexto:
+## Alterações Técnicas
 
-| Contexto | Versao | Motivo |
-|----------|--------|--------|
-| Sidebar | Logo completa | Espaco amplo, mostra a marca completa |
-| Pagina de Login | Logo completa | Tela principal de apresentacao |
-| Header mobile | Apenas icone | Espaco limitado |
-| PWA icons | Apenas icone | Formato quadrado obrigatorio |
-| Favicon | Apenas icone | Formato pequeno |
+### 1. Atualizar `src/pages/Login.tsx`
 
----
+Modificar o container da logo (linhas 104) para usar cor sólida que corresponda exatamente ao fundo da imagem:
 
-## Arquivos a Modificar
+```text
+Antes:
+bg-gradient-to-b from-[hsl(40,30%,96%)] via-[hsl(40,25%,93%)] to-[hsl(40,20%,90%)]
 
-### 1. Adicionar Logo Completa
-- Copiar `user-uploads://IMG_8160-2.jpeg` para `src/assets/logo-hortii-full.png`
-- Manter `src/assets/logo-hortii-3d.png` (icone atual) para usos compactos
-
-### 2. Atualizar src/components/BrandLogo.tsx
-
-Refatorar completamente para usar as imagens profissionais:
-
-```tsx
-import logoFull from '@/assets/logo-hortii-full.png';
-import logoIcon from '@/assets/logo-hortii-3d.png';
-
-// Versao completa para sidebar e login
-export function BrandLogo({ size = 'md', variant = 'full' }) {
-  if (variant === 'icon-only') {
-    return <img src={logoIcon} ... />;
-  }
-  
-  // Logo completa com texto metalico 3D
-  return <img src={logoFull} ... />;
-}
-
-// Versao para pagina de login (fundo claro)
-export function BrandLogoLight({ size = 'lg' }) {
-  return <img src={logoFull} ... />;
-}
+Depois:
+bg-[#F5F0E6]
 ```
 
-### 3. Ajustar Layout.tsx
+Isso garante que o fundo do container seja **idêntico** ao fundo da imagem PNG, criando integração invisível.
 
-- Sidebar: Usar logo completa com tamanho adequado
-- Header mobile: Manter icone compacto
+### 2. Ajustar transição para o resto do card
 
-### 4. Ajustar Login.tsx
-
-- Usar logo completa centralizada
-- Remover tipografia manual (ja esta na imagem)
-
-### 5. PWA e Favicon
-
-- Manter icones atuais (formato correto para PWA)
-- Criar favicon.ico a partir do icone
-
----
+Para manter a transição suave entre a área da logo (cor sólida) e o resto do card (gradiente), adicionar um degradê sutil na borda inferior do container da logo.
 
 ## Resultado Esperado
 
-### Sidebar (Desktop/Mobile)
-Logo completa profissional com texto metalico 3D visivel
+- Logo aparecerá perfeitamente integrada ao container
+- Nenhuma "caixa" ou bordas visíveis ao redor da imagem
+- Transição suave para o resto do formulário
 
-### Pagina de Login
-Logo completa centralizada com fundo apropriado
+## Arquivos a Modificar
 
-### Header Mobile
-Icone compacto (espaço limitado)
-
-### PWA/Favicon
-Icone quadrado otimizado
-
----
-
-## Secao Tecnica
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/assets/logo-hortii-full.png` | Logo completa (nova) |
-| `src/assets/logo-hortii-3d.png` | Manter icone atual |
-| `src/components/BrandLogo.tsx` | Usar imagens reais |
-| `src/components/Layout.tsx` | Ajustar tamanhos |
-| `src/pages/Login.tsx` | Simplificar para usar imagem |
-| `public/favicon.ico` | Criar a partir do icone |
-
-### Tamanhos Recomendados
-
-```text
-Sidebar:        Logo completa ~200px largura
-Login:          Logo completa ~280px largura  
-Header mobile:  Icone 48px
-PWA 192:        Icone centralizado
-PWA 512:        Icone centralizado
-```
+- `src/pages/Login.tsx` (1 arquivo)

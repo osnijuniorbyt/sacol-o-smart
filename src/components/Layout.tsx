@@ -169,36 +169,34 @@ export default function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo com fundo premium - tema pôr do sol */}
+          {/* Logo com fundo premium - tema pôr do sol integrado */}
           <div className="p-4 border-b border-[hsl(40,70%,55%,0.25)]">
-            {/* Container com gradiente de pôr do sol */}
+            {/* Container sem fundo - a logo já tem o gradiente de pôr do sol */}
             <div className="relative rounded-xl overflow-hidden">
-              {/* Fundo gradiente pôr do sol */}
-              <div className="absolute inset-0 bg-gradient-to-b from-[hsl(42,30%,92%)] via-[hsl(40,40%,85%)] to-[hsl(35,50%,75%)]" />
+              {/* Borda metálica dourada */}
+              <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-[hsl(40,80%,60%,0.5)]" />
               
-              {/* Brilho sutil dourado intensificado */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[hsl(30,60%,50%,0.2)] via-transparent to-[hsl(45,50%,80%,0.1)]" />
-              
-              {/* Borda metálica dourada com shimmer */}
-              <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-[hsl(40,80%,60%,0.4)]" />
+              {/* Shimmer na borda inferior */}
               <div 
-                className="absolute bottom-0 left-0 right-0 h-[2px] animate-shimmer"
+                className="absolute bottom-0 left-0 right-0 h-[2px] animate-shimmer z-10"
                 style={{
                   background: 'linear-gradient(90deg, transparent, hsl(40,85%,65%), hsl(45,40%,90%), hsl(40,85%,65%), transparent)',
                   backgroundSize: '200% 100%',
                 }}
               />
               
-              {/* Conteúdo */}
-              <div className="relative flex items-center justify-between gap-2 p-4">
-                <BrandLogo size="md" variant="full" />
+              {/* Conteúdo - logo preenche o container */}
+              <div className="relative flex items-center justify-between">
+                <div className="flex-1">
+                  <BrandLogo size="md" variant="full" className="w-full" />
+                </div>
                 
                 {/* Close button for mobile */}
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setSidebarOpen(false)}
-                  className="lg:hidden h-10 w-10 text-[hsl(30,50%,35%)] hover:text-[hsl(30,60%,25%)] hover:bg-[hsl(40,40%,80%,0.5)] flex-shrink-0"
+                  className="lg:hidden absolute top-2 right-2 h-10 w-10 text-[hsl(30,50%,35%)] hover:text-[hsl(30,60%,25%)] hover:bg-[hsl(40,40%,80%,0.5)] flex-shrink-0 z-20"
                 >
                   <X className="h-5 w-5" />
                 </Button>

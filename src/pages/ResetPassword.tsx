@@ -10,25 +10,45 @@ import { KeyRound, CheckCircle } from 'lucide-react';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const { updatePassword, session } = useAuth();
+  const { updatePassword, session, loading: authLoading } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [waitingForSession, setWaitingForSession] = useState(true);
 
   // Verificar se há sessão ativa (token do email)
   useEffect(() => {
-    if (!session) {
-      // Aguardar um pouco para o Supabase processar o token da URL
-      const timer = setTimeout(() => {
-        if (!session) {
-          navigate('/login');
-        }
-      }, 2000);
-      return () => clearTimeout(timer);
+    if (authLoading) return;
+    
+    if (session) {
+      setWaitingForSession(false);
+      return;
     }
-  }, [session, navigate]);
+
+    // Aguardar um pouco para o Supabase processar o token da URL
+    const timer = setTimeout(() => {
+      if (!session) {
+        navigate('/login');
+      }
+      setWaitingForSession(false);
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, [session, authLoading, navigate]);
+
+  // Mostrar loading enquanto aguarda sessão
+  if (authLoading || waitingForSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+          <p className="text-amber-200 text-sm">Verificando link...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

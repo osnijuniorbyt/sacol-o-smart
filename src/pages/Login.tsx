@@ -84,8 +84,8 @@ export default function Login() {
       
       {/* Card principal com estética premium */}
       <div className="relative w-full max-w-md">
-        {/* Borda metálica externa */}
-        <div className="absolute -inset-[2px] rounded-2xl bg-gradient-to-b from-[hsl(36,70%,60%)] via-[hsl(36,60%,45%)] to-[hsl(36,50%,30%)] opacity-60" />
+        {/* Borda metálica externa com tons dourados de pôr do sol */}
+        <div className="absolute -inset-[2px] rounded-2xl bg-gradient-to-b from-[hsl(40,80%,70%)] via-[hsl(36,75%,55%)] to-[hsl(30,70%,40%)] opacity-70" />
         
         {/* Card interno */}
         <div className="relative rounded-2xl overflow-hidden">
@@ -109,20 +109,20 @@ export default function Login() {
                   className="absolute inset-0 w-full h-full object-cover object-center"
                 />
                 
-                {/* Gradiente sutil na base */}
+                {/* Gradiente sutil na base com tons de pôr do sol */}
                 <div 
-                  className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
+                  className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none"
                   style={{
-                    background: 'linear-gradient(to bottom, transparent 0%, hsl(36,30%,82%) 100%)',
+                    background: 'linear-gradient(to bottom, transparent 0%, hsl(35,50%,75%) 100%)',
                   }}
                 />
                 
-                {/* Borda metálica inferior com shimmer */}
-                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(36,70%,55%)] to-transparent z-10" />
+                {/* Borda metálica inferior dourada com shimmer */}
+                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(38,80%,60%)] to-transparent z-10" />
                 <div 
                   className="absolute bottom-0 left-0 right-0 h-[3px] animate-shimmer z-10"
                   style={{
-                    background: 'linear-gradient(90deg, transparent, hsl(36,80%,70%), hsl(40,30%,95%), hsl(36,80%,70%), transparent)',
+                    background: 'linear-gradient(90deg, transparent, hsl(40,85%,65%), hsl(45,40%,90%), hsl(40,85%,65%), transparent)',
                     backgroundSize: '200% 100%',
                   }}
                 />

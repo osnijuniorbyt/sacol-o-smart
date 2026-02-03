@@ -109,19 +109,19 @@ export default function Layout({ children }: LayoutProps) {
   }, [sidebarOpen]);
 
   return (
-    <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-emerald-50/30">
-      {/* Mobile header - Logo centralizada com safe area */}
-      <header className="lg:hidden flex items-center justify-between p-4 pt-safe border-b bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
+    <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-[hsl(40,30%,94%)] via-[hsl(40,25%,96%)] to-[hsl(40,20%,92%)]">
+      {/* Mobile header - Premium com borda laranja */}
+      <header className="lg:hidden flex items-center justify-between p-4 pt-safe border-b-2 border-primary/30 bg-gradient-to-r from-[hsl(150,50%,12%)] via-[hsl(150,45%,16%)] to-[hsl(150,50%,12%)] shadow-lg">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="h-12 w-12 text-amber-100 hover:text-white hover:bg-emerald-700/50"
+          className="h-12 w-12 text-primary/80 hover:text-primary hover:bg-white/10"
         >
           <Menu className="h-6 w-6" />
         </Button>
         
-        {/* Logo centralizada - maior destaque */}
+        {/* Logo centralizada */}
         <BrandLogo size="sm" variant="icon-only" />
         
         <SyncStatusIndicator />
@@ -161,10 +161,10 @@ export default function Layout({ children }: LayoutProps) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Premium dark green */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-72 bg-gradient-to-b from-emerald-900 via-emerald-850 to-emerald-950 border-r border-emerald-700/30 transform transition-transform duration-300 ease-out lg:translate-x-0 shadow-2xl",
+          "fixed top-0 left-0 z-50 h-full w-72 bg-gradient-to-b from-[hsl(150,50%,14%)] via-[hsl(150,45%,12%)] to-[hsl(150,50%,10%)] border-r-2 border-primary/20 transform transition-transform duration-300 ease-out lg:translate-x-0 shadow-2xl",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -212,8 +212,8 @@ export default function Layout({ children }: LayoutProps) {
                   className={cn(
                     "flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all",
                     isActive
-                      ? "bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 text-white shadow-lg shadow-amber-900/50 border-t border-amber-300/30"
-                      : "hover:bg-emerald-800/50 text-emerald-200 hover:text-amber-200 active:bg-emerald-700/50"
+                      ? "bg-gradient-to-r from-primary via-[hsl(36,90%,45%)] to-primary text-white shadow-lg shadow-[hsl(36,90%,30%,0.5)] border-t border-[hsl(36,80%,70%,0.3)]"
+                      : "hover:bg-white/5 text-[hsl(40,30%,80%)] hover:text-primary active:bg-white/10"
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -232,10 +232,10 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Logout button */}
-          <div className="p-3 border-t border-emerald-700/30">
+          <div className="p-3 border-t border-primary/20">
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-emerald-300 hover:text-amber-200 hover:bg-emerald-800/50"
+              className="w-full justify-start gap-3 h-12 text-[hsl(40,30%,70%)] hover:text-primary hover:bg-white/5"
               onClick={signOut}
             >
               <LogOut className="h-5 w-5" />
@@ -245,8 +245,8 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="lg:ml-72 min-h-screen bg-gradient-to-br from-amber-50/50 via-white to-emerald-50/30">
+      {/* Main content - Premium cream background */}
+      <main className="lg:ml-72 min-h-screen bg-gradient-to-br from-[hsl(40,30%,94%)] via-[hsl(40,25%,96%)] to-[hsl(40,20%,92%)]">
         <div className="p-4 lg:p-6 pb-safe">
           {children}
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,8 @@ import { KeyRound, CheckCircle } from 'lucide-react';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const { updatePassword, session, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const { updatePassword, session, loading: authLoading, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,9 +19,20 @@ export default function ResetPassword() {
   const [success, setSuccess] = useState(false);
   const [waitingForSession, setWaitingForSession] = useState(true);
 
+  // Verificar se a URL contém parâmetros de recuperação
+  const hasRecoveryParams = location.hash.includes('type=recovery') || 
+                            location.search.includes('type=recovery') ||
+                            isPasswordRecovery;
+
   // Verificar se há sessão ativa (token do email)
   useEffect(() => {
     if (authLoading) return;
+    
+    // Se temos uma sessão válida e parâmetros de recuperação, mostrar formulário
+    if (session && hasRecoveryParams) {
+      setWaitingForSession(false);
+      return;
+    }
     
     if (session) {
       setWaitingForSession(false);
@@ -36,7 +48,7 @@ export default function ResetPassword() {
     }, 3000);
     
     return () => clearTimeout(timer);
-  }, [session, authLoading, navigate]);
+  }, [session, authLoading, navigate, hasRecoveryParams]);
 
   // Mostrar loading enquanto aguarda sessão
   if (authLoading || waitingForSession) {
@@ -71,6 +83,7 @@ export default function ResetPassword() {
     if (error) {
       setError(error.message);
     } else {
+      clearPasswordRecovery();
       setSuccess(true);
       setTimeout(() => {
         navigate('/');

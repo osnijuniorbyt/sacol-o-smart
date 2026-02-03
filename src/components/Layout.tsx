@@ -169,8 +169,9 @@ export default function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo com fundo premium harmonizado */}
+          {/* Logo com fundo premium que combina com estética metálica */}
           <div className="p-4 border-b border-amber-500/20">
+            {/* Container com gradiente que realça a logo metálica */}
             <div className="relative rounded-xl overflow-hidden">
               {/* Fundo gradiente premium */}
               <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
@@ -195,10 +196,6 @@ export default function Layout({ children }: LayoutProps) {
                   <X className="h-5 w-5" />
                 </Button>
               </div>
-              
-              {/* Borda metálica inferior com shimmer - igual ao login */}
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[hsl(36,70%,55%)] to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] animate-shimmer" />
             </div>
           </div>
 

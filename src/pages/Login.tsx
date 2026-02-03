@@ -71,21 +71,19 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col relative overflow-x-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 pt-safe pb-safe relative overflow-hidden">
       {/* Background premium com gradiente verde escuro */}
-      <div className="fixed inset-0 bg-gradient-to-br from-[hsl(150,50%,12%)] via-[hsl(150,45%,16%)] to-[hsl(150,50%,10%)]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(150,50%,12%)] via-[hsl(150,45%,16%)] to-[hsl(150,50%,10%)]" />
       
       {/* Decoração lateral - faixa laranja */}
-      <div className="fixed left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-primary via-[hsl(36,90%,45%)] to-primary z-10" />
-      <div className="fixed right-0 top-0 bottom-0 w-2 bg-gradient-to-b from-primary via-[hsl(36,90%,45%)] to-primary z-10" />
+      <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-primary via-[hsl(36,90%,45%)] to-primary" />
+      <div className="absolute right-0 top-0 bottom-0 w-2 bg-gradient-to-b from-primary via-[hsl(36,90%,45%)] to-primary" />
       
       {/* Efeito de brilho sutil */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(36,90%,50%,0.1)_0%,_transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(36,90%,50%,0.1)_0%,_transparent_50%)]" />
       
-      {/* Container scrollável para suportar teclado virtual */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden flex items-center justify-center p-4 pt-safe pb-safe pl-safe pr-safe min-h-[100dvh]">
-        {/* Card principal com estética premium */}
-        <div className="relative w-full max-w-md my-auto">
+      {/* Card principal com estética premium */}
+      <div className="relative w-full max-w-md">
         {/* Borda metálica externa */}
         <div className="absolute -inset-[2px] rounded-2xl bg-gradient-to-b from-[hsl(36,70%,60%)] via-[hsl(36,60%,45%)] to-[hsl(36,50%,30%)] opacity-60" />
         
@@ -100,19 +98,34 @@ export default function Login() {
           }} />
           
           <div className="relative p-4 sm:p-6">
-            {/* Logo Container Premium - Simplificado com fundo integrado */}
+            {/* Logo Container Premium - Container maior com logo integrada */}
             <div className="relative mb-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 overflow-hidden rounded-t-2xl">
+              {/* Container maior para a logo */}
               <div className="relative h-[280px] sm:h-[320px]">
+                {/* Logo preenchendo o container */}
                 <img 
                   src={logoLogin}
                   alt="Horti Campos - Hortifruti e Produtos Naturais"
                   className="absolute inset-0 w-full h-full object-cover object-center"
-                  loading="eager"
+                />
+                
+                {/* Gradiente sutil na base */}
+                <div 
+                  className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(to bottom, transparent 0%, hsl(36,30%,82%) 100%)',
+                  }}
                 />
                 
                 {/* Borda metálica inferior com shimmer */}
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(36,70%,55%)] to-transparent z-10" />
-                <div className="absolute bottom-0 left-0 right-0 h-[3px] animate-shimmer z-10" />
+                <div 
+                  className="absolute bottom-0 left-0 right-0 h-[3px] animate-shimmer z-10"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent, hsl(36,80%,70%), hsl(40,30%,95%), hsl(36,80%,70%), transparent)',
+                    backgroundSize: '200% 100%',
+                  }}
+                />
               </div>
             </div>
             
@@ -237,7 +250,6 @@ export default function Login() {
             </Tabs>
           </div>
         </div>
-      </div>
       </div>
 
       {/* Reset Password Dialog */}

@@ -165,23 +165,23 @@ export default function Layout({ children }: LayoutProps) {
       {/* Sidebar - Premium dark green com tema pôr do sol */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-64 bg-gradient-to-b from-[hsl(150,50%,14%)] via-[hsl(150,45%,12%)] to-[hsl(150,50%,10%)] border-r-2 border-[hsl(40,70%,50%,0.25)] transform transition-transform duration-300 ease-out lg:translate-x-0 lg:left-3 lg:top-3 lg:bottom-3 lg:h-auto lg:rounded-2xl shadow-2xl",
+          "fixed top-0 left-0 z-50 h-full w-64 bg-gradient-to-b from-[hsl(150,50%,14%)] via-[hsl(150,45%,12%)] to-[hsl(150,50%,10%)] transform transition-transform duration-300 ease-out lg:translate-x-0 lg:left-3 lg:top-3 lg:bottom-3 lg:h-auto lg:rounded-2xl shadow-2xl lg:border lg:border-[hsl(40,60%,55%,0.3)]",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full lg:rounded-2xl overflow-hidden">
           {/* Logo preenchendo o container - tema pôr do sol sutil */}
-          <div className="relative border-b border-[hsl(40,50%,55%,0.15)]">
-            {/* Container da logo - altura fixa para preencher melhor */}
-            <div className="relative overflow-hidden h-[140px]">
+          <div className="relative border-b border-[hsl(40,50%,55%,0.2)]">
+            {/* Container da logo - altura fixa com bordas arredondadas no desktop */}
+            <div className="relative overflow-hidden h-[140px] lg:rounded-t-2xl">
               {/* Borda metálica sutil */}
-              <div className="absolute inset-0 ring-1 ring-inset ring-[hsl(40,60%,60%,0.3)]" />
+              <div className="absolute inset-0 lg:rounded-t-2xl ring-1 ring-inset ring-[hsl(40,60%,60%,0.25)]" />
               
               {/* Shimmer sutil na borda inferior */}
               <div 
-                className="absolute bottom-0 left-0 right-0 h-[1px] animate-shimmer z-10 opacity-60"
+                className="absolute bottom-0 left-0 right-0 h-[2px] animate-shimmer z-10 opacity-50"
                 style={{
-                  background: 'linear-gradient(90deg, transparent, hsl(40,70%,65%), hsl(45,30%,85%), hsl(40,70%,65%), transparent)',
+                  background: 'linear-gradient(90deg, transparent, hsl(40,70%,60%), hsl(45,30%,85%), hsl(40,70%,60%), transparent)',
                   backgroundSize: '200% 100%',
                 }}
               />
@@ -190,7 +190,7 @@ export default function Layout({ children }: LayoutProps) {
               <img 
                 src={logoFull}
                 alt="Horti Campos"
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-center lg:rounded-t-2xl"
               />
               
               {/* Close button for mobile - posicionado sobre a logo */}

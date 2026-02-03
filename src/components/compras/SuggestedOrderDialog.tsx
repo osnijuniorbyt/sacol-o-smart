@@ -503,11 +503,11 @@ export function SuggestedOrderDialog({
                         <Minus className="h-4 w-4" />
                       </Button>
                       <Input
-                        type="number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={item.suggested_qty}
                         onChange={(e) => handleSetQuantity(item.product_id, parseInt(e.target.value) || 0)}
                         className="w-14 h-11 text-center font-mono text-lg"
-                        min="0"
                       />
                       <Button
                         variant="outline"
@@ -601,7 +601,7 @@ export function SuggestedOrderDialog({
           
           <SuggestionsContent />
           
-          <DrawerFooter className="border-t pt-3 pb-safe">
+          <DrawerFooter className="border-t pt-3 fixed-bottom-safe">
             <FooterContent />
           </DrawerFooter>
         </DrawerContent>

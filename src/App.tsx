@@ -28,7 +28,7 @@ function GlobalHooks({ children }: { children: React.ReactNode }) {
 }
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading, isApproved } = useAuth();
+  const { user, loading, isApproved, isPasswordRecovery } = useAuth();
 
   if (loading) {
     return (
@@ -36,6 +36,11 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
       </div>
     );
+  }
+
+  // Se está em modo de recuperação de senha, redirecionar para reset-password
+  if (isPasswordRecovery) {
+    return <Navigate to="/reset-password" replace />;
   }
 
   if (!user) {
@@ -60,7 +65,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading, isApproved, isAdmin } = useAuth();
+  const { user, loading, isApproved, isAdmin, isPasswordRecovery } = useAuth();
 
   if (loading || isApproved === null) {
     return (
@@ -68,6 +73,11 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
       </div>
     );
+  }
+
+  // Se está em modo de recuperação de senha, redirecionar para reset-password
+  if (isPasswordRecovery) {
+    return <Navigate to="/reset-password" replace />;
   }
 
   if (!user) {
@@ -86,7 +96,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading, isApproved } = useAuth();
+  const { user, loading, isApproved, isPasswordRecovery } = useAuth();
 
   if (loading) {
     return (
@@ -94,6 +104,11 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
       </div>
     );
+  }
+
+  // Se está em modo de recuperação de senha, redirecionar para reset-password
+  if (isPasswordRecovery) {
+    return <Navigate to="/reset-password" replace />;
   }
 
   if (user) {
@@ -111,7 +126,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function PendingRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading, isApproved } = useAuth();
+  const { user, loading, isApproved, isPasswordRecovery } = useAuth();
 
   if (loading) {
     return (
@@ -119,6 +134,11 @@ function PendingRoute({ children }: { children: React.ReactNode }) {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
       </div>
     );
+  }
+
+  // Se está em modo de recuperação de senha, redirecionar para reset-password
+  if (isPasswordRecovery) {
+    return <Navigate to="/reset-password" replace />;
   }
 
   if (!user) {

@@ -8,12 +8,14 @@ interface AuthContextType {
   loading: boolean;
   isApproved: boolean | null;
   isAdmin: boolean;
+  isPasswordRecovery: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   checkApprovalStatus: () => Promise<void>;
+  clearPasswordRecovery: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isApproved, setIsApproved] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   const checkApprovalStatus = useCallback(async () => {
     if (!user) {
@@ -60,7 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up auth state listener BEFORE getting session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        // Detectar evento de recuperação de senha
+        if (event === 'PASSWORD_RECOVERY') {
+          setIsPasswordRecovery(true);
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -120,7 +128,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.updateUser({
       password: newPassword
     });
+    if (!error) {
+      setIsPasswordRecovery(false);
+    }
     return { error };
+  };
+
+  const clearPasswordRecovery = () => {
+    setIsPasswordRecovery(false);
   };
 
   return (
@@ -130,12 +145,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading, 
       isApproved,
       isAdmin,
+      isPasswordRecovery,
       signIn, 
       signUp, 
       signOut,
       resetPassword,
       updatePassword,
-      checkApprovalStatus
+      checkApprovalStatus,
+      clearPasswordRecovery
     }}>
       {children}
     </AuthContext.Provider>

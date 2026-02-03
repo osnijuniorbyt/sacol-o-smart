@@ -12,12 +12,12 @@ import {
   LogOut,
   Menu,
   X,
-  Leaf,
   Truck,
   Building2,
 } from 'lucide-react';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
+import logoHorticampos from '@/assets/logo-horticampos.jpeg';
 
 interface LayoutProps {
   children: ReactNode;
@@ -46,8 +46,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Mobile header */}
       <header className="lg:hidden flex items-center justify-between p-4 border-b bg-card">
         <div className="flex items-center gap-2">
-          <Leaf className="h-6 w-6 text-primary" />
-          <span className="font-semibold">HortiFruti</span>
+          <img src={logoHorticampos} alt="Horti Campos" className="h-8 w-auto object-contain" />
           <SyncStatusIndicator />
         </div>
         <Button
@@ -77,15 +76,13 @@ export default function Layout({ children }: LayoutProps) {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                <Leaf className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="font-semibold">HortiFruti</h1>
-                <p className="text-xs text-muted-foreground">Sistema de Gestão</p>
-              </div>
+          <div className="p-4 border-b">
+            <div className="flex items-center justify-center">
+              <img 
+                src={logoHorticampos} 
+                alt="Horti Campos - Hortifruti e Produtos Naturais" 
+                className="h-16 w-auto object-contain"
+              />
             </div>
           </div>
 

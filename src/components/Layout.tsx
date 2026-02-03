@@ -165,7 +165,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Sidebar - Premium dark green com tema pôr do sol */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-72 bg-gradient-to-b from-[hsl(150,50%,14%)] via-[hsl(150,45%,12%)] to-[hsl(150,50%,10%)] border-r-2 border-[hsl(40,70%,50%,0.25)] transform transition-transform duration-300 ease-out lg:translate-x-0 shadow-2xl",
+          "fixed top-0 left-0 z-50 h-full w-64 bg-gradient-to-b from-[hsl(150,50%,14%)] via-[hsl(150,45%,12%)] to-[hsl(150,50%,10%)] border-r-2 border-[hsl(40,70%,50%,0.25)] transform transition-transform duration-300 ease-out lg:translate-x-0 lg:left-3 lg:top-3 lg:bottom-3 lg:h-auto lg:rounded-2xl shadow-2xl",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -252,7 +252,7 @@ export default function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* Main content - Premium sunset cream background */}
-      <main className="lg:ml-72 min-h-screen bg-gradient-to-br from-[hsl(42,35%,95%)] via-[hsl(40,30%,93%)] to-[hsl(38,40%,90%)]">
+      <main className="lg:ml-[280px] min-h-screen bg-gradient-to-br from-[hsl(42,35%,95%)] via-[hsl(40,30%,93%)] to-[hsl(38,40%,90%)]">
         <div className="p-4 lg:p-6 pb-safe">
           {children}
         </div>

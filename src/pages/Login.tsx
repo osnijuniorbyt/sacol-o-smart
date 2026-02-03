@@ -101,7 +101,7 @@ export default function Login() {
             {/* Logo Container Premium - Container maior com logo integrada */}
             <div className="relative mb-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 overflow-hidden rounded-t-2xl">
               {/* Container maior para a logo */}
-              <div className="relative h-[280px] sm:h-[320px] bg-[hsl(40,15%,92%)]">
+              <div className="relative h-[280px] sm:h-[320px]">
                 {/* Logo com fundo harmonizado */}
                 <img 
                   src={logoLogin}

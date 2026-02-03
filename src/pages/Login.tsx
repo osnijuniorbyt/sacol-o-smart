@@ -218,9 +218,19 @@ export default function Login() {
             </div>
             
             {resetMessage && (
-              <p className={`text-sm ${resetMessage.includes('enviado') ? 'text-emerald-600' : 'text-destructive'}`}>
-                {resetMessage}
-              </p>
+              <div className={`text-sm ${resetMessage.includes('enviado') ? 'text-emerald-600' : 'text-destructive'}`}>
+                <p className="font-medium">{resetMessage}</p>
+                {resetMessage.includes('enviado') && (
+                  <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                    <p className="text-xs text-amber-700 font-medium mb-1">📧 Dicas importantes:</p>
+                    <ul className="text-xs text-amber-600 space-y-1 list-disc list-inside">
+                      <li>Verifique também a pasta de spam</li>
+                      <li>Se o botão não aparecer, copie o link do email</li>
+                      <li>O link expira em 1 hora</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
             )}
             
             <DialogFooter>

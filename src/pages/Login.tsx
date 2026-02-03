@@ -111,9 +111,9 @@ export default function Login() {
                 
                 {/* Gradiente saturado na base - transição para a borda */}
                 <div 
-                  className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+                  className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
                   style={{
-                    background: 'linear-gradient(to bottom, transparent 0%, hsl(38,25%,88%) 60%, hsl(36,40%,82%) 100%)',
+                    background: 'linear-gradient(to bottom, transparent 0%, hsl(36,35%,85%) 40%, hsl(36,55%,75%) 80%, hsl(36,65%,68%) 100%)',
                   }}
                 />
                 

@@ -109,9 +109,9 @@ export default function Layout({ children }: LayoutProps) {
   }, [sidebarOpen]);
 
   return (
-    <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-[hsl(40,30%,94%)] via-[hsl(40,25%,96%)] to-[hsl(40,20%,92%)]">
-      {/* Mobile header - Premium com borda laranja */}
-      <header className="lg:hidden flex items-center justify-between p-4 pt-safe border-b-2 border-primary/30 bg-gradient-to-r from-[hsl(150,50%,12%)] via-[hsl(150,45%,16%)] to-[hsl(150,50%,12%)] shadow-lg">
+    <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-[hsl(42,35%,95%)] via-[hsl(40,30%,93%)] to-[hsl(38,40%,90%)]">
+      {/* Mobile header - Premium com tema pôr do sol */}
+      <header className="lg:hidden flex items-center justify-between p-4 pt-safe border-b-2 border-[hsl(38,80%,55%,0.4)] bg-gradient-to-r from-[hsl(150,50%,12%)] via-[hsl(150,45%,16%)] to-[hsl(150,50%,12%)] shadow-lg shadow-[hsl(30,60%,30%,0.3)]">
         <Button
           variant="ghost"
           size="icon"
@@ -135,20 +135,20 @@ export default function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="relative flex items-center">
-          {/* Glow effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-amber-400/40 to-transparent blur-lg w-8 h-20 rounded-r-full" />
+          {/* Glow effect - sunset */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[hsl(38,80%,55%,0.5)] to-transparent blur-lg w-8 h-20 rounded-r-full" />
           
-          {/* Main indicator */}
-          <div className="relative bg-gradient-to-b from-emerald-800 via-emerald-700 to-emerald-800 rounded-r-2xl shadow-lg border-y border-r border-amber-500/30 overflow-hidden">
+          {/* Main indicator - sunset theme */}
+          <div className="relative bg-gradient-to-b from-[hsl(150,45%,14%)] via-[hsl(150,40%,12%)] to-[hsl(150,45%,10%)] rounded-r-2xl shadow-lg border-y border-r border-[hsl(40,75%,55%,0.4)] overflow-hidden">
             <div className="px-1.5 py-4 flex flex-col items-center gap-1">
-              {/* Animated chevrons */}
-              <ChevronRight className="h-4 w-4 text-amber-400 animate-[pulse_1.5s_ease-in-out_infinite]" />
-              <ChevronRight className="h-4 w-4 text-amber-300/70 animate-[pulse_1.5s_ease-in-out_0.2s_infinite]" />
-              <ChevronRight className="h-4 w-4 text-amber-200/50 animate-[pulse_1.5s_ease-in-out_0.4s_infinite]" />
+              {/* Animated chevrons - sunset colors */}
+              <ChevronRight className="h-4 w-4 text-[hsl(45,85%,65%)] animate-[pulse_1.5s_ease-in-out_infinite]" />
+              <ChevronRight className="h-4 w-4 text-[hsl(40,80%,55%,0.7)] animate-[pulse_1.5s_ease-in-out_0.2s_infinite]" />
+              <ChevronRight className="h-4 w-4 text-[hsl(35,75%,50%,0.5)] animate-[pulse_1.5s_ease-in-out_0.4s_infinite]" />
             </div>
             
             {/* Shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[hsl(45,60%,80%,0.15)] via-transparent to-transparent pointer-events-none" />
           </div>
         </div>
       </div>
@@ -161,26 +161,33 @@ export default function Layout({ children }: LayoutProps) {
         />
       )}
 
-      {/* Sidebar - Premium dark green */}
+      {/* Sidebar - Premium dark green com tema pôr do sol */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-72 bg-gradient-to-b from-[hsl(150,50%,14%)] via-[hsl(150,45%,12%)] to-[hsl(150,50%,10%)] border-r-2 border-primary/20 transform transition-transform duration-300 ease-out lg:translate-x-0 shadow-2xl",
+          "fixed top-0 left-0 z-50 h-full w-72 bg-gradient-to-b from-[hsl(150,50%,14%)] via-[hsl(150,45%,12%)] to-[hsl(150,50%,10%)] border-r-2 border-[hsl(40,70%,50%,0.25)] transform transition-transform duration-300 ease-out lg:translate-x-0 shadow-2xl",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo com fundo premium que combina com estética metálica */}
-          <div className="p-4 border-b border-amber-500/20">
-            {/* Container com gradiente que realça a logo metálica */}
+          {/* Logo com fundo premium - tema pôr do sol */}
+          <div className="p-4 border-b border-[hsl(40,70%,55%,0.25)]">
+            {/* Container com gradiente de pôr do sol */}
             <div className="relative rounded-xl overflow-hidden">
-              {/* Fundo gradiente premium */}
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+              {/* Fundo gradiente pôr do sol */}
+              <div className="absolute inset-0 bg-gradient-to-b from-[hsl(42,30%,92%)] via-[hsl(40,40%,85%)] to-[hsl(35,50%,75%)]" />
               
-              {/* Brilho sutil dourado */}
-              <div className="absolute inset-0 bg-gradient-to-t from-amber-900/20 via-transparent to-amber-500/10" />
+              {/* Brilho sutil dourado intensificado */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[hsl(30,60%,50%,0.2)] via-transparent to-[hsl(45,50%,80%,0.1)]" />
               
-              {/* Borda metálica sutil */}
-              <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-amber-400/20" />
+              {/* Borda metálica dourada com shimmer */}
+              <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-[hsl(40,80%,60%,0.4)]" />
+              <div 
+                className="absolute bottom-0 left-0 right-0 h-[2px] animate-shimmer"
+                style={{
+                  background: 'linear-gradient(90deg, transparent, hsl(40,85%,65%), hsl(45,40%,90%), hsl(40,85%,65%), transparent)',
+                  backgroundSize: '200% 100%',
+                }}
+              />
               
               {/* Conteúdo */}
               <div className="relative flex items-center justify-between gap-2 p-4">
@@ -191,7 +198,7 @@ export default function Layout({ children }: LayoutProps) {
                   variant="ghost"
                   size="icon"
                   onClick={() => setSidebarOpen(false)}
-                  className="lg:hidden h-10 w-10 text-amber-100 hover:text-white hover:bg-white/10 flex-shrink-0"
+                  className="lg:hidden h-10 w-10 text-[hsl(30,50%,35%)] hover:text-[hsl(30,60%,25%)] hover:bg-[hsl(40,40%,80%,0.5)] flex-shrink-0"
                 >
                   <X className="h-5 w-5" />
                 </Button>
@@ -232,10 +239,10 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Logout button */}
-          <div className="p-3 border-t border-primary/20">
+          <div className="p-3 border-t border-[hsl(40,70%,55%,0.25)]">
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-[hsl(40,30%,70%)] hover:text-primary hover:bg-white/5"
+              className="w-full justify-start gap-3 h-12 text-[hsl(42,35%,75%)] hover:text-[hsl(45,85%,65%)] hover:bg-white/5"
               onClick={signOut}
             >
               <LogOut className="h-5 w-5" />
@@ -245,8 +252,8 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </aside>
 
-      {/* Main content - Premium cream background */}
-      <main className="lg:ml-72 min-h-screen bg-gradient-to-br from-[hsl(40,30%,94%)] via-[hsl(40,25%,96%)] to-[hsl(40,20%,92%)]">
+      {/* Main content - Premium sunset cream background */}
+      <main className="lg:ml-72 min-h-screen bg-gradient-to-br from-[hsl(42,35%,95%)] via-[hsl(40,30%,93%)] to-[hsl(38,40%,90%)]">
         <div className="p-4 lg:p-6 pb-safe">
           {children}
         </div>

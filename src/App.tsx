@@ -14,6 +14,7 @@ import Quebras from "@/pages/Quebras";
 import Produtos from "@/pages/Produtos";
 import Compras from "@/pages/Compras";
 import Fornecedores from "@/pages/Fornecedores";
+import Protocolo from "@/pages/Protocolo";
 import PendingApproval from "@/pages/PendingApproval";
 import AdminUsers from "@/pages/AdminUsers";
 import ResetPassword from "@/pages/ResetPassword";
@@ -229,6 +230,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <Fornecedores />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/protocolo/:orderId"
+        element={
+          <PrivateRoute>
+            <Protocolo />
           </PrivateRoute>
         }
       />

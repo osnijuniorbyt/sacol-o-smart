@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,6 @@ import {
 import { PurchaseOrder, PURCHASE_ORDER_STATUS_LABELS } from '@/types/database';
 import { ReceivingDialog } from './ReceivingDialog';
 import { EditOrderDialog } from './EditOrderDialog';
-import { ClosingProtocolDialog } from './ClosingProtocolDialog';
 import { PhotoGallery } from './PhotoGallery';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -45,9 +45,9 @@ interface OrdersListProps {
 }
 
 export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: OrdersListProps) {
+  const navigate = useNavigate();
   const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
-  const [closingOrder, setClosingOrder] = useState<PurchaseOrder | null>(null);
 
   const statusColors: Record<string, string> = {
     rascunho: 'bg-muted text-muted-foreground',
@@ -182,7 +182,7 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
                     <Button
                       variant="outline"
                       className="flex-1 h-12"
-                      onClick={() => setClosingOrder(order)}
+                      onClick={() => navigate(`/protocolo/${order.id}`)}
                     >
                       <FileText className="mr-2 h-5 w-5" />
                       Protocolo Fechamento
@@ -240,13 +240,6 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
         order={editingOrder}
         open={!!editingOrder}
         onOpenChange={(open) => !open && setEditingOrder(null)}
-        onSuccess={onRefresh}
-      />
-
-      <ClosingProtocolDialog
-        order={closingOrder}
-        open={!!closingOrder}
-        onOpenChange={(open) => !open && setClosingOrder(null)}
         onSuccess={onRefresh}
       />
     </>

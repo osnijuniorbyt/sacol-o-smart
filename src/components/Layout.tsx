@@ -172,8 +172,8 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex flex-col h-full">
           {/* Logo preenchendo o container - tema pôr do sol sutil */}
           <div className="relative border-b border-[hsl(40,50%,55%,0.15)]">
-            {/* Container da logo - sem padding */}
-            <div className="relative overflow-hidden">
+            {/* Container da logo - altura fixa para preencher melhor */}
+            <div className="relative overflow-hidden h-[140px]">
               {/* Borda metálica sutil */}
               <div className="absolute inset-0 ring-1 ring-inset ring-[hsl(40,60%,60%,0.3)]" />
               
@@ -186,11 +186,11 @@ export default function Layout({ children }: LayoutProps) {
                 }}
               />
               
-              {/* Logo preenchendo totalmente */}
+              {/* Logo preenchendo totalmente o container */}
               <img 
                 src={logoFull}
                 alt="Horti Campos"
-                className="w-full h-auto block"
+                className="w-full h-full object-cover object-center"
               />
               
               {/* Close button for mobile - posicionado sobre a logo */}
@@ -198,7 +198,7 @@ export default function Layout({ children }: LayoutProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden absolute top-3 right-3 h-9 w-9 text-[hsl(30,40%,40%)] hover:text-[hsl(30,50%,30%)] hover:bg-[hsl(40,30%,85%,0.7)] flex-shrink-0 z-20 rounded-full"
+                className="lg:hidden absolute top-2 right-2 h-8 w-8 text-[hsl(30,40%,40%)] hover:text-[hsl(30,50%,30%)] hover:bg-[hsl(40,30%,85%,0.7)] flex-shrink-0 z-20 rounded-full"
               >
                 <X className="h-4 w-4" />
               </Button>

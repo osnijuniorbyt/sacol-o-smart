@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Leaf } from 'lucide-react';
+import logoHorticampos from '@/assets/logo-horticampos.jpeg';
 
 export default function Login() {
   const { signIn, signUp } = useAuth();
@@ -46,10 +46,14 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4 pt-safe pb-safe">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
-            <Leaf className="h-8 w-8 text-primary-foreground" />
+          <div className="mx-auto mb-4">
+            <img 
+              src={logoHorticampos} 
+              alt="Horti Campos - Hortifruti e Produtos Naturais" 
+              className="h-32 w-auto object-contain"
+            />
           </div>
-          <CardTitle className="text-2xl">HortiFruti</CardTitle>
+          <CardTitle className="text-2xl">Horti Campos</CardTitle>
           <CardDescription>Sistema de Gestão</CardDescription>
         </CardHeader>
         <CardContent>

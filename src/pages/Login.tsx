@@ -112,9 +112,9 @@ export default function Login() {
                 
                 {/* Gradiente pôr do sol na base */}
                 <div 
-                  className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
+                  className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
                   style={{
-                    background: 'linear-gradient(to bottom, transparent 0%, hsl(36,45%,80%) 100%)',
+                    background: 'linear-gradient(to bottom, transparent 0%, hsl(38,55%,88%) 100%)',
                   }}
                 />
                 

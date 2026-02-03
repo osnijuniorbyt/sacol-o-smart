@@ -43,20 +43,26 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 pt-safe pb-safe">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950 p-4 pt-safe pb-safe">
+      <Card className="w-full max-w-md bg-gradient-to-b from-white to-amber-50/50 shadow-2xl shadow-black/40 border-0 ring-1 ring-amber-200/50">
         <CardHeader className="text-center pb-2">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg flex items-center justify-center p-3 ring-2 ring-primary/20">
-              <img 
-                src={logoHorticampos} 
-                alt="Horti Campos" 
-                className="w-full h-full object-contain"
-              />
+            {/* 3D Metallic Logo Container */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 rounded-3xl blur-md opacity-60 scale-105"></div>
+              <div className="relative w-32 h-32 rounded-3xl bg-gradient-to-b from-amber-100 via-white to-amber-50 shadow-xl flex items-center justify-center p-3 ring-4 ring-amber-400/50 border-t-2 border-amber-200">
+                <div className="w-full h-full rounded-2xl bg-gradient-to-br from-emerald-800 via-emerald-700 to-emerald-900 p-2 shadow-inner">
+                  <img 
+                    src={logoHorticampos} 
+                    alt="Horti Campos" 
+                    className="w-full h-full object-contain drop-shadow-lg"
+                  />
+                </div>
+              </div>
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold">Horti Campos</CardTitle>
-              <CardDescription className="text-sm mt-1">Hortifruti & Produtos Naturais</CardDescription>
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 bg-clip-text text-transparent drop-shadow-sm">Horti Campos</CardTitle>
+              <CardDescription className="text-emerald-700 font-medium mt-1">Hortifruti & Produtos Naturais</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -98,7 +104,7 @@ export default function Login() {
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button 
                   type="submit" 
-                  className="w-full h-14 text-base font-semibold bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800 hover:from-slate-500 hover:via-slate-600 hover:to-slate-700 text-white shadow-lg shadow-slate-500/30 transition-all duration-200 hover:shadow-xl border-t border-slate-400/30" 
+                  className="w-full h-14 text-base font-bold bg-gradient-to-b from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:via-amber-500 hover:to-amber-600 text-white shadow-lg shadow-amber-900/40 transition-all duration-200 hover:shadow-xl border-t border-amber-300/50 hover:scale-[1.02]" 
                   disabled={loading}
                 >
                   {loading ? 'Entrando...' : 'Entrar'}
@@ -138,7 +144,7 @@ export default function Login() {
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button 
                   type="submit" 
-                  className="w-full h-14 text-base font-semibold bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800 hover:from-slate-500 hover:via-slate-600 hover:to-slate-700 text-white shadow-lg shadow-slate-500/30 transition-all duration-200 hover:shadow-xl border-t border-slate-400/30" 
+                  className="w-full h-14 text-base font-bold bg-gradient-to-b from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:via-amber-500 hover:to-amber-600 text-white shadow-lg shadow-amber-900/40 transition-all duration-200 hover:shadow-xl border-t border-amber-300/50 hover:scale-[1.02]" 
                   disabled={loading}
                 >
                   {loading ? 'Cadastrando...' : 'Cadastrar'}

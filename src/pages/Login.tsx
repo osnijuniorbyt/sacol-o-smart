@@ -98,7 +98,7 @@ export default function Login() {
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button 
                   type="submit" 
-                  className="w-full h-14 text-base font-semibold shadow-lg shadow-primary/25 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30" 
+                  className="w-full h-14 text-base font-semibold bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800 hover:from-slate-500 hover:via-slate-600 hover:to-slate-700 text-white shadow-lg shadow-slate-500/30 transition-all duration-200 hover:shadow-xl border-t border-slate-400/30" 
                   disabled={loading}
                 >
                   {loading ? 'Entrando...' : 'Entrar'}
@@ -138,7 +138,7 @@ export default function Login() {
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button 
                   type="submit" 
-                  className="w-full h-14 text-base font-semibold shadow-lg shadow-primary/25 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30" 
+                  className="w-full h-14 text-base font-semibold bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800 hover:from-slate-500 hover:via-slate-600 hover:to-slate-700 text-white shadow-lg shadow-slate-500/30 transition-all duration-200 hover:shadow-xl border-t border-slate-400/30" 
                   disabled={loading}
                 >
                   {loading ? 'Cadastrando...' : 'Cadastrar'}

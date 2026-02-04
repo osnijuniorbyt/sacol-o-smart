@@ -221,8 +221,11 @@ export interface PurchaseOrderItem {
   unit_cost_estimated: number | null;
   unit_cost_actual: number | null;
   quantity_received: number | null;
+  packaging_id: string | null;
+  tare_total: number;
   created_at: string;
   product?: Product;
+  packaging?: Packaging;
 }
 
 export const PURCHASE_ORDER_STATUS_LABELS: Record<PurchaseOrderStatus, string> = {

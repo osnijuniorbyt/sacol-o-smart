@@ -145,8 +145,8 @@ export function SuggestedOrderDialog({
         const daysOfStock = avgDaily > 0 ? currentStock / avgDaily : 999;
         
         const neededKg = Math.max(0, (avgDaily * daysToStock) - currentStock);
-        const fator = (product as any).fator_conversao || 22;
-        const suggestedBoxes = Math.ceil(neededKg / fator);
+        const pesoPorUnidade = (product as any).peso_por_unidade || 22;
+        const suggestedBoxes = Math.ceil(neededKg / pesoPorUnidade);
         
         return {
           product_id: product.id,

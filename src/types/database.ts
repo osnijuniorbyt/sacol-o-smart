@@ -4,6 +4,10 @@ export type ProductCategory = 'frutas' | 'verduras' | 'legumes' | 'temperos' | '
 export type UnitType = 'kg' | 'un' | 'maco' | 'bandeja' | 'caixa' | 'engradado' | 'saco' | 'penca';
 export type BreakageReason = 'vencido' | 'danificado' | 'furto' | 'erro_operacional' | 'outro';
 
+// Enums de conversão e visual
+export type UnidadeVenda = 'PARA_UN' | 'PARA_KG';
+export type CategoriaVisual = 'FRUTA' | 'LEGUME' | 'VERDURA' | 'TEMPERO' | 'OUTROS';
+
 // New entity types
 export type PersonType = 'funcionario' | 'cliente' | 'motorista';
 export type PackagingMaterial = 'plastico' | 'madeira' | 'papelao' | 'isopor';
@@ -61,8 +65,9 @@ export interface Product {
   plu: string;
   name: string;
   category: ProductCategory;
+  categoria_visual: CategoriaVisual | null;
   unit: UnitType;
-  unidade_venda: string; // Unidade de venda no PDV
+  unidade_venda: UnidadeVenda | null; // PARA_UN = unidades, PARA_KG = quilos
   peso_por_unidade: number; // Peso em kg por unidade de venda
   price: number;
   min_stock: number;
@@ -71,7 +76,7 @@ export interface Product {
   custo_compra: number;
   supplier_id: string | null;
   shelf_life: number;
-  fator_conversao: number;
+  ultimo_preco_caixa: number | null;
   image_url: string | null;
   created_at: string;
   updated_at: string;

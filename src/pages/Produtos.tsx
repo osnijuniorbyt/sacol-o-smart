@@ -48,6 +48,8 @@ export default function Produtos() {
     name: '',
     category: 'outros' as ProductCategory,
     unit: 'kg' as UnitType,
+    unidade_venda: 'PARA_KG' as 'PARA_UN' | 'PARA_KG',
+    peso_por_unidade: '1',
     price: '',
     min_stock: '',
     is_active: true,
@@ -55,7 +57,6 @@ export default function Produtos() {
     custo_compra: '',
     supplier_id: '',
     shelf_life: '7',
-    fator_conversao: '1'
   });
 
   const resetForm = () => {
@@ -64,6 +65,8 @@ export default function Produtos() {
       name: '',
       category: 'outros',
       unit: 'kg',
+      unidade_venda: 'PARA_KG',
+      peso_por_unidade: '1',
       price: '',
       min_stock: '',
       is_active: true,
@@ -71,7 +74,6 @@ export default function Produtos() {
       custo_compra: '',
       supplier_id: '',
       shelf_life: '7',
-      fator_conversao: '1'
     });
     setEditingProduct(null);
   };
@@ -87,6 +89,8 @@ export default function Produtos() {
       name: product.name,
       category: product.category,
       unit: product.unit,
+      unidade_venda: product.unidade_venda || 'PARA_KG',
+      peso_por_unidade: String(product.peso_por_unidade || 1),
       price: String(product.price),
       min_stock: String(product.min_stock),
       is_active: product.is_active,
@@ -94,7 +98,6 @@ export default function Produtos() {
       custo_compra: String(product.custo_compra || ''),
       supplier_id: product.supplier_id || '',
       shelf_life: String(product.shelf_life || 7),
-      fator_conversao: String(product.fator_conversao || 1)
     });
     setEditingProduct(product);
     setDialogOpen(true);
@@ -147,6 +150,8 @@ export default function Produtos() {
       name: formData.name,
       category: formData.category,
       unit: formData.unit,
+      unidade_venda: formData.unidade_venda,
+      peso_por_unidade: parseFloat(formData.peso_por_unidade) || 1,
       price: parseFloat(formData.price),
       min_stock: parseFloat(formData.min_stock) || 0,
       is_active: formData.is_active,
@@ -154,7 +159,6 @@ export default function Produtos() {
       custo_compra: parseFloat(formData.custo_compra) || 0,
       supplier_id: formData.supplier_id || null,
       shelf_life: parseInt(formData.shelf_life) || 7,
-      fator_conversao: parseFloat(formData.fator_conversao) || 1
     };
 
     if (editingProduct) {
@@ -343,7 +347,39 @@ export default function Produtos() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Conversão PDV</Label>
+                  <Select
+                    value={formData.unidade_venda}
+                    onValueChange={(value) => setFormData(prev => ({ 
+                      ...prev, 
+                      unidade_venda: value as 'PARA_UN' | 'PARA_KG'
+                    }))}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PARA_KG">Para Quilos (kg)</SelectItem>
+                      <SelectItem value="PARA_UN">Para Unidades (un)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Peso/Unidade (kg)</Label>
+                  <Input
+                    type="number"
+                    step="0.001"
+                    value={formData.peso_por_unidade}
+                    onChange={(e) => setFormData(prev => ({ ...prev, peso_por_unidade: e.target.value }))}
+                    placeholder="1"
+                    className="h-12"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Estoque Mín</Label>
                   <Input
@@ -362,17 +398,6 @@ export default function Produtos() {
                     value={formData.shelf_life}
                     onChange={(e) => setFormData(prev => ({ ...prev, shelf_life: e.target.value }))}
                     placeholder="7"
-                    className="h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Fator Conv.</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.fator_conversao}
-                    onChange={(e) => setFormData(prev => ({ ...prev, fator_conversao: e.target.value }))}
-                    placeholder="1"
                     className="h-12"
                   />
                 </div>

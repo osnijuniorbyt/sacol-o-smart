@@ -63,12 +63,13 @@ export default function Protocolo() {
       setLoading(true);
       const { data, error } = await supabase
         .from('purchase_orders')
-        .select(`
+      .select(`
           *,
           supplier:suppliers(*),
           items:purchase_order_items(
             *,
-            product:products(*)
+            product:products(*),
+            packaging:packagings(*)
           )
         `)
         .eq('id', id)
@@ -105,16 +106,26 @@ export default function Protocolo() {
     const valorProdutos = order.items.reduce(
       (sum, i) => sum + (i.quantity * (i.unit_cost_estimated || 0)), 0
     );
-    const pesoNota = order.items.reduce(
+    // Peso bruto = quantidade * kg estimado por volume
+    const pesoBruto = order.items.reduce(
       (sum, i) => sum + (i.quantity * (i.estimated_kg || 1)), 0
     );
+    // Tara total = soma de (quantidade * peso_tara do vasilhame)
+    const taraTotal = order.items.reduce(
+      (sum, i) => sum + (i.tare_total || 0), 0
+    );
+    // Peso líquido = peso bruto - tara
+    const pesoLiquido = pesoBruto - taraTotal;
     
     const totalCustosAdicionais = valorFrete + taxaDescarga + outrosCustos;
     
     return {
       totalCaixas,
       valorProdutos,
-      pesoNota,
+      pesoBruto,
+      taraTotal,
+      pesoLiquido,
+      pesoNota: pesoLiquido, // Para compatibilidade
       totalCustosAdicionais,
       valorTotal: valorProdutos + totalCustosAdicionais,
     };
@@ -138,19 +149,24 @@ export default function Protocolo() {
     
     message += `*ITENS:*\n`;
     order.items?.forEach((item, idx) => {
-      message += `${idx + 1}. ${item.product?.name}: ${item.quantity} cx × R$${(item.unit_cost_estimated || 0).toFixed(2)}\n`;
+      const packagingName = item.packaging?.name ? ` (${item.packaging.name})` : '';
+      message += `${idx + 1}. ${item.product?.name}${packagingName}: ${item.quantity} cx × R$${(item.unit_cost_estimated || 0).toFixed(2)}\n`;
     });
     
     message += `\n*RESUMO:*\n`;
     message += `• ${resumo.totalCaixas} caixas\n`;
     message += `• Valor Produtos: R$ ${resumo.valorProdutos.toFixed(2)}\n`;
-    message += `• Peso Nota: ${resumo.pesoNota.toFixed(1)} kg\n`;
+    message += `• Peso Bruto: ${resumo.pesoBruto.toFixed(1)} kg\n`;
+    if (resumo.taraTotal > 0) {
+      message += `• Tara Vasilhames: -${resumo.taraTotal.toFixed(1)} kg\n`;
+    }
+    message += `• *Peso Líquido: ${resumo.pesoLiquido.toFixed(1)} kg*\n`;
     
     if (pesoBalancaReal > 0) {
       message += `• Peso Balança: ${pesoBalancaReal.toFixed(1)} kg\n`;
       if (diferencaPeso !== null) {
         const diff = diferencaPeso >= 0 ? `+${diferencaPeso.toFixed(1)}` : diferencaPeso.toFixed(1);
-        message += `• Diferença: ${diff} kg (${((diferencaPeso / resumo.pesoNota) * 100).toFixed(1)}%)\n`;
+        message += `• Diferença: ${diff} kg (${((diferencaPeso / resumo.pesoLiquido) * 100).toFixed(1)}%)\n`;
       }
     }
     
@@ -309,7 +325,7 @@ export default function Protocolo() {
               )}
             </div>
             <Separator className="my-2" />
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="text-muted-foreground text-xs">Caixas</span>
                 <p className="font-mono font-medium">{resumo.totalCaixas}</p>
@@ -318,9 +334,24 @@ export default function Protocolo() {
                 <span className="text-muted-foreground text-xs">Valor</span>
                 <p className="font-mono font-medium">R$ {resumo.valorProdutos.toFixed(2)}</p>
               </div>
-              <div>
-                <span className="text-muted-foreground text-xs">Peso Nota</span>
-                <p className="font-mono font-medium">{resumo.pesoNota.toFixed(1)} kg</p>
+            </div>
+            
+            {/* Detalhamento de peso */}
+            <div className="mt-3 p-2 bg-muted/50 rounded-lg space-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Peso Bruto:</span>
+                <span className="font-mono">{resumo.pesoBruto.toFixed(1)} kg</span>
+              </div>
+              {resumo.taraTotal > 0 && (
+                <div className="flex justify-between text-amber-600 dark:text-amber-400">
+                  <span>(-) Tara Vasilhames:</span>
+                  <span className="font-mono">-{resumo.taraTotal.toFixed(1)} kg</span>
+                </div>
+              )}
+              <Separator className="my-1" />
+              <div className="flex justify-between font-medium">
+                <span>Peso Líquido:</span>
+                <span className="font-mono">{resumo.pesoLiquido.toFixed(1)} kg</span>
               </div>
             </div>
 
@@ -329,7 +360,14 @@ export default function Protocolo() {
             <div className="space-y-1">
               {order.items?.map(item => (
                 <div key={item.id} className="flex justify-between text-xs">
-                  <span className="truncate flex-1">{item.product?.name}</span>
+                  <span className="truncate flex-1">
+                    {item.product?.name}
+                    {item.packaging && (
+                      <span className="text-muted-foreground ml-1">
+                        ({item.packaging.name})
+                      </span>
+                    )}
+                  </span>
                   <span className="font-mono ml-2">{item.quantity} × R${(item.unit_cost_estimated || 0).toFixed(2)}</span>
                 </div>
               ))}

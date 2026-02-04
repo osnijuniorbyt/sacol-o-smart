@@ -280,9 +280,11 @@ export type Database = {
           estimated_kg: number
           id: string
           order_id: string
+          packaging_id: string | null
           product_id: string
           quantity: number
           quantity_received: number | null
+          tare_total: number | null
           unit: string
           unit_cost_actual: number | null
           unit_cost_estimated: number | null
@@ -292,9 +294,11 @@ export type Database = {
           estimated_kg: number
           id?: string
           order_id: string
+          packaging_id?: string | null
           product_id: string
           quantity: number
           quantity_received?: number | null
+          tare_total?: number | null
           unit?: string
           unit_cost_actual?: number | null
           unit_cost_estimated?: number | null
@@ -304,9 +308,11 @@ export type Database = {
           estimated_kg?: number
           id?: string
           order_id?: string
+          packaging_id?: string | null
           product_id?: string
           quantity?: number
           quantity_received?: number | null
+          tare_total?: number | null
           unit?: string
           unit_cost_actual?: number | null
           unit_cost_estimated?: number | null
@@ -317,6 +323,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_packaging_id_fkey"
+            columns: ["packaging_id"]
+            isOneToOne: false
+            referencedRelation: "packagings"
             referencedColumns: ["id"]
           },
           {

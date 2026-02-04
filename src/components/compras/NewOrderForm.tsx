@@ -146,14 +146,22 @@ export function NewOrderForm({ suppliers, allProducts, onOrderSent }: NewOrderFo
 
       if (orderError) throw orderError;
 
-      const itemsToInsert = itemsWithQty.map(item => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        unit: 'cx',
-        estimated_kg: item.quantity,
-        unit_cost_estimated: item.unit_price,
-      }));
+      // Calcula a tara total para cada item
+      const itemsToInsert = itemsWithQty.map(item => {
+        const packaging = activePackagings.find(p => p.id === item.packaging_id);
+        const tareTotal = packaging ? item.quantity * packaging.tare_weight : 0;
+        
+        return {
+          order_id: order.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit: 'cx',
+          estimated_kg: item.quantity,
+          unit_cost_estimated: item.unit_price,
+          packaging_id: item.packaging_id,
+          tare_total: tareTotal,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from('purchase_order_items')

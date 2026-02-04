@@ -1,7 +1,7 @@
 // Types for the application
 
 export type ProductCategory = 'frutas' | 'verduras' | 'legumes' | 'temperos' | 'outros';
-export type UnitType = 'kg' | 'un' | 'maco' | 'bandeja';
+export type UnitType = 'kg' | 'un' | 'maco' | 'bandeja' | 'caixa' | 'engradado' | 'saco' | 'penca';
 export type BreakageReason = 'vencido' | 'danificado' | 'furto' | 'erro_operacional' | 'outro';
 
 // New entity types
@@ -62,6 +62,8 @@ export interface Product {
   name: string;
   category: ProductCategory;
   unit: UnitType;
+  unidade_venda: string; // Unidade de venda no PDV
+  peso_por_unidade: number; // Peso em kg por unidade de venda
   price: number;
   min_stock: number;
   is_active: boolean;
@@ -158,7 +160,11 @@ export const UNIT_LABELS: Record<UnitType, string> = {
   kg: 'Quilograma',
   un: 'Unidade',
   maco: 'Maço',
-  bandeja: 'Bandeja'
+  bandeja: 'Bandeja',
+  caixa: 'Caixa',
+  engradado: 'Engradado',
+  saco: 'Saco',
+  penca: 'Penca',
 };
 
 export const BREAKAGE_REASON_LABELS: Record<BreakageReason, string> = {

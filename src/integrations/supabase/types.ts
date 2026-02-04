@@ -65,86 +65,53 @@ export type Database = {
           },
         ]
       }
-      demand_request_items: {
+      itens_demanda: {
         Row: {
+          categoria: Database["public"]["Enums"]["categoria_visual"] | null
           created_at: string
           id: string
-          notes: string | null
-          priority: string | null
+          lote_id: string
+          observacoes: string | null
+          prioridade: Database["public"]["Enums"]["prioridade_demanda"]
           product_id: string
-          quantity_approved: number | null
-          quantity_requested: number
-          request_id: string
+          qtd_sugerida: number
         }
         Insert: {
+          categoria?: Database["public"]["Enums"]["categoria_visual"] | null
           created_at?: string
           id?: string
-          notes?: string | null
-          priority?: string | null
+          lote_id: string
+          observacoes?: string | null
+          prioridade?: Database["public"]["Enums"]["prioridade_demanda"]
           product_id: string
-          quantity_approved?: number | null
-          quantity_requested: number
-          request_id: string
+          qtd_sugerida: number
         }
         Update: {
+          categoria?: Database["public"]["Enums"]["categoria_visual"] | null
           created_at?: string
           id?: string
-          notes?: string | null
-          priority?: string | null
+          lote_id?: string
+          observacoes?: string | null
+          prioridade?: Database["public"]["Enums"]["prioridade_demanda"]
           product_id?: string
-          quantity_approved?: number | null
-          quantity_requested?: number
-          request_id?: string
+          qtd_sugerida?: number
         }
         Relationships: [
           {
-            foreignKeyName: "demand_request_items_product_id_fkey"
+            foreignKeyName: "itens_demanda_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes_demanda"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_demanda_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "demand_request_items_request_id_fkey"
-            columns: ["request_id"]
-            isOneToOne: false
-            referencedRelation: "demand_requests"
-            referencedColumns: ["id"]
-          },
         ]
-      }
-      demand_requests: {
-        Row: {
-          created_at: string
-          id: string
-          notes: string | null
-          processed_at: string | null
-          processed_by: string | null
-          requested_by: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          notes?: string | null
-          processed_at?: string | null
-          processed_by?: string | null
-          requested_by?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          notes?: string | null
-          processed_at?: string | null
-          processed_by?: string | null
-          requested_by?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       locations: {
         Row: {
@@ -178,6 +145,42 @@ export type Database = {
           temperature_max?: number | null
           temperature_min?: number | null
           type?: Database["public"]["Enums"]["location_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lotes_demanda: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_necessidade: string
+          id: string
+          observacoes: string | null
+          prioridade: Database["public"]["Enums"]["prioridade_demanda"]
+          status: Database["public"]["Enums"]["status_lote_demanda"]
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_necessidade: string
+          id?: string
+          observacoes?: string | null
+          prioridade?: Database["public"]["Enums"]["prioridade_demanda"]
+          status?: Database["public"]["Enums"]["status_lote_demanda"]
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_necessidade?: string
+          id?: string
+          observacoes?: string | null
+          prioridade?: Database["public"]["Enums"]["prioridade_demanda"]
+          status?: Database["public"]["Enums"]["status_lote_demanda"]
+          titulo?: string
           updated_at?: string
         }
         Relationships: []
@@ -935,6 +938,7 @@ export type Database = {
         | "furto"
         | "erro_operacional"
         | "outro"
+      categoria_visual: "FRUTA" | "LEGUME" | "VERDURA" | "TEMPERO" | "OUTROS"
       location_type:
         | "box_ceasa"
         | "camara_fria"
@@ -943,6 +947,7 @@ export type Database = {
         | "gondola"
       packaging_material: "plastico" | "madeira" | "papelao" | "isopor"
       person_type: "funcionario" | "cliente" | "motorista"
+      prioridade_demanda: "BAIXA" | "NORMAL" | "ALTA" | "URGENTE"
       product_category:
         | "frutas"
         | "verduras"
@@ -950,6 +955,7 @@ export type Database = {
         | "temperos"
         | "outros"
       purchase_order_status: "rascunho" | "enviado" | "recebido" | "cancelado"
+      status_lote_demanda: "ABERTO" | "EM_COMPRA" | "RECEBIDO" | "FECHADO"
       unit_type: "kg" | "un" | "maco" | "bandeja"
     }
     CompositeTypes: {
@@ -1086,6 +1092,7 @@ export const Constants = {
         "erro_operacional",
         "outro",
       ],
+      categoria_visual: ["FRUTA", "LEGUME", "VERDURA", "TEMPERO", "OUTROS"],
       location_type: [
         "box_ceasa",
         "camara_fria",
@@ -1095,8 +1102,10 @@ export const Constants = {
       ],
       packaging_material: ["plastico", "madeira", "papelao", "isopor"],
       person_type: ["funcionario", "cliente", "motorista"],
+      prioridade_demanda: ["BAIXA", "NORMAL", "ALTA", "URGENTE"],
       product_category: ["frutas", "verduras", "legumes", "temperos", "outros"],
       purchase_order_status: ["rascunho", "enviado", "recebido", "cancelado"],
+      status_lote_demanda: ["ABERTO", "EM_COMPRA", "RECEBIDO", "FECHADO"],
       unit_type: ["kg", "un", "maco", "bandeja"],
     },
   },

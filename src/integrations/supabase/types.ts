@@ -65,6 +65,87 @@ export type Database = {
           },
         ]
       }
+      demand_request_items: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          priority: string | null
+          product_id: string
+          quantity_approved: number | null
+          quantity_requested: number
+          request_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          product_id: string
+          quantity_approved?: number | null
+          quantity_requested: number
+          request_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          product_id?: string
+          quantity_approved?: number | null
+          quantity_requested?: number
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_request_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "demand_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demand_requests: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          processed_at: string | null
+          processed_by: string | null
+          requested_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       locations: {
         Row: {
           created_at: string

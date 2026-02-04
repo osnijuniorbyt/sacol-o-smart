@@ -171,35 +171,25 @@ export default function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="flex flex-col h-full lg:rounded-2xl overflow-hidden">
-          {/* Logo preenchendo o container - tema pôr do sol sutil */}
-          <div className="relative border-b border-[hsl(40,50%,55%,0.2)]">
-            {/* Container da logo - altura fixa com bordas arredondadas no desktop */}
-            <div className="relative overflow-hidden h-[140px] lg:rounded-t-2xl">
-              {/* Borda metálica sutil */}
-              <div className="absolute inset-0 lg:rounded-t-2xl ring-1 ring-inset ring-[hsl(40,60%,60%,0.25)]" />
-              
-              {/* Shimmer sutil na borda inferior */}
-              <div 
-                className="absolute bottom-0 left-0 right-0 h-[2px] animate-shimmer z-10 opacity-50"
-                style={{
-                  background: 'linear-gradient(90deg, transparent, hsl(40,70%,60%), hsl(45,30%,85%), hsl(40,70%,60%), transparent)',
-                  backgroundSize: '200% 100%',
-                }}
-              />
-              
-              {/* Logo preenchendo totalmente o container */}
+          {/* Logo container - design clean */}
+          <div className="relative border-b border-[hsl(40,30%,50%,0.15)]">
+            <div className="relative h-[120px] lg:rounded-t-2xl bg-[hsl(42,25%,92%)] flex items-center justify-center">
+              {/* Logo centralizada */}
               <img 
                 src={logoFull}
                 alt="Horti Campos"
-                className="w-full h-full object-cover object-center lg:rounded-t-2xl"
+                className="h-[90px] w-auto object-contain"
               />
               
-              {/* Close button for mobile - posicionado sobre a logo */}
+              {/* Linha sutil na base */}
+              <div className="absolute bottom-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-[hsl(38,50%,65%,0.5)] to-transparent" />
+              
+              {/* Close button for mobile */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden absolute top-2 right-2 h-8 w-8 text-[hsl(30,40%,40%)] hover:text-[hsl(30,50%,30%)] hover:bg-[hsl(40,30%,85%,0.7)] flex-shrink-0 z-20 rounded-full"
+                className="lg:hidden absolute top-2 right-2 h-8 w-8 text-[hsl(150,30%,35%)] hover:text-[hsl(150,40%,25%)] hover:bg-[hsl(40,20%,85%)] flex-shrink-0 z-20 rounded-full"
               >
                 <X className="h-4 w-4" />
               </Button>

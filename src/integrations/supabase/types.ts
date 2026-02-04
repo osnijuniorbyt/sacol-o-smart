@@ -269,11 +269,13 @@ export type Database = {
           is_active: boolean
           min_stock: number
           name: string
+          peso_por_unidade: number | null
           plu: string
           price: number
           shelf_life: number | null
           supplier_id: string | null
           ultimo_preco_caixa: number | null
+          unidade_venda: string | null
           unit: Database["public"]["Enums"]["unit_type"]
           updated_at: string
         }
@@ -288,11 +290,13 @@ export type Database = {
           is_active?: boolean
           min_stock?: number
           name: string
+          peso_por_unidade?: number | null
           plu: string
           price?: number
           shelf_life?: number | null
           supplier_id?: string | null
           ultimo_preco_caixa?: number | null
+          unidade_venda?: string | null
           unit?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
         }
@@ -307,11 +311,13 @@ export type Database = {
           is_active?: boolean
           min_stock?: number
           name?: string
+          peso_por_unidade?: number | null
           plu?: string
           price?: number
           shelf_life?: number | null
           supplier_id?: string | null
           ultimo_preco_caixa?: number | null
+          unidade_venda?: string | null
           unit?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
         }
@@ -956,7 +962,15 @@ export type Database = {
         | "outros"
       purchase_order_status: "rascunho" | "enviado" | "recebido" | "cancelado"
       status_lote_demanda: "ABERTO" | "EM_COMPRA" | "RECEBIDO" | "FECHADO"
-      unit_type: "kg" | "un" | "maco" | "bandeja"
+      unit_type:
+        | "kg"
+        | "un"
+        | "maco"
+        | "bandeja"
+        | "caixa"
+        | "engradado"
+        | "saco"
+        | "penca"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1106,7 +1120,16 @@ export const Constants = {
       product_category: ["frutas", "verduras", "legumes", "temperos", "outros"],
       purchase_order_status: ["rascunho", "enviado", "recebido", "cancelado"],
       status_lote_demanda: ["ABERTO", "EM_COMPRA", "RECEBIDO", "FECHADO"],
-      unit_type: ["kg", "un", "maco", "bandeja"],
+      unit_type: [
+        "kg",
+        "un",
+        "maco",
+        "bandeja",
+        "caixa",
+        "engradado",
+        "saco",
+        "penca",
+      ],
     },
   },
 } as const

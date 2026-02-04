@@ -259,11 +259,13 @@ export type Database = {
       }
       products: {
         Row: {
+          categoria_visual:
+            | Database["public"]["Enums"]["categoria_visual"]
+            | null
           category: Database["public"]["Enums"]["product_category"]
           codigo_balanca: string | null
           created_at: string
           custo_compra: number | null
-          fator_conversao: number | null
           id: string
           image_url: string | null
           is_active: boolean
@@ -275,16 +277,18 @@ export type Database = {
           shelf_life: number | null
           supplier_id: string | null
           ultimo_preco_caixa: number | null
-          unidade_venda: string | null
+          unidade_venda: Database["public"]["Enums"]["unidade_venda"] | null
           unit: Database["public"]["Enums"]["unit_type"]
           updated_at: string
         }
         Insert: {
+          categoria_visual?:
+            | Database["public"]["Enums"]["categoria_visual"]
+            | null
           category?: Database["public"]["Enums"]["product_category"]
           codigo_balanca?: string | null
           created_at?: string
           custo_compra?: number | null
-          fator_conversao?: number | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -296,16 +300,18 @@ export type Database = {
           shelf_life?: number | null
           supplier_id?: string | null
           ultimo_preco_caixa?: number | null
-          unidade_venda?: string | null
+          unidade_venda?: Database["public"]["Enums"]["unidade_venda"] | null
           unit?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
         }
         Update: {
+          categoria_visual?:
+            | Database["public"]["Enums"]["categoria_visual"]
+            | null
           category?: Database["public"]["Enums"]["product_category"]
           codigo_balanca?: string | null
           created_at?: string
           custo_compra?: number | null
-          fator_conversao?: number | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -317,7 +323,7 @@ export type Database = {
           shelf_life?: number | null
           supplier_id?: string | null
           ultimo_preco_caixa?: number | null
-          unidade_venda?: string | null
+          unidade_venda?: Database["public"]["Enums"]["unidade_venda"] | null
           unit?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
         }
@@ -962,6 +968,7 @@ export type Database = {
         | "outros"
       purchase_order_status: "rascunho" | "enviado" | "recebido" | "cancelado"
       status_lote_demanda: "ABERTO" | "EM_COMPRA" | "RECEBIDO" | "FECHADO"
+      unidade_venda: "PARA_UN" | "PARA_KG"
       unit_type:
         | "kg"
         | "un"
@@ -1120,6 +1127,7 @@ export const Constants = {
       product_category: ["frutas", "verduras", "legumes", "temperos", "outros"],
       purchase_order_status: ["rascunho", "enviado", "recebido", "cancelado"],
       status_lote_demanda: ["ABERTO", "EM_COMPRA", "RECEBIDO", "FECHADO"],
+      unidade_venda: ["PARA_UN", "PARA_KG"],
       unit_type: [
         "kg",
         "un",

@@ -171,18 +171,41 @@ export default function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="flex flex-col h-full lg:rounded-2xl overflow-hidden">
-          {/* Logo container - design clean */}
-          <div className="relative border-b border-[hsl(40,30%,50%,0.15)]">
-            <div className="relative h-[120px] lg:rounded-t-2xl bg-[hsl(42,25%,92%)] flex items-center justify-center">
-              {/* Logo centralizada */}
-              <img 
-                src={logoFull}
-                alt="Horti Campos"
-                className="h-[90px] w-auto object-contain"
+          {/* Logo container - gradiente suave harmonioso */}
+          <div className="relative">
+            <div className="relative h-[130px] lg:rounded-t-2xl overflow-hidden">
+              {/* Fundo gradiente suave - tons naturais que harmonizam com verde e laranja da logo */}
+              <div 
+                className="absolute inset-0"
+                style={{
+                  background: 'linear-gradient(145deg, hsl(45, 35%, 94%) 0%, hsl(40, 30%, 90%) 40%, hsl(35, 25%, 85%) 100%)'
+                }}
               />
               
-              {/* Linha sutil na base */}
-              <div className="absolute bottom-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-[hsl(38,50%,65%,0.5)] to-transparent" />
+              {/* Reflexo sutil de luz no topo */}
+              <div 
+                className="absolute top-0 left-0 right-0 h-1/3 opacity-60"
+                style={{
+                  background: 'linear-gradient(180deg, hsl(48, 40%, 97%) 0%, transparent 100%)'
+                }}
+              />
+              
+              {/* Logo centralizada */}
+              <div className="relative h-full flex items-center justify-center p-4">
+                <img 
+                  src={logoFull}
+                  alt="Horti Campos"
+                  className="h-[100px] w-auto object-contain drop-shadow-sm"
+                />
+              </div>
+              
+              {/* Borda inferior elegante com gradiente dourado suave */}
+              <div 
+                className="absolute bottom-0 left-0 right-0 h-[2px]"
+                style={{
+                  background: 'linear-gradient(90deg, transparent 5%, hsl(38, 45%, 70%) 30%, hsl(40, 50%, 75%) 50%, hsl(38, 45%, 70%) 70%, transparent 95%)'
+                }}
+              />
               
               {/* Close button for mobile */}
               <Button

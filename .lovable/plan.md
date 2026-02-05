@@ -1,176 +1,141 @@
 
-# Plano de Otimizacao UX Mobile - Compras (iPhone 16 Pro Max)
+# Plano: UI Otimista com Debounce para Botões +/- de Quantidade
 
-## Problemas Identificados
+## Problema Atual
+O componente `OrderItemsTable` recebe a lista de itens como prop e chama callbacks do pai (`onAddProduct`, `onDecrement`) ao clicar +/-. Isso causa:
+1. Atualização do estado do pai → re-render de TODOS os itens
+2. Possível lag perceptível no mobile durante a propagação do estado
 
-### 1. Safe Areas Inadequadas
-- Header usa `pt-safe` mas o main content nao considera adequadamente o Dynamic Island do iPhone 16 Pro Max
-- Botao fixo "Enviar Pedido" usa `bottom-0` sem considerar safe area inferior
-- Drawers e modais podem estar cortando conteudo
+## Solução: Estado Local por Item + Debounce
 
-### 2. Teclado Virtual Acionado Automaticamente
-- Inputs `type="number"` focam automaticamente em certas situacoes
-- Select dropdowns podem estar focando inputs internamente
-- O hook `useDismissKeyboardOnEnter` pode nao estar cobrindo todos os cenarios
-
-### 3. Altura da Tela / Menu Nao Visivel
-- Header mobile com altura fixa nao considera Dynamic Island (iPhone 14 Pro+)
-- Main content comeca muito abaixo, empurrando menu para fora da tela
-- Falta de scroll-to-top ao navegar entre abas
-
-### 4. Botao Fixo no Rodape
-- `pb-24` no container pode nao ser suficiente para o botao fixo + safe area
-- Botao pode estar sobrepondo conteudo importante
-
----
-
-## Solucoes Propostas
-
-### Fase 1: Correcao de Safe Areas (Layout.tsx)
-
-**Alteracoes:**
-- Adicionar classe `pt-safe` mais robusta no header mobile considerando Dynamic Island
-- Aumentar altura do header de `p-4` para incluir safe area adequada
-- Aplicar `pb-safe` no main content de forma mais agressiva
+Criaremos um componente wrapper `OrderItemRow` que gerencia quantidade localmente para cada item individual.
 
 ```text
-Mudancas em Layout.tsx:
-- Header: aumentar altura base + pt-safe mais robusto
-- Main: adicionar padding-top para compensar header fixo
+┌─────────────────────────────────────────────────────┐
+│  Clique no +/-                                      │
+│       ↓                                             │
+│  useState local atualiza INSTANTÂNEO (0ms)         │
+│       ↓                                             │
+│  useEffect com debounce (500ms)                    │
+│       ↓                                             │
+│  Callback para pai (sync com useOrderForm)         │
+└─────────────────────────────────────────────────────┘
 ```
 
-### Fase 2: Correcao do Botao Fixo (Compras.tsx)
+## Implementação Técnica
 
-**Alteracoes:**
-- Adicionar `pb-safe` no container do botao fixo
-- Aumentar `pb-24` para `pb-32` para dar mais espaco
-- Garantir que o botao nao sobreponha conteudo critico
+### 1. Criar componente `OrderItemRow`
+Novo componente interno em `OrderItemsTable.tsx`:
 
-```text
-Mudancas em Compras.tsx (linha 567):
-- div fixed: adicionar pb-safe
-- Container principal: aumentar pb-24 para pb-32
-```
-
-### Fase 3: Prevencao de Foco Automatico em Inputs
-
-**Alteracoes:**
-- Adicionar `inputMode="none"` em inputs que usam teclado numerico customizado
-- Usar `readOnly` em inputs que abrem modal numerico
-- Remover `autoFocus` de selects/inputs em modais
-
-```text
-Arquivos afetados:
-- SuggestedOrderDialog.tsx: inputs de quantidade
-- ReceivingDialog.tsx: inputs de peso/custo
-- EditOrderDialog.tsx: inputs de preco
-```
-
-### Fase 4: Otimizacao do Header Mobile
-
-**Alteracoes em index.css:**
-- Aumentar `pt-safe` para considerar Dynamic Island (min 3rem)
-- Adicionar variavel CSS para altura do header
-- Criar classe `.header-height` reutilizavel
-
-```css
-.pt-safe {
-  padding-top: max(0.75rem, env(safe-area-inset-top));
+```tsx
+interface OrderItemRowProps {
+  item: PedidoItem;
+  product: Product | undefined;
+  onQuantityChange: (productId: string, newQuantity: number) => void;
+  onUpdatePrice: (productId: string, price: string) => void;
+  onRemoveItem: (productId: string) => void;
 }
 
-.header-safe {
-  height: calc(3.5rem + env(safe-area-inset-top));
-}
-```
+function OrderItemRow({ item, product, onQuantityChange, onUpdatePrice, onRemoveItem }: OrderItemRowProps) {
+  // Estado LOCAL para quantidade - atualiza instantaneamente
+  const [localQuantity, setLocalQuantity] = useState(item.quantity);
+  const debounceRef = useRef<NodeJS.Timeout>();
 
-### Fase 5: Scroll e Navegacao
+  // Sincroniza quando prop muda (ex: ao carregar pedido existente)
+  useEffect(() => {
+    setLocalQuantity(item.quantity);
+  }, [item.quantity]);
 
-**Alteracoes:**
-- Adicionar scroll-to-top automatico ao trocar de aba em Compras
-- Prevenir scroll lock quando teclado abre
-- Melhorar comportamento de swipe para fechar drawers
+  const handleIncrement = () => {
+    const newQty = localQuantity + 1;
+    setLocalQuantity(newQty); // INSTANTÂNEO
+    
+    // Debounce callback para pai
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onQuantityChange(item.product_id, newQty);
+    }, 500);
+  };
 
----
+  const handleDecrement = () => {
+    if (localQuantity <= 1) {
+      onRemoveItem(item.product_id);
+      return;
+    }
+    
+    const newQty = localQuantity - 1;
+    setLocalQuantity(newQty); // INSTANTÂNEO
+    
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onQuantityChange(item.product_id, newQty);
+    }, 500);
+  };
 
-## Detalhamento Tecnico
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => clearTimeout(debounceRef.current);
+  }, []);
 
-### Arquivo: src/index.css
-
-Adicionar:
-```css
-/* Safe area otimizada para Dynamic Island */
-.pt-safe {
-  padding-top: max(0.75rem, env(safe-area-inset-top));
-}
-
-/* Altura minima para header mobile considerando notch/Dynamic Island */
-.header-mobile {
-  min-height: calc(3.5rem + env(safe-area-inset-top));
-}
-
-/* Safe area lateral para bordas curvas */
-.pl-safe {
-  padding-left: max(0.5rem, env(safe-area-inset-left));
-}
-
-.pr-safe {
-  padding-right: max(0.5rem, env(safe-area-inset-right));
+  // ... resto do JSX usando localQuantity
 }
 ```
 
-### Arquivo: src/components/Layout.tsx
+### 2. Atualizar `useOrderForm` hook
+Adicionar função `setQuantity` para atualização direta:
 
-Mudancas no header mobile:
-- Adicionar classe `header-mobile` 
-- Garantir `min-h-[60px]` + safe area
-- Padding lateral com `pl-safe pr-safe`
+```tsx
+const handleSetQuantity = useCallback((productId: string, newQuantity: number) => {
+  setItems(prev => prev.map(item => 
+    item.product_id === productId
+      ? { 
+          ...item, 
+          quantity: newQuantity, 
+          subtotal: item.unit_cost ? newQuantity * item.unit_cost : null 
+        }
+      : item
+  ));
+}, []);
+```
 
-### Arquivo: src/pages/Compras.tsx
+### 3. Atualizar `OrderItemsTable`
+- Substituir `onAddProduct`/`onDecrement` por `onQuantityChange`
+- Renderizar `OrderItemRow` em vez de div inline
 
-Mudancas:
-- Linha 263: Aumentar `pb-24` para `pb-36`
-- Linha 567: Adicionar `pb-safe` no container do botao fixo
-- Adicionar `useEffect` para scroll-to-top ao mudar aba
+### 4. Feedback Visual Adicional
+Adicionar indicador de "sincronizando" quando debounce está ativo:
 
-### Arquivo: src/components/compras/SuggestedOrderDialog.tsx
+```tsx
+const [isPending, setIsPending] = useState(false);
 
-Mudancas:
-- Inputs de quantidade: adicionar `inputMode="decimal"` em vez de `type="number"`
-- Remover qualquer `autoFocus`
-- DrawerContent: garantir safe areas
+const handleIncrement = () => {
+  setLocalQuantity(prev => prev + 1);
+  setIsPending(true); // Mostra indicador sutil
+  
+  clearTimeout(debounceRef.current);
+  debounceRef.current = setTimeout(() => {
+    onQuantityChange(item.product_id, localQuantity + 1);
+    setIsPending(false);
+  }, 500);
+};
+```
 
-### Arquivo: src/components/compras/ReceivingDialog.tsx
+## Arquivos a Modificar
 
-Mudancas:
-- Botoes que abrem modal numerico: garantir que nao focam input nativo
-- DrawerFooter: adicionar `pb-safe` mais robusto
-- Scroll container: melhorar `overscroll-behavior`
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/compras/OrderItemsTable.tsx` | Criar `OrderItemRow` com estado local + debounce |
+| `src/hooks/useOrderForm.tsx` | Adicionar `handleSetQuantity` |
 
-### Arquivo: src/components/compras/EditOrderDialog.tsx
+## Comportamento Esperado
 
-Mudancas:
-- Converter para usar Drawer em mobile (como outros dialogos)
-- Inputs de preco: usar `inputMode="decimal"`
-- Adicionar safe areas adequadas
+1. **Clique em +/-** → Número muda na tela em < 16ms (um frame)
+2. **Cliques rápidos** → Cada clique atualiza visual, mas só o último dispara callback após 500ms
+3. **Remover item** → Se quantidade chegar a 0, remove imediatamente (sem debounce)
+4. **Sync bidirecional** → Se pai atualizar quantidade externamente, local sincroniza
 
----
+## Considerações
 
-## Ordem de Implementacao
-
-1. **index.css** - Classes de safe area otimizadas
-2. **Layout.tsx** - Header mobile corrigido
-3. **Compras.tsx** - Botao fixo e padding
-4. **SuggestedOrderDialog.tsx** - Inputs e Drawer
-5. **ReceivingDialog.tsx** - Safe areas no Drawer
-6. **EditOrderDialog.tsx** - Converter para Drawer/Dialog hibrido
-
----
-
-## Testes Necessarios
-
-1. Testar em iPhone 16 Pro Max (ou simulador com Dynamic Island)
-2. Verificar se menu e visivel sem scroll
-3. Confirmar que teclado nao abre automaticamente ao entrar na tela
-4. Testar fluxo completo: Pedido Sugerido -> Selecionar Fornecedor -> Aplicar -> Enviar
-5. Verificar que botao "Enviar Pedido" nao sobrepoe ultimo item da lista
-6. Testar todos os drawers (Pedido Sugerido, Recebimento)
+- O debounce de 500ms é ideal para evitar spam de re-renders no pai
+- Para EditOrderDialog, o mesmo padrão pode ser aplicado posteriormente
+- Não há salvamento no Supabase durante edição - isso só acontece ao "Enviar Pedido"

@@ -90,6 +90,19 @@ export function useOrderForm() {
     setItems(prev => prev.filter(i => i.product_id !== productId));
   }, []);
 
+  // Atualização direta de quantidade (para UI otimista com debounce)
+  const handleSetQuantity = useCallback((productId: string, newQuantity: number) => {
+    setItems(prev => prev.map(item => 
+      item.product_id === productId
+        ? { 
+            ...item, 
+            quantity: newQuantity, 
+            subtotal: item.unit_cost ? newQuantity * item.unit_cost : null 
+          }
+        : item
+    ));
+  }, []);
+
   // Pega quantidade atual de um produto no pedido
   const getQuantity = useCallback((productId: string) => {
     const item = items.find(i => i.product_id === productId);
@@ -197,6 +210,7 @@ export function useOrderForm() {
     handleDecrement,
     handleUpdatePrice,
     handleRemoveItem,
+    handleSetQuantity,
     getQuantity,
     handleApplySuggestion,
     handleEnviarPedido,

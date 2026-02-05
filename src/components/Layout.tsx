@@ -1,5 +1,11 @@
 import { ReactNode, useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -255,6 +261,16 @@ export default function Layout({ children }: LayoutProps) {
       {/* Main content - Premium sunset cream background */}
       <main className="lg:ml-[280px] min-h-screen bg-gradient-to-br from-[hsl(42,35%,95%)] via-[hsl(40,30%,93%)] to-[hsl(38,40%,90%)]">
         <div className="p-4 lg:p-6 pb-safe">
+          {/* Breadcrumb - página atual */}
+          <Breadcrumb className="mb-4">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage className="text-foreground/70 text-sm font-medium">
+                  {allNavItems.find(item => item.path === location.pathname)?.label || 'Página'}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
           {children}
         </div>
       </main>

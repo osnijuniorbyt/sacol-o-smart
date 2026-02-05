@@ -19,6 +19,7 @@ import PendingApproval from "@/pages/PendingApproval";
 import AdminUsers from "@/pages/AdminUsers";
 import ResetPassword from "@/pages/ResetPassword";
 import NotFound from "@/pages/NotFound";
+import MobileComprasMenu from "@/pages/mobile/MobileComprasMenu";
 
 const queryClient = new QueryClient();
 
@@ -154,6 +155,42 @@ function PendingRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Rota privada SEM layout (para rotas mobile)
+function MobilePrivateRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading, isApproved, isPasswordRecovery } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-800">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  if (isPasswordRecovery) {
+    return <Navigate to="/reset-password" replace />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isApproved === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-800">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  if (!isApproved) {
+    return <Navigate to="/pending-approval" replace />;
+  }
+
+  // SEM Layout wrapper - renderiza diretamente
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -247,6 +284,15 @@ function AppRoutes() {
           <AdminRoute>
             <AdminUsers />
           </AdminRoute>
+        }
+      />
+      {/* Rotas Mobile - SEM layout desktop */}
+      <Route
+        path="/mobile/compras"
+        element={
+          <MobilePrivateRoute>
+            <MobileComprasMenu />
+          </MobilePrivateRoute>
         }
       />
       <Route path="*" element={<NotFound />} />

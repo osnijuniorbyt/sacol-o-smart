@@ -168,7 +168,11 @@ serve(async (req) => {
         );
       }
       
-      throw new Error(`AI gateway error: ${aiResponse.status}`);
+      // Log detailed error server-side, return generic message to client
+      return new Response(
+        JSON.stringify({ error: "Failed to generate image. Please try again later.", code: "AI_GENERATION_FAILED" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const aiData = await aiResponse.json();
@@ -178,7 +182,11 @@ serve(async (req) => {
     const imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     
     if (!imageData) {
-      throw new Error("No image generated");
+      console.error("AI response missing image data");
+      return new Response(
+        JSON.stringify({ error: "Failed to generate image. Please try again later.", code: "NO_IMAGE_DATA" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Extract base64 data (remove data:image/png;base64, prefix if present)
@@ -202,7 +210,10 @@ serve(async (req) => {
 
     if (uploadError) {
       console.error("Upload error:", uploadError);
-      throw new Error(`Upload failed: ${uploadError.message}`);
+      return new Response(
+        JSON.stringify({ error: "Failed to save image. Please try again later.", code: "UPLOAD_FAILED" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Get public URL
@@ -221,7 +232,10 @@ serve(async (req) => {
 
     if (updateError) {
       console.error("Update error:", updateError);
-      throw new Error(`Product update failed: ${updateError.message}`);
+      return new Response(
+        JSON.stringify({ error: "Failed to update product. Please try again later.", code: "UPDATE_FAILED" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(
@@ -234,9 +248,14 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error:", error);
+    // Log detailed error for debugging, return generic message to client
+    console.error("Product image generation error:", {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Failed to generate product image. Please try again later.", code: "INTERNAL_ERROR" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

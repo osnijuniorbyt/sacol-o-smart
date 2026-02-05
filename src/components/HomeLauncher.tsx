@@ -1,93 +1,61 @@
  import { useNavigate } from 'react-router-dom';
- import { ShoppingCart, Package, Warehouse, AlertTriangle } from 'lucide-react';
- import { cn } from '@/lib/utils';
- 
- interface LauncherItem {
-   title: string;
-   description: string;
-   icon: React.ElementType;
-   route: string;
-   colorClass: string;
-   bgClass: string;
- }
- 
- const launcherItems: LauncherItem[] = [
-   {
-     title: 'PDV',
-     description: 'Ponto de Venda',
-     icon: ShoppingCart,
-     route: '/pdv',
-     colorClass: 'text-green-600',
-     bgClass: 'bg-green-500/10 hover:bg-green-500/20 active:bg-green-500/30',
-   },
-   {
-     title: 'Compras',
-     description: 'Pedidos de Compra',
-     icon: Package,
-     route: '/compras',
-     colorClass: 'text-blue-600',
-     bgClass: 'bg-blue-500/10 hover:bg-blue-500/20 active:bg-blue-500/30',
-   },
-   {
-     title: 'Estoque',
-     description: 'Controle de Lotes',
-     icon: Warehouse,
-     route: '/estoque',
-     colorClass: 'text-amber-600',
-     bgClass: 'bg-amber-500/10 hover:bg-amber-500/20 active:bg-amber-500/30',
-   },
-   {
-     title: 'Quebras',
-     description: 'Registrar Perdas',
-     icon: AlertTriangle,
-     route: '/quebras',
-     colorClass: 'text-red-600',
-     bgClass: 'bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30',
-   },
- ];
+ import { ShoppingCart, Package, DollarSign, TrendingDown } from 'lucide-react';
+ import logoHortii from '@/assets/logo-hortii-transparent.png';
  
  export function HomeLauncher() {
    const navigate = useNavigate();
  
    return (
-     <div className="flex flex-col min-h-[calc(100dvh-4rem)] p-4">
-       {/* Header */}
-       <div className="text-center mb-6">
-         <h1 className="text-2xl font-bold text-foreground">Sacola Mágica</h1>
-         <p className="text-sm text-muted-foreground mt-1">O que você deseja fazer?</p>
-       </div>
+     <div className="flex flex-col min-h-[100dvh] bg-background">
+       {/* Header simples com logo centralizada */}
+       <header className="flex items-center justify-center py-6 border-b border-border/50">
+         <img 
+           src={logoHortii} 
+           alt="Hortii" 
+           className="h-14 w-auto object-contain"
+         />
+       </header>
  
-       {/* Grid 2x2 */}
-       <div className="grid grid-cols-2 gap-4 flex-1 max-h-[60vh]">
-         {launcherItems.map((item) => (
+       {/* Grid 2x2 com botões gigantes */}
+       <div className="flex-1 p-4 flex items-center">
+         <div className="grid grid-cols-2 gap-4 w-full">
+           {/* COMPRAS - Verde escuro */}
            <button
-             key={item.route}
-             onClick={() => navigate(item.route)}
-             className={cn(
-               'flex flex-col items-center justify-center gap-3 rounded-2xl border border-border/50 transition-all duration-200',
-               'min-h-[140px] p-4',
-               'shadow-sm hover:shadow-md active:scale-[0.98]',
-               item.bgClass
-             )}
+             onClick={() => navigate('/compras')}
+             className="flex flex-col items-center justify-center gap-3 min-h-[150px] rounded-2xl bg-[hsl(150,100%,20%)] hover:bg-[hsl(150,100%,25%)] active:scale-[0.98] transition-all shadow-lg"
            >
-             <div className={cn('p-4 rounded-full bg-background/80 shadow-sm', item.colorClass)}>
-               <item.icon className="h-8 w-8" strokeWidth={2} />
-             </div>
-             <div className="text-center">
-               <span className="text-lg font-semibold text-foreground block">{item.title}</span>
-               <span className="text-xs text-muted-foreground">{item.description}</span>
-             </div>
+             <ShoppingCart className="h-12 w-12 text-white" strokeWidth={2.5} />
+             <span className="text-xl font-bold text-white">COMPRAS</span>
            </button>
-         ))}
-       </div>
  
-       {/* Footer shortcut to Dashboard */}
-       <button
-         onClick={() => navigate('/dashboard')}
-         className="mt-6 py-3 px-6 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-sm text-muted-foreground"
-       >
-         📊 Ver Dashboard Completo
-       </button>
+           {/* ESTOQUE - Azul */}
+           <button
+             onClick={() => navigate('/estoque')}
+             className="flex flex-col items-center justify-center gap-3 min-h-[150px] rounded-2xl bg-[hsl(210,80%,45%)] hover:bg-[hsl(210,80%,50%)] active:scale-[0.98] transition-all shadow-lg"
+           >
+             <Package className="h-12 w-12 text-white" strokeWidth={2.5} />
+             <span className="text-xl font-bold text-white">ESTOQUE</span>
+           </button>
+ 
+           {/* PDV - Laranja */}
+           <button
+             onClick={() => navigate('/pdv')}
+             className="flex flex-col items-center justify-center gap-3 min-h-[150px] rounded-2xl bg-[hsl(36,90%,50%)] hover:bg-[hsl(36,90%,55%)] active:scale-[0.98] transition-all shadow-lg"
+           >
+             <DollarSign className="h-12 w-12 text-white" strokeWidth={2.5} />
+             <span className="text-xl font-bold text-white">PDV</span>
+           </button>
+ 
+           {/* QUEBRAS - Vermelho */}
+           <button
+             onClick={() => navigate('/quebras')}
+             className="flex flex-col items-center justify-center gap-3 min-h-[150px] rounded-2xl bg-[hsl(0,70%,50%)] hover:bg-[hsl(0,70%,55%)] active:scale-[0.98] transition-all shadow-lg"
+           >
+             <TrendingDown className="h-12 w-12 text-white" strokeWidth={2.5} />
+             <span className="text-xl font-bold text-white">QUEBRAS</span>
+           </button>
+         </div>
+       </div>
      </div>
    );
  }

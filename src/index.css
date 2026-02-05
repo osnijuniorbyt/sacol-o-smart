@@ -9,105 +9,59 @@
 
 @layer base {
   :root {
-    /* Premium cream/beige background matching logo style */
-    --background: 40 30% 94%;
-    --foreground: 150 35% 12%;
+    /* TITAN INDUSTRIAL - Dark Mode */
+    --background: 220 15% 8%;
+    --foreground: 210 20% 95%;
 
-    /* Card with subtle warm tone */
-    --card: 40 25% 97%;
-    --card-foreground: 150 35% 12%;
+    /* Cards - slightly lighter dark */
+    --card: 220 15% 12%;
+    --card-foreground: 210 20% 95%;
 
-    --popover: 40 25% 97%;
-    --popover-foreground: 150 35% 12%;
+    --popover: 220 15% 14%;
+    --popover-foreground: 210 20% 95%;
 
-    /* Orange/Gold metallic primary - matches logo */
-    --primary: 36 90% 50%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary - Industrial Green */
+    --primary: 150 80% 35%;
+    --primary-foreground: 220 15% 8%;
 
-    --secondary: 40 20% 90%;
-    --secondary-foreground: 150 35% 15%;
+    --secondary: 220 12% 18%;
+    --secondary-foreground: 210 15% 85%;
 
-    --muted: 40 15% 92%;
-    --muted-foreground: 150 20% 40%;
+    --muted: 220 12% 16%;
+    --muted-foreground: 210 10% 55%;
 
-    /* Green accent - matches logo green */
-    --accent: 150 45% 30%;
+    /* Accent - Amber/Gold industrial highlight */
+    --accent: 38 90% 50%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 70% 50%;
+    --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 40 25% 82%;
-    --input: 40 20% 88%;
-    --ring: 36 90% 50%;
+    --border: 220 12% 20%;
+    --input: 220 12% 16%;
+    --ring: 150 80% 35%;
 
     --radius: 0.75rem;
     
-    /* Brand Palette - Metallic 3D Logo Colors */
-    --brand-orange: 36 90% 50%;
-    --brand-orange-light: 38 85% 60%;
-    --brand-orange-dark: 34 95% 40%;
-    --brand-green: 150 100% 20%;
-    --brand-green-light: 150 60% 35%;
-    --brand-green-dark: 150 100% 12%;
-    --brand-cream: 40 30% 94%;
+    /* Brand Palette - Industrial */
+    --brand-orange: 38 90% 50%;
+    --brand-orange-light: 40 85% 60%;
+    --brand-orange-dark: 36 95% 40%;
+    --brand-green: 150 80% 35%;
+    --brand-green-light: 150 70% 45%;
+    --brand-green-dark: 150 90% 20%;
+    --brand-cream: 210 20% 95%;
     --brand-dark: 220 15% 15%;
 
-    /* Sidebar - Dark green premium */
-    --sidebar-background: 150 50% 14%;
-    --sidebar-foreground: 40 30% 95%;
-    --sidebar-primary: 36 90% 55%;
-    --sidebar-primary-foreground: 150 35% 10%;
-    --sidebar-accent: 150 35% 22%;
-    --sidebar-accent-foreground: 40 30% 95%;
-    --sidebar-border: 150 30% 20%;
-    --sidebar-ring: 36 90% 55%;
-  }
-
-  .dark {
-    --background: 220 15% 10%;
-    --foreground: 40 25% 95%;
-
-    --card: 220 15% 14%;
-    --card-foreground: 40 25% 95%;
-
-    --popover: 220 15% 14%;
-    --popover-foreground: 40 25% 95%;
-
-    --primary: 36 85% 55%;
-    --primary-foreground: 220 15% 10%;
-
-    --secondary: 220 12% 20%;
-    --secondary-foreground: 40 25% 90%;
-
-    --muted: 220 12% 20%;
-    --muted-foreground: 40 15% 60%;
-
-    --accent: 150 40% 35%;
-    --accent-foreground: 40 25% 95%;
-
-    --destructive: 0 60% 45%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 220 12% 22%;
-    --input: 220 12% 22%;
-    --ring: 36 85% 55%;
-    
-    --brand-orange: 36 85% 55%;
-    --brand-orange-light: 38 80% 65%;
-    --brand-orange-dark: 34 90% 45%;
-    --brand-green: 150 50% 40%;
-    --brand-green-light: 150 45% 50%;
-    --brand-green-dark: 150 55% 25%;
-    
-    --sidebar-background: 220 15% 8%;
-    --sidebar-foreground: 40 25% 92%;
-    --sidebar-primary: 36 85% 55%;
-    --sidebar-primary-foreground: 220 15% 10%;
-    --sidebar-accent: 220 12% 16%;
-    --sidebar-accent-foreground: 40 25% 92%;
+    /* Sidebar - Industrial Dark */
+    --sidebar-background: 220 15% 6%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 150 80% 40%;
+    --sidebar-primary-foreground: 220 15% 8%;
+    --sidebar-accent: 220 12% 14%;
+    --sidebar-accent-foreground: 210 20% 90%;
     --sidebar-border: 220 12% 16%;
-    --sidebar-ring: 36 85% 55%;
+    --sidebar-ring: 150 80% 40%;
   }
 }
 
@@ -160,31 +114,35 @@
 /* Premium gradient utilities */
 @layer utilities {
   .gradient-brand {
-    background: linear-gradient(135deg, hsl(var(--brand-green-dark)) 0%, hsl(var(--brand-green)) 50%, hsl(var(--brand-green-dark)) 100%);
+    background: linear-gradient(135deg, hsl(220 15% 6%) 0%, hsl(220 15% 12%) 100%);
   }
   
   .gradient-orange {
-    background: linear-gradient(180deg, hsl(var(--brand-orange-light)) 0%, hsl(var(--brand-orange)) 50%, hsl(var(--brand-orange-dark)) 100%);
+    background: linear-gradient(180deg, hsl(var(--brand-orange-light)) 0%, hsl(var(--brand-orange)) 100%);
   }
   
   .gradient-premium {
-    background: linear-gradient(145deg, hsl(40 35% 96%) 0%, hsl(40 30% 92%) 50%, hsl(40 25% 88%) 100%);
+    background: linear-gradient(145deg, hsl(220 15% 14%) 0%, hsl(220 15% 10%) 100%);
   }
   
   .shadow-premium {
     box-shadow: 
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -2px rgba(0, 0, 0, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 4px 6px -1px rgba(0, 0, 0, 0.4),
+      0 2px 4px -2px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
   
   .border-metallic {
     border: 1px solid;
-    border-image: linear-gradient(180deg, hsl(36 60% 70%), hsl(36 50% 50%), hsl(36 40% 35%)) 1;
+    border-image: linear-gradient(180deg, hsl(150 60% 50%), hsl(150 50% 35%), hsl(150 40% 25%)) 1;
   }
   
   .glow-orange {
-    box-shadow: 0 0 20px -5px hsl(36 90% 50% / 0.4);
+    box-shadow: 0 0 20px -5px hsl(150 80% 40% / 0.3);
+  }
+  
+  .glow-accent {
+    box-shadow: 0 0 20px -5px hsl(38 90% 50% / 0.3);
   }
 }
 

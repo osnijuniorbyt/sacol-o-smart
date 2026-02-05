@@ -25,8 +25,7 @@ import {
 } from 'lucide-react';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
-import { BrandLogo } from '@/components/BrandLogo';
-import logoFull from '@/assets/logo-hortii-cream.png';
+ import logoLight from '@/assets/logo-hortii-transparent.png';
 
 interface LayoutProps {
   children: ReactNode;
@@ -116,25 +115,25 @@ export default function Layout({ children }: LayoutProps) {
   }, [sidebarOpen]);
 
   return (
-    <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-[hsl(42,35%,95%)] via-[hsl(40,30%,93%)] to-[hsl(38,40%,90%)]">
-      {/* Mobile header - Premium com tema pôr do sol - Otimizado para Dynamic Island */}
-      <header className="lg:hidden flex items-center justify-between p-4 header-mobile pl-safe pr-safe border-b-2 border-[hsl(38,80%,55%,0.4)] bg-gradient-to-r from-[hsl(150,50%,12%)] via-[hsl(150,45%,16%)] to-[hsl(150,50%,12%)] shadow-lg shadow-[hsl(30,60%,30%,0.3)]">
+    <div ref={mainRef} className="min-h-screen bg-background">
+      {/* Mobile header - Industrial Dark */}
+      <header className="lg:hidden flex items-center justify-between p-4 header-mobile pl-safe pr-safe border-b border-border bg-card">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="h-12 w-12 text-primary/80 hover:text-primary hover:bg-white/10"
+          className="h-12 w-12 text-muted-foreground hover:text-foreground hover:bg-secondary"
         >
           <Menu className="h-6 w-6" />
         </Button>
         
         {/* Logo centralizada */}
-        <BrandLogo size="sm" variant="icon-only" />
+        <img src={logoLight} alt="Hortii" className="h-8 w-auto object-contain" />
         
         <SyncStatusIndicator />
       </header>
 
-      {/* Swipe indicator - visual hint melhorado */}
+      {/* Swipe indicator - industrial */}
       <div 
         className={cn(
           "lg:hidden fixed left-0 top-1/2 -translate-y-1/2 z-30 transition-all duration-500",
@@ -142,20 +141,16 @@ export default function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="relative flex items-center">
-          {/* Glow effect - sunset */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[hsl(38,80%,55%,0.5)] to-transparent blur-lg w-8 h-20 rounded-r-full" />
+          {/* Glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-transparent blur-lg w-8 h-20 rounded-r-full" />
           
-          {/* Main indicator - sunset theme */}
-          <div className="relative bg-gradient-to-b from-[hsl(150,45%,14%)] via-[hsl(150,40%,12%)] to-[hsl(150,45%,10%)] rounded-r-2xl shadow-lg border-y border-r border-[hsl(40,75%,55%,0.4)] overflow-hidden">
+          {/* Main indicator */}
+          <div className="relative bg-card rounded-r-xl shadow-lg border-y border-r border-border overflow-hidden">
             <div className="px-1.5 py-4 flex flex-col items-center gap-1">
-              {/* Animated chevrons - sunset colors */}
-              <ChevronRight className="h-4 w-4 text-[hsl(45,85%,65%)] animate-[pulse_1.5s_ease-in-out_infinite]" />
-              <ChevronRight className="h-4 w-4 text-[hsl(40,80%,55%,0.7)] animate-[pulse_1.5s_ease-in-out_0.2s_infinite]" />
-              <ChevronRight className="h-4 w-4 text-[hsl(35,75%,50%,0.5)] animate-[pulse_1.5s_ease-in-out_0.4s_infinite]" />
+              <ChevronRight className="h-4 w-4 text-primary animate-[pulse_1.5s_ease-in-out_infinite]" />
+              <ChevronRight className="h-4 w-4 text-primary/70 animate-[pulse_1.5s_ease-in-out_0.2s_infinite]" />
+              <ChevronRight className="h-4 w-4 text-primary/40 animate-[pulse_1.5s_ease-in-out_0.4s_infinite]" />
             </div>
-            
-            {/* Shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-b from-[hsl(45,60%,80%,0.15)] via-transparent to-transparent pointer-events-none" />
           </div>
         </div>
       </div>
@@ -163,49 +158,35 @@ export default function Layout({ children }: LayoutProps) {
       {/* Sidebar overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/70 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar - Premium dark green com tema pôr do sol */}
+      {/* Sidebar - Industrial Dark */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-64 bg-gradient-to-b from-[hsl(150,50%,14%)] via-[hsl(150,45%,12%)] to-[hsl(150,50%,10%)] transform transition-transform duration-300 ease-out lg:translate-x-0 lg:left-3 lg:top-3 lg:bottom-3 lg:h-auto lg:rounded-2xl lg:border lg:border-[hsl(40,60%,55%,0.3)]",
-          "shadow-2xl lg:shadow-[0_8px_32px_-4px_hsl(38,70%,45%,0.35),0_4px_16px_-2px_hsl(30,60%,35%,0.25)]",
+          "fixed top-0 left-0 z-50 h-full w-64 bg-sidebar-background transform transition-transform duration-300 ease-out lg:translate-x-0 lg:left-3 lg:top-3 lg:bottom-3 lg:h-auto lg:rounded-xl lg:border lg:border-sidebar-border",
+          "shadow-2xl",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex flex-col h-full lg:rounded-2xl overflow-hidden">
-          {/* Logo preenchendo o container - tema pôr do sol sutil */}
-          <div className="relative border-b border-[hsl(40,50%,55%,0.2)]">
-            {/* Container da logo - altura fixa com bordas arredondadas no desktop */}
-            <div className="relative overflow-hidden h-[140px] lg:rounded-t-2xl">
-              {/* Borda metálica sutil */}
-              <div className="absolute inset-0 lg:rounded-t-2xl ring-1 ring-inset ring-[hsl(40,60%,60%,0.25)]" />
-              
-              {/* Shimmer sutil na borda inferior */}
-              <div 
-                className="absolute bottom-0 left-0 right-0 h-[2px] animate-shimmer z-10 opacity-50"
-                style={{
-                  background: 'linear-gradient(90deg, transparent, hsl(40,70%,60%), hsl(45,30%,85%), hsl(40,70%,60%), transparent)',
-                  backgroundSize: '200% 100%',
-                }}
-              />
-              
-              {/* Logo preenchendo totalmente o container */}
+        <div className="flex flex-col h-full lg:rounded-xl overflow-hidden">
+          {/* Logo container */}
+          <div className="relative border-b border-sidebar-border">
+            <div className="relative overflow-hidden h-[80px] lg:rounded-t-xl flex items-center justify-center bg-sidebar-accent">
               <img 
-                src={logoFull}
+                src={logoLight}
                 alt="Horti Campos"
-                className="w-full h-full object-cover object-center lg:rounded-t-2xl"
+                className="h-12 w-auto object-contain"
               />
               
-              {/* Close button for mobile - posicionado sobre a logo */}
+              {/* Close button for mobile */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden absolute top-2 right-2 h-8 w-8 text-[hsl(30,40%,40%)] hover:text-[hsl(30,50%,30%)] hover:bg-[hsl(40,30%,85%,0.7)] flex-shrink-0 z-20 rounded-full"
+                className="lg:hidden absolute top-2 right-2 h-8 w-8 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0 z-20 rounded-lg"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -213,7 +194,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {allNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -223,16 +204,16 @@ export default function Layout({ children }: LayoutProps) {
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all",
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
                     isActive
-                      ? "bg-gradient-to-r from-primary via-[hsl(36,90%,45%)] to-primary text-white shadow-lg shadow-[hsl(36,90%,30%,0.5)] border-t border-[hsl(36,80%,70%,0.3)]"
-                      : "hover:bg-white/5 text-[hsl(40,30%,80%)] hover:text-primary active:bg-white/10"
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      : "hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground"
                   )}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="font-medium flex-1">{item.label}</span>
                   {'shortcut' in item && item.shortcut && (
-                    <span className="text-xs opacity-60 hidden lg:inline">{item.shortcut}</span>
+                    <span className="text-xs text-sidebar-foreground/50 hidden lg:inline">{item.shortcut}</span>
                   )}
                 </Link>
               );
@@ -245,10 +226,10 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Logout button */}
-          <div className="p-3 border-t border-[hsl(40,70%,55%,0.25)]">
+          <div className="p-3 border-t border-sidebar-border">
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-[hsl(42,35%,75%)] hover:text-[hsl(45,85%,65%)] hover:bg-white/5"
+              className="w-full justify-start gap-3 h-12 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
               onClick={signOut}
             >
               <LogOut className="h-5 w-5" />
@@ -258,14 +239,14 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </aside>
 
-      {/* Main content - Premium sunset cream background */}
-      <main className="lg:ml-[280px] min-h-screen bg-gradient-to-br from-[hsl(42,35%,95%)] via-[hsl(40,30%,93%)] to-[hsl(38,40%,90%)]">
+      {/* Main content */}
+      <main className="lg:ml-[280px] min-h-screen bg-background">
         <div className="p-4 lg:p-6 pb-safe">
-          {/* Breadcrumb - página atual */}
+          {/* Breadcrumb */}
           <Breadcrumb className="mb-4">
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbPage className="text-foreground/70 text-sm font-medium">
+                <BreadcrumbPage className="text-muted-foreground text-sm font-medium">
                   {allNavItems.find(item => item.path === location.pathname)?.label || 'Página'}
                 </BreadcrumbPage>
               </BreadcrumbItem>

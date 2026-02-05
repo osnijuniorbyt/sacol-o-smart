@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,8 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ProductImage } from '@/components/ui/product-image';
 import { ProductPickerDialog } from './ProductPickerDialog';
+import { NewOrderItemRow } from './NewOrderItemRow';
 import { useSupplierProducts, SupplierProduct } from '@/hooks/useSupplierProducts';
 import { usePackagings } from '@/hooks/usePackagings';
 import { Supplier } from '@/hooks/useSuppliers';
@@ -24,7 +23,6 @@ import {
   Building2, 
   Package, 
   Plus, 
-  X, 
   Loader2, 
   Send,
   ShoppingCart
@@ -105,6 +103,12 @@ export function NewOrderForm({ suppliers, allProducts, onOrderSent }: NewOrderFo
   const handleUpdateItem = useCallback((productId: string, field: keyof OrderItem, value: any) => {
     setItems(prev => prev.map(item =>
       item.product_id === productId ? { ...item, [field]: value } : item
+    ));
+  }, []);
+
+  const handleQuantityChange = useCallback((productId: string, newQuantity: number) => {
+    setItems(prev => prev.map(item =>
+      item.product_id === productId ? { ...item, quantity: newQuantity } : item
     ));
   }, []);
 
@@ -271,89 +275,14 @@ export function NewOrderForm({ suppliers, allProducts, onOrderSent }: NewOrderFo
             ) : (
               <div className="space-y-3">
                 {items.map(item => (
-                  <div 
+                  <NewOrderItemRow
                     key={item.product_id}
-                    className="p-3 rounded-lg border bg-card"
-                  >
-                    <div className="flex items-start gap-3">
-                      <ProductImage
-                        src={item.product_image}
-                        alt={item.product_name}
-                        category={item.category as any}
-                        size="sm"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
-                          <div className="font-medium truncate pr-2">{item.product_name}</div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 -mt-1 -mr-1 text-muted-foreground hover:text-destructive"
-                            onClick={() => handleRemoveItem(item.product_id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-2 mt-2">
-                          {/* Quantidade */}
-                          <div>
-                            <Label className="text-xs text-muted-foreground">Qtd Vol.</Label>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              min={1}
-                              value={item.quantity}
-                              onChange={(e) => handleUpdateItem(
-                                item.product_id, 
-                                'quantity', 
-                                parseInt(e.target.value) || 1
-                              )}
-                              className="h-10 text-center font-mono"
-                            />
-                          </div>
-                          
-                          {/* Vasilhame */}
-                          <div>
-                            <Label className="text-xs text-muted-foreground">Vasilhame</Label>
-                            <Select
-                              value={item.packaging_id || ''}
-                              onValueChange={(v) => handleUpdateItem(item.product_id, 'packaging_id', v || null)}
-                            >
-                              <SelectTrigger className="h-10 text-xs">
-                                <SelectValue placeholder="Selecione" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-popover z-50">
-                                {activePackagings.map(pkg => (
-                                  <SelectItem key={pkg.id} value={pkg.id} className="text-sm">
-                                    {pkg.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          {/* Preço */}
-                          <div>
-                            <Label className="text-xs text-muted-foreground">R$/Vol.</Label>
-                            <Input
-                              type="number"
-                              inputMode="decimal"
-                              step="0.01"
-                              value={item.unit_price ?? ''}
-                              onChange={(e) => handleUpdateItem(
-                                item.product_id, 
-                                'unit_price', 
-                                parseFloat(e.target.value) || null
-                              )}
-                              className="h-10 text-right font-mono"
-                              placeholder="0,00"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    item={item}
+                    packagings={activePackagings}
+                    onQuantityChange={handleQuantityChange}
+                    onFieldChange={handleUpdateItem}
+                    onRemove={handleRemoveItem}
+                  />
                 ))}
 
                 {/* Botão adicionar mais */}

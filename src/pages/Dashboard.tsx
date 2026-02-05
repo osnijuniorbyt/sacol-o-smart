@@ -1,6 +1,12 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip as ShadcnTooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useSales } from '@/hooks/useSales';
 import { useStock } from '@/hooks/useStock';
 import { useBreakages } from '@/hooks/useBreakages';
@@ -200,11 +206,19 @@ export default function Dashboard() {
       </div>
 
       {/* Main Metrics - 2x2 on mobile, 4 columns on desktop - COMPACT */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+      <TooltipProvider>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {/* Lucro do Dia */}
         <Card className={metrics.todayProfit >= 0 ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
-            <CardTitle className="text-[10px] sm:text-xs font-medium">Lucro do Dia</CardTitle>
+            <ShadcnTooltip>
+              <TooltipTrigger asChild>
+                <CardTitle className="text-[10px] sm:text-xs font-medium cursor-help">Lucro do Dia</CardTitle>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Diferença entre receita e custos do dia atual</p>
+              </TooltipContent>
+            </ShadcnTooltip>
             {metrics.todayProfit >= 0 ? (
               <TrendingUp className="h-3.5 w-3.5 text-green-600" />
             ) : (
@@ -224,7 +238,14 @@ export default function Dashboard() {
         {/* Margem Real */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
-            <CardTitle className="text-[10px] sm:text-xs font-medium">Margem Real</CardTitle>
+            <ShadcnTooltip>
+              <TooltipTrigger asChild>
+                <CardTitle className="text-[10px] sm:text-xs font-medium cursor-help">Margem Real</CardTitle>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Percentual de lucro sobre o preço de venda</p>
+              </TooltipContent>
+            </ShadcnTooltip>
             <Target className="h-3.5 w-3.5 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-3 pt-0">
@@ -240,7 +261,14 @@ export default function Dashboard() {
         {/* Estoque em Valor */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
-            <CardTitle className="text-[10px] sm:text-xs font-medium">Estoque (R$)</CardTitle>
+            <ShadcnTooltip>
+              <TooltipTrigger asChild>
+                <CardTitle className="text-[10px] sm:text-xs font-medium cursor-help">Estoque (R$)</CardTitle>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Valor total do estoque em R$</p>
+              </TooltipContent>
+            </ShadcnTooltip>
             <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-3 pt-0">
@@ -256,7 +284,14 @@ export default function Dashboard() {
         {/* Vencendo em 3 dias */}
         <Card className={metrics.expiringCount > 0 ? 'border-orange-500/30 bg-orange-500/5' : ''}>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
-            <CardTitle className="text-[10px] sm:text-xs font-medium">Vencendo</CardTitle>
+            <ShadcnTooltip>
+              <TooltipTrigger asChild>
+                <CardTitle className="text-[10px] sm:text-xs font-medium cursor-help">Vencendo</CardTitle>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Produtos próximos da data de validade</p>
+              </TooltipContent>
+            </ShadcnTooltip>
             <Clock className="h-3.5 w-3.5 text-orange-500" />
           </CardHeader>
           <CardContent className="p-3 pt-0">
@@ -268,7 +303,8 @@ export default function Dashboard() {
             </p>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </TooltipProvider>
 
       {/* Stacked Bar Chart - Revenue vs Costs */}
       <Card>

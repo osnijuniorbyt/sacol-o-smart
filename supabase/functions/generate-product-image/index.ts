@@ -6,18 +6,112 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Valid product categories whitelist
+const VALID_CATEGORIES = ['frutas', 'verduras', 'legumes', 'temperos', 'outros', 'produce'];
+
+// Sanitize product name - only allow alphanumeric, spaces, hyphens, and common accented chars
+function sanitizeProductName(name: string): string {
+  return name
+    .slice(0, 100) // Max 100 characters
+    .replace(/[^a-zA-ZÀ-ÿ0-9\s\-]/g, '') // Only alphanumeric, accents, spaces, hyphens
+    .trim();
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // ========== AUTHENTICATION ==========
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Missing or invalid authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create client with user's auth context
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Verify user authentication
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // ========== AUTHORIZATION - Check if user is manager (admin or moderator) ==========
+    const { data: roles, error: rolesError } = await supabaseAuth
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .in('role', ['admin', 'moderator']);
+
+    if (rolesError || !roles || roles.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden - Only managers can generate product images" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ========== INPUT VALIDATION ==========
     const { productName, productId, category } = await req.json();
 
-    if (!productName || !productId) {
+    // Validate productId is a valid UUID
+    if (!productId || typeof productId !== 'string' || !UUID_REGEX.test(productId)) {
       return new Response(
-        JSON.stringify({ error: "productName and productId are required" }),
+        JSON.stringify({ error: "Invalid productId - must be a valid UUID" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate and sanitize productName
+    if (!productName || typeof productName !== 'string') {
+      return new Response(
+        JSON.stringify({ error: "productName is required and must be a string" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const sanitizedName = sanitizeProductName(productName);
+    if (!sanitizedName || sanitizedName.length < 2) {
+      return new Response(
+        JSON.stringify({ error: "productName must contain at least 2 valid characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate category against whitelist
+    const sanitizedCategory = category && typeof category === 'string' && VALID_CATEGORIES.includes(category.toLowerCase())
+      ? category.toLowerCase()
+      : 'produce';
+
+    // Verify the product exists before generating image
+    const { data: product, error: productError } = await supabaseAuth
+      .from('products')
+      .select('id, name')
+      .eq('id', productId)
+      .single();
+
+    if (productError || !product) {
+      return new Response(
+        JSON.stringify({ error: "Product not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -26,14 +120,18 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Generate image using Gemini via Lovable AI Gateway
-    const prompt = `Create a simple, clean illustration of a ${productName} (${category || 'produce'}) on a white background. 
-Style: flat design, minimalist, vibrant colors. 
-The item should be centered and fill 80% of the frame. 
-No text, no shadows, no decorations. 
-Single item only, professional quality illustration suitable for a grocery store product catalog.`;
+    // Generate image using Gemini via Lovable AI Gateway with structured prompt
+    const prompt = [
+      'Create a simple, clean illustration of a grocery product on a white background.',
+      `Product name: ${sanitizedName}`,
+      `Category: ${sanitizedCategory}`,
+      'Style: flat design, minimalist, vibrant colors.',
+      'The item should be centered and fill 80% of the frame.',
+      'Requirements: No text, no shadows, no decorations, single item only.',
+      'Professional quality illustration suitable for a grocery store product catalog.'
+    ].join('\n');
 
-    console.log("Generating image for:", productName);
+    console.log("Generating image for product:", productId, "by user:", userId);
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

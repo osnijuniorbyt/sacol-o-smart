@@ -9,59 +9,59 @@
 
 @layer base {
   :root {
-    /* TITAN INDUSTRIAL - Dark Mode */
-    --background: 220 15% 8%;
-    --foreground: 210 20% 95%;
+    /* TITAN CORPORATE - Estilo Smart Software */
+    --background: 210 20% 96%;
+    --foreground: 203 35% 28%;
 
-    /* Cards - slightly lighter dark */
-    --card: 220 15% 12%;
-    --card-foreground: 210 20% 95%;
+    /* Cards - white/light gray */
+    --card: 0 0% 100%;
+    --card-foreground: 203 35% 28%;
 
-    --popover: 220 15% 14%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 203 35% 28%;
 
-    /* Primary - Industrial Green */
-    --primary: 150 80% 35%;
-    --primary-foreground: 220 15% 8%;
+    /* Primary - Corporate Dark Blue #2D4A5E */
+    --primary: 203 35% 28%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 12% 18%;
-    --secondary-foreground: 210 15% 85%;
+    --secondary: 210 15% 92%;
+    --secondary-foreground: 203 35% 28%;
 
-    --muted: 220 12% 16%;
-    --muted-foreground: 210 10% 55%;
+    --muted: 210 15% 90%;
+    --muted-foreground: 203 25% 45%;
 
-    /* Accent - Amber/Gold industrial highlight */
-    --accent: 38 90% 50%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Orange/Yellow highlight */
+    --accent: 38 95% 55%;
+    --accent-foreground: 203 35% 20%;
 
-    --destructive: 0 65% 50%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 12% 20%;
-    --input: 220 12% 16%;
-    --ring: 150 80% 35%;
+    --border: 210 15% 85%;
+    --input: 210 15% 90%;
+    --ring: 203 35% 28%;
 
     --radius: 0.75rem;
     
-    /* Brand Palette - Industrial */
-    --brand-orange: 38 90% 50%;
-    --brand-orange-light: 40 85% 60%;
-    --brand-orange-dark: 36 95% 40%;
-    --brand-green: 150 80% 35%;
-    --brand-green-light: 150 70% 45%;
-    --brand-green-dark: 150 90% 20%;
-    --brand-cream: 210 20% 95%;
-    --brand-dark: 220 15% 15%;
+    /* Brand Palette - Corporate */
+    --brand-blue: 203 35% 28%;
+    --brand-blue-light: 203 30% 45%;
+    --brand-blue-dark: 203 40% 20%;
+    --brand-orange: 38 95% 55%;
+    --brand-orange-light: 40 90% 65%;
+    --brand-teal: 175 50% 35%;
+    --brand-teal-dark: 175 55% 25%;
+    --brand-gray: 210 15% 90%;
 
-    /* Sidebar - Industrial Dark */
-    --sidebar-background: 220 15% 6%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 150 80% 40%;
-    --sidebar-primary-foreground: 220 15% 8%;
-    --sidebar-accent: 220 12% 14%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 220 12% 16%;
-    --sidebar-ring: 150 80% 40%;
+    /* Sidebar - Corporate Dark Blue */
+    --sidebar-background: 203 35% 28%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 38 95% 55%;
+    --sidebar-primary-foreground: 203 35% 20%;
+    --sidebar-accent: 203 30% 35%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 203 30% 35%;
+    --sidebar-ring: 38 95% 55%;
   }
 }
 
@@ -114,35 +114,34 @@
 /* Premium gradient utilities */
 @layer utilities {
   .gradient-brand {
-    background: linear-gradient(135deg, hsl(220 15% 6%) 0%, hsl(220 15% 12%) 100%);
+    background: linear-gradient(135deg, hsl(203 35% 28%) 0%, hsl(203 30% 35%) 100%);
   }
   
   .gradient-orange {
-    background: linear-gradient(180deg, hsl(var(--brand-orange-light)) 0%, hsl(var(--brand-orange)) 100%);
+    background: linear-gradient(180deg, hsl(40 90% 65%) 0%, hsl(38 95% 55%) 100%);
   }
   
   .gradient-premium {
-    background: linear-gradient(145deg, hsl(220 15% 14%) 0%, hsl(220 15% 10%) 100%);
+    background: linear-gradient(145deg, hsl(210 20% 98%) 0%, hsl(210 15% 92%) 100%);
   }
   
   .shadow-premium {
     box-shadow: 
-      0 4px 6px -1px rgba(0, 0, 0, 0.4),
-      0 2px 4px -2px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      0 4px 6px -1px rgba(45, 74, 94, 0.15),
+      0 2px 4px -2px rgba(45, 74, 94, 0.1);
   }
   
   .border-metallic {
     border: 1px solid;
-    border-image: linear-gradient(180deg, hsl(150 60% 50%), hsl(150 50% 35%), hsl(150 40% 25%)) 1;
+    border-image: linear-gradient(180deg, hsl(203 30% 45%), hsl(203 35% 28%), hsl(203 40% 20%)) 1;
   }
   
   .glow-orange {
-    box-shadow: 0 0 20px -5px hsl(150 80% 40% / 0.3);
+    box-shadow: 0 0 20px -5px hsl(38 90% 50% / 0.3);
   }
   
-  .glow-accent {
-    box-shadow: 0 0 20px -5px hsl(38 90% 50% / 0.3);
+  .btn-pill {
+    @apply rounded-full px-6 py-3 font-medium transition-all;
   }
 }
 

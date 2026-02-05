@@ -1,4 +1,4 @@
 # Memory: design/sunset-theme
-Updated: 2026-02-05
+Updated: 2026-02-05 (Titan Corporate)
 
-[DEPRECATED] Tema substituído pelo TITAN INDUSTRIAL Dark Mode. Novo tema: fundo escuro hsl(220,15%,8%), cards em hsl(220,15%,12%), primary verde industrial hsl(150,80%,35%), accent âmbar hsl(38,90%,50%). Design minimalista industrial com cores sólidas, tipografia bold e contraste alto. Sem gradientes decorativos, sem shimmer, sem efeitos metálicos.
+[TITAN CORPORATE] Tema estilo Smart Software. Primary: Azul corporativo #2D4A5E (hsl 203,35%,28%). Background: cinza claro hsl(210,20%,96%). Cards: brancos. Sidebar e Header mobile: azul sólido com ícones/textos brancos. Botões pill arredondados cinza (bg-secondary). Accent: laranja/amarelo hsl(38,95%,55%) para preços. Teal hsl(175,50%,35%) para botões de quantidade. Home mobile com grid 2x2 de cards brancos com ícones grandes azuis. Estilo minimalista corporativo limpo.

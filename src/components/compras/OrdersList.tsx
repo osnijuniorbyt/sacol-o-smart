@@ -1,22 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { 
   Package, 
   Truck, 
@@ -27,7 +13,9 @@ import {
   Building2,
   Loader2,
   Pencil,
-  FileText
+  FileText,
+  DollarSign,
+  ChevronRight
 } from 'lucide-react';
 import { PurchaseOrder, PURCHASE_ORDER_STATUS_LABELS } from '@/types/database';
 import { ReceivingDialog } from './ReceivingDialog';
@@ -35,6 +23,7 @@ import { EditOrderDialog } from './EditOrderDialog';
 import { PhotoGallery } from './PhotoGallery';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface OrdersListProps {
   orders: PurchaseOrder[];
@@ -48,12 +37,37 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
   const navigate = useNavigate();
   const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
+  const [clickedButton, setClickedButton] = useState<string | null>(null);
 
-  const statusColors: Record<string, string> = {
-    rascunho: 'bg-muted text-muted-foreground',
-    enviado: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    recebido: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    cancelado: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  const statusConfig: Record<string, { bg: string; text: string; border: string }> = {
+    rascunho: { 
+      bg: 'bg-muted', 
+      text: 'text-muted-foreground',
+      border: 'border-muted'
+    },
+    enviado: { 
+      bg: 'bg-amber-100 dark:bg-amber-900/30', 
+      text: 'text-amber-800 dark:text-amber-200',
+      border: 'border-amber-300 dark:border-amber-700'
+    },
+    recebido: { 
+      bg: 'bg-emerald-100 dark:bg-emerald-900/30', 
+      text: 'text-emerald-800 dark:text-emerald-200',
+      border: 'border-emerald-300 dark:border-emerald-700'
+    },
+    cancelado: { 
+      bg: 'bg-red-100 dark:bg-red-900/30', 
+      text: 'text-red-800 dark:text-red-200',
+      border: 'border-red-300 dark:border-red-700'
+    },
+  };
+
+  // Optimistic UI handler
+  const handleButtonClick = (buttonId: string, action: () => void) => {
+    setClickedButton(buttonId);
+    // Reset after animation
+    setTimeout(() => setClickedButton(null), 300);
+    action();
   };
 
   if (orders.length === 0) {
@@ -80,36 +94,68 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
     <>
       <div className="space-y-4">
         {orders.map(order => (
-          <Card key={order.id} className="overflow-hidden">
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <CardTitle className="text-base">
+          <Card 
+            key={order.id} 
+            className={cn(
+              "overflow-hidden transition-all duration-200",
+              "border-l-4",
+              statusConfig[order.status]?.border || 'border-muted'
+            )}
+          >
+            <CardContent className="p-4 sm:p-5">
+              {/* Header: Supplier + Status */}
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Building2 className="h-5 w-5 text-primary flex-shrink-0" />
+                    <h3 className="text-xl sm:text-2xl font-bold truncate">
                       {order.supplier?.name || 'Fornecedor não definido'}
-                    </CardTitle>
+                    </h3>
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4 flex-shrink-0" />
+                    <span>
                       {format(new Date(order.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                     </span>
-                    <Badge className={statusColors[order.status]}>
-                      {PURCHASE_ORDER_STATUS_LABELS[order.status]}
-                    </Badge>
-                    {order.edited_at && (
-                      <Badge variant="secondary">
-                        ✏️ Editado
-                      </Badge>
-                    )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">
-                    {type === 'received' ? 'Valor Pago' : 'Estimado'}
+                <div className="flex flex-col items-end gap-2">
+                  <Badge 
+                    className={cn(
+                      "text-sm px-3 py-1 font-semibold",
+                      statusConfig[order.status]?.bg,
+                      statusConfig[order.status]?.text
+                    )}
+                  >
+                    {PURCHASE_ORDER_STATUS_LABELS[order.status]}
+                  </Badge>
+                  {order.edited_at && (
+                    <Badge variant="secondary" className="text-xs">
+                      ✏️ Editado
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Stats Row: Items + Value */}
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                <div className="bg-muted/50 rounded-xl p-3 sm:p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                    <Package className="h-4 w-4" />
+                    <span className="text-xs sm:text-sm font-medium">Itens</span>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold">
+                    {order.items?.length || 0}
                   </p>
-                  <p className="text-lg font-bold font-mono">
+                </div>
+                <div className="bg-primary/10 rounded-xl p-3 sm:p-4">
+                  <div className="flex items-center gap-2 text-primary mb-1">
+                    <DollarSign className="h-4 w-4" />
+                    <span className="text-xs sm:text-sm font-medium">
+                      {type === 'received' ? 'Valor Pago' : 'Estimado'}
+                    </span>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold font-mono text-primary">
                     R$ {(type === 'received' && order.total_received 
                       ? order.total_received 
                       : order.total_estimated
@@ -117,98 +163,62 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
                   </p>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="items" className="border-none">
-                  <AccordionTrigger className="py-2 hover:no-underline">
-                    <span className="flex items-center gap-2 text-sm">
-                      <Package className="h-4 w-4" />
-                      {order.items?.length || 0} itens
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Produto</TableHead>
-                          <TableHead className="text-right">Pedido</TableHead>
-                          {type === 'received' && (
-                            <TableHead className="text-right">Recebido</TableHead>
-                          )}
-                          <TableHead className="text-right">
-                            {type === 'received' ? 'Custo Real' : 'Custo Est.'}
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {order.items?.map(item => (
-                          <TableRow key={item.id}>
-                            <TableCell className="font-medium">
-                              {item.product?.name}
-                            </TableCell>
-                            <TableCell className="text-right font-mono">
-                              {item.quantity} kg
-                            </TableCell>
-                            {type === 'received' && (
-                              <TableCell className="text-right font-mono">
-                                {item.quantity_received ?? '-'} kg
-                              </TableCell>
-                            )}
-                            <TableCell className="text-right font-mono">
-                              R$ {(type === 'received' && item.unit_cost_actual 
-                                ? item.unit_cost_actual 
-                                : item.unit_cost_estimated || 0
-                              ).toFixed(2)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
 
               {type === 'pending' && (
-                <div className="space-y-2 mt-4">
-                  <div className="flex gap-2">
+                <div className="space-y-3">
+                  {/* Primary Actions - Large Touch Targets */}
+                  <Button 
+                    className={cn(
+                      "w-full h-14 text-base font-semibold transition-all duration-150",
+                      clickedButton === `conferir-${order.id}` && "scale-95 opacity-80"
+                    )}
+                    onClick={() => handleButtonClick(`conferir-${order.id}`, () => setReceivingOrder(order))}
+                  >
+                    <ClipboardCheck className="mr-3 h-6 w-6" />
+                    Conferir Item a Item
+                    <ChevronRight className="ml-auto h-5 w-5" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-14 text-base font-semibold transition-all duration-150",
+                      clickedButton === `protocolo-${order.id}` && "scale-95 opacity-80"
+                    )}
+                    onClick={() => handleButtonClick(`protocolo-${order.id}`, () => navigate(`/protocolo/${order.id}`))}
+                  >
+                    <FileText className="mr-3 h-6 w-6" />
+                    Protocolo Fechamento
+                    <ChevronRight className="ml-auto h-5 w-5" />
+                  </Button>
+
+                  {/* Secondary Actions */}
+                  <div className="flex gap-3 pt-2">
                     <Button 
-                      className="flex-1 h-12"
-                      onClick={() => setReceivingOrder(order)}
-                    >
-                      <ClipboardCheck className="mr-2 h-5 w-5" />
-                      Conferir Item a Item
-                    </Button>
-                    <Button
                       variant="outline"
-                      className="flex-1 h-12"
-                      onClick={() => navigate(`/protocolo/${order.id}`)}
+                      className={cn(
+                        "flex-1 h-12 text-sm font-medium transition-all duration-150",
+                        clickedButton === `editar-${order.id}` && "scale-95 opacity-80"
+                      )}
+                      onClick={() => handleButtonClick(`editar-${order.id}`, () => setEditingOrder(order))}
                     >
-                      <FileText className="mr-2 h-5 w-5" />
-                      Protocolo Fechamento
-                    </Button>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10"
-                      onClick={() => setEditingOrder(order)}
-                    >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="mr-2 h-5 w-5" />
+                      Editar
                     </Button>
                     {onDelete && (
                       <Button 
                         variant="outline" 
-                        size="icon"
-                        className="text-destructive h-10 w-10"
-                        onClick={() => onDelete(order.id)}
+                        className={cn(
+                          "h-12 px-4 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all duration-150",
+                          clickedButton === `delete-${order.id}` && "scale-95 opacity-80"
+                        )}
+                        onClick={() => handleButtonClick(`delete-${order.id}`, () => onDelete(order.id))}
                         disabled={isDeleting}
                       >
                         {isDeleting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-5 w-5 animate-spin" />
                         ) : (
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-5 w-5" />
                         )}
                       </Button>
                     )}
@@ -217,9 +227,12 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
               )}
 
               {type === 'received' && order.received_at && (
-                <div className="mt-4 space-y-3">
-                  <div className="text-sm text-muted-foreground">
-                    Recebido em: {format(new Date(order.received_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                    <span>
+                      Recebido em: {format(new Date(order.received_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </span>
                   </div>
                   <PhotoGallery orderId={order.id} order={order} compact />
                 </div>

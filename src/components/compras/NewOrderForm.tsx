@@ -25,8 +25,11 @@ import {
   Plus, 
   Loader2, 
   Send,
-  ShoppingCart
+  ShoppingCart,
+  ListOrdered,
+  ClipboardList
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface OrderItem {
   product_id: string;
@@ -52,6 +55,7 @@ export function NewOrderForm({ suppliers, allProducts, onOrderSent }: NewOrderFo
   const [items, setItems] = useState<OrderItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
+  const [activeView, setActiveView] = useState<'itens' | 'resumo'>('itens');
 
   const { products: supplierProducts, productsWithHistory, isLoading: loadingHistory } = useSupplierProducts(selectedSupplier);
   const selectedSupplierData = suppliers.find(s => s.id === selectedSupplier);
@@ -206,116 +210,177 @@ export function NewOrderForm({ suppliers, allProducts, onOrderSent }: NewOrderFo
 
   return (
     <div className="space-y-4">
-      {/* 1. SELEÇÃO DE FORNECEDOR */}
-      <Card className="border-2 border-primary">
-        <CardContent className="pt-4">
-          <Label className="text-sm font-medium mb-2 flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Fornecedor
-            <Badge variant="destructive" className="ml-1">Obrigatório</Badge>
-          </Label>
-          <Select value={selectedSupplier} onValueChange={handleSupplierChange}>
-            <SelectTrigger className="h-14 text-lg">
-              <SelectValue placeholder="Selecione o fornecedor..." />
-            </SelectTrigger>
-            <SelectContent className="bg-popover z-50">
-              {suppliers.map(supplier => (
-                <SelectItem key={supplier.id} value={supplier.id} className="py-3">
-                  <div className="font-medium">{supplier.name}</div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {selectedSupplierData && (
-            <div className="mt-2 p-2 bg-primary/10 rounded-lg text-sm">
-              ✓ {selectedSupplierData.name}
-              {selectedSupplierData.phone && ` • ${selectedSupplierData.phone}`}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 2. ITENS DO PEDIDO */}
-      {selectedSupplier && (
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between mb-3">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <ShoppingCart className="h-4 w-4" />
-                Itens do Pedido
+      {/* VIEW: ITENS */}
+      {activeView === 'itens' && (
+        <>
+          {/* 1. SELEÇÃO DE FORNECEDOR */}
+          <Card className="border-2 border-primary">
+            <CardContent className="pt-4">
+              <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Fornecedor
+                <Badge variant="destructive" className="ml-1">Obrigatório</Badge>
               </Label>
-              {items.length > 0 && (
-                <Badge variant="secondary">
-                  {items.length} produtos • {totalVolumes} vol.
-                </Badge>
+              <Select value={selectedSupplier} onValueChange={handleSupplierChange}>
+                <SelectTrigger className="h-14 text-lg">
+                  <SelectValue placeholder="Selecione o fornecedor..." />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {suppliers.map(supplier => (
+                    <SelectItem key={supplier.id} value={supplier.id} className="py-3">
+                      <div className="font-medium">{supplier.name}</div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {selectedSupplierData && (
+                <div className="mt-2 p-2 bg-primary/10 rounded-lg text-sm">
+                  ✓ {selectedSupplierData.name}
+                  {selectedSupplierData.phone && ` • ${selectedSupplierData.phone}`}
+                </div>
               )}
-            </div>
+            </CardContent>
+          </Card>
 
-            {loadingHistory ? (
-              <div className="py-8 text-center">
-                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Carregando histórico...</p>
-              </div>
-            ) : items.length === 0 ? (
-              <div className="py-8 text-center border-2 border-dashed rounded-lg">
-                <Package className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-muted-foreground mb-3">
-                  Nenhum produto no histórico. Adicione do catálogo.
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowProductPicker(true)}
-                  className="border-primary text-primary hover:bg-primary/10"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Produto
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {items.map(item => (
-                  <NewOrderItemRow
-                    key={item.product_id}
-                    item={item}
-                    packagings={activePackagings}
-                    onQuantityChange={handleQuantityChange}
-                    onFieldChange={handleUpdateItem}
-                    onRemove={handleRemoveItem}
-                  />
-                ))}
+          {/* 2. ITENS DO PEDIDO */}
+          {selectedSupplier && (
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <ShoppingCart className="h-4 w-4" />
+                    Itens do Pedido
+                  </Label>
+                  {items.length > 0 && (
+                    <Badge variant="secondary">
+                      {items.length} produtos • {totalVolumes} vol.
+                    </Badge>
+                  )}
+                </div>
 
-                {/* Botão adicionar mais */}
-                <Button
-                  variant="outline"
-                  onClick={() => setShowProductPicker(true)}
-                  className="w-full h-12 border-dashed border-2 border-primary text-primary hover:bg-primary/10"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Adicionar Outro Produto
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                {loadingHistory ? (
+                  <div className="py-8 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Carregando histórico...</p>
+                  </div>
+                ) : items.length === 0 ? (
+                  <div className="py-8 text-center border-2 border-dashed rounded-lg">
+                    <Package className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
+                    <p className="text-muted-foreground mb-3">
+                      Nenhum produto no histórico. Adicione do catálogo.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowProductPicker(true)}
+                      className="border-primary text-primary hover:bg-primary/10"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Adicionar Produto
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {items.map(item => (
+                      <NewOrderItemRow
+                        key={item.product_id}
+                        item={item}
+                        packagings={activePackagings}
+                        onQuantityChange={handleQuantityChange}
+                        onFieldChange={handleUpdateItem}
+                        onRemove={handleRemoveItem}
+                      />
+                    ))}
+
+                    {/* Botão adicionar mais */}
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowProductPicker(true)}
+                      className="w-full h-12 border-dashed border-2 border-primary text-primary hover:bg-primary/10"
+                    >
+                      <Plus className="h-5 w-5 mr-2" />
+                      Adicionar Outro Produto
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
-      {/* 3. BOTÃO ENVIAR */}
-      {selectedSupplier && items.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 fixed-bottom-safe pl-safe pr-safe bg-background border-t shadow-lg z-50">
-          <div className="max-w-md mx-auto">
-            <div className="flex justify-between mb-2 text-sm">
-              <span>
-                {selectedSupplierData?.name} • {totalVolumes} volumes
-              </span>
-              {totalPedido > 0 && (
-                <span className="font-mono font-medium">R$ {totalPedido.toFixed(2)}</span>
+      {/* VIEW: RESUMO */}
+      {activeView === 'resumo' && selectedSupplier && (
+        <Card>
+          <CardContent className="pt-4">
+            <Label className="text-sm font-medium mb-4 flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Resumo do Pedido
+            </Label>
+
+            {/* Info Fornecedor */}
+            <div className="p-3 bg-muted rounded-lg mb-4">
+              <div className="flex items-center gap-2 text-sm">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{selectedSupplierData?.name}</span>
+              </div>
+              {selectedSupplierData?.phone && (
+                <div className="text-xs text-muted-foreground mt-1 ml-6">
+                  {selectedSupplierData.phone}
+                </div>
               )}
             </div>
+
+            {/* Lista de itens resumida */}
+            {items.length === 0 ? (
+              <div className="py-6 text-center border-2 border-dashed rounded-lg mb-4">
+                <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                <p className="text-sm text-muted-foreground">
+                  Nenhum item adicionado. Vá para "Itens" para adicionar produtos.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 mb-4 max-h-[40vh] overflow-y-auto">
+                {items.map(item => {
+                  const subtotal = item.quantity * (item.unit_price || 0);
+                  return (
+                    <div key={item.product_id} className="flex justify-between items-center py-2 border-b border-border/50 last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{item.product_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.quantity} cx × R$ {(item.unit_price || 0).toFixed(2)}
+                        </p>
+                      </div>
+                      <span className="font-mono text-sm font-medium ml-2">
+                        R$ {subtotal.toFixed(2)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Totais */}
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Total de itens</span>
+                <span>{items.length} produtos</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Total de volumes</span>
+                <span>{totalVolumes} caixas</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                <span>Total Estimado</span>
+                <span className="text-primary font-mono">R$ {totalPedido.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Botão Enviar */}
             <Button 
               onClick={handleEnviarPedido}
-              disabled={isSaving}
-              className="w-full h-14 text-lg"
+              disabled={isSaving || items.length === 0}
+              className="w-full h-14 text-lg mt-6"
             >
               {isSaving ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -323,6 +388,46 @@ export function NewOrderForm({ suppliers, allProducts, onOrderSent }: NewOrderFo
                 <Send className="mr-2 h-5 w-5" />
               )}
               {isSaving ? 'Enviando...' : 'Enviar Pedido'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* BARRA DE NAVEGAÇÃO FIXA NO RODAPÉ */}
+      {selectedSupplier && (
+        <div className="fixed bottom-0 left-0 right-0 fixed-bottom-safe pl-safe pr-safe bg-background border-t shadow-lg z-50">
+          <div className="max-w-md mx-auto flex gap-2 p-2">
+            <Button
+              variant={activeView === 'itens' ? 'default' : 'outline'}
+              onClick={() => setActiveView('itens')}
+              className={cn(
+                "flex-1 h-14 text-base gap-2",
+                activeView === 'itens' && "shadow-md"
+              )}
+            >
+              <ListOrdered className="h-5 w-5" />
+              Itens
+              {items.length > 0 && (
+                <Badge variant={activeView === 'itens' ? 'secondary' : 'outline'} className="ml-1">
+                  {items.length}
+                </Badge>
+              )}
+            </Button>
+            <Button
+              variant={activeView === 'resumo' ? 'default' : 'outline'}
+              onClick={() => setActiveView('resumo')}
+              className={cn(
+                "flex-1 h-14 text-base gap-2",
+                activeView === 'resumo' && "shadow-md"
+              )}
+            >
+              <ClipboardList className="h-5 w-5" />
+              Resumo
+              {totalPedido > 0 && (
+                <span className="font-mono text-xs ml-1">
+                  R$ {totalPedido.toFixed(0)}
+                </span>
+              )}
             </Button>
           </div>
         </div>

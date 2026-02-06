@@ -8,6 +8,7 @@ export interface DraftItemData {
   unit_cost_actual: number;
   quality_status: QualityStatus;
   quality_notes: string;
+  peso_bruto?: number;
 }
 
 export interface ReceivingDraft {

@@ -564,14 +564,14 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                         Vasilhame
                       </Label>
                       <Select
-                        value={item.packaging_id || ''}
-                        onValueChange={(v) => updateItem(item.id, 'packaging_id', v || null)}
+                        value={item.packaging_id || '__none__'}
+                        onValueChange={(v) => updateItem(item.id, 'packaging_id', v === '__none__' ? null : v)}
                       >
                         <SelectTrigger className="h-10">
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                         <SelectContent className="bg-popover z-50">
-                          <SelectItem value="">Nenhum</SelectItem>
+                          <SelectItem value="__none__">Nenhum</SelectItem>
                           {activePackagings.map(pkg => (
                             <SelectItem key={pkg.id} value={pkg.id} className="py-2">
                               <div className="flex items-center justify-between gap-2">

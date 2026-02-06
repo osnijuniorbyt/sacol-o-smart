@@ -84,6 +84,7 @@ interface ItemReceiving {
   quality_notes: string;
   packaging_id: string | null;
   peso_bruto: number;
+  qtd_volumes: number;
 }
 
 interface ReceivingDialogProps {
@@ -135,7 +136,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   const [numericModal, setNumericModal] = useState<{
     open: boolean;
     itemId: string;
-    field: 'quantity_received' | 'unit_cost_actual' | 'peso_bruto';
+    field: 'quantity_received' | 'unit_cost_actual' | 'peso_bruto' | 'qtd_volumes';
     value: string;
     title: string;
     unit: string;
@@ -152,21 +153,24 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
 
   const openNumericModal = (
     itemId: string, 
-    field: 'quantity_received' | 'unit_cost_actual' | 'peso_bruto',
+    field: 'quantity_received' | 'unit_cost_actual' | 'peso_bruto' | 'qtd_volumes',
     currentValue: number,
     productName: string,
     productUnit: UnitType
   ) => {
     const isQuantity = field === 'quantity_received';
     const isPesoBruto = field === 'peso_bruto';
+    const isQtdVolumes = field === 'qtd_volumes';
     setNumericModal({
       open: true,
       itemId,
       field,
       value: currentValue > 0 ? currentValue.toString().replace('.', ',') : '',
-      title: isPesoBruto ? `Peso Bruto: ${productName}` : (isQuantity ? `Qtd: ${productName}` : `Custo: ${productName}`),
-      unit: isPesoBruto ? 'kg' : (isQuantity ? UNIT_SHORT[productUnit] : 'R$'),
-      maxDecimals: isPesoBruto ? 3 : (isQuantity ? 1 : 2),
+      title: isPesoBruto ? `Peso Bruto: ${productName}` : 
+             isQtdVolumes ? `Qtd Volumes: ${productName}` :
+             (isQuantity ? `Qtd: ${productName}` : `Custo: ${productName}`),
+      unit: isPesoBruto ? 'kg' : (isQtdVolumes ? 'vol' : (isQuantity ? UNIT_SHORT[productUnit] : 'R$')),
+      maxDecimals: (isPesoBruto ? 3 : (isQtdVolumes ? 0 : (isQuantity ? 1 : 2))),
     });
   };
 
@@ -192,6 +196,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
       quality_notes: '',
       packaging_id: item.packaging_id || null,
       peso_bruto: item.estimated_kg || 0,
+      qtd_volumes: item.quantity || 0,
     }));
   }, [order]);
 
@@ -218,6 +223,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
           quality_notes: draftItem.quality_notes,
           packaging_id: orderItem.packaging_id || null,
           peso_bruto: draftItem.peso_bruto ?? orderItem.estimated_kg ?? 0,
+          qtd_volumes: draftItem.qtd_volumes ?? orderItem.quantity ?? 0,
         };
       }
       
@@ -235,6 +241,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
         quality_notes: '',
         packaging_id: orderItem.packaging_id || null,
         peso_bruto: orderItem.estimated_kg || 0,
+        qtd_volumes: orderItem.quantity || 0,
       };
     });
     
@@ -285,6 +292,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
       quality_status: item.quality_status,
       quality_notes: item.quality_notes,
       peso_bruto: item.peso_bruto,
+      qtd_volumes: item.qtd_volumes,
     }));
     
     saveDraft(draftItems, generalNotes);
@@ -591,24 +599,24 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                     </div>
                   </div>
 
-                  {/* Row 3: Peso Bruto, Tara, Líquido */}
+                  {/* Row 3: Peso Bruto, Tara, Qtd Volumes, Líquido */}
                   {(() => {
                     const selectedPkg = activePackagings.find(p => p.id === item.packaging_id);
                     const taraUnitaria = selectedPkg?.tare_weight || 0;
-                    const taraTotal = taraUnitaria * item.quantity_received;
+                    const taraTotal = taraUnitaria * item.qtd_volumes;
                     const pesoLiquido = Math.max(0, item.peso_bruto - taraTotal);
                     
                     return (
-                      <div className="grid grid-cols-3 gap-2 pt-1 border-t border-dashed">
+                      <div className="grid grid-cols-4 gap-2 pt-1 border-t border-dashed">
                         <div>
-                          <Label className="text-[10px] text-muted-foreground">Peso Bruto</Label>
+                          <Label className="text-[10px] text-muted-foreground">Bruto (kg)</Label>
                           {isMobile ? (
                             <button
                               type="button"
                               onClick={() => openNumericModal(item.id, 'peso_bruto', item.peso_bruto, item.product_name, item.product_unit)}
                               className="w-full h-10 px-2 rounded-md border border-input bg-background text-left font-mono text-sm hover:bg-accent transition-colors"
                             >
-                              {item.peso_bruto.toFixed(2)} <span className="text-[10px] text-muted-foreground">kg</span>
+                              {item.peso_bruto.toFixed(2)}
                             </button>
                           ) : (
                             <Input
@@ -627,15 +635,37 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                           )}
                         </div>
                         <div>
-                          <Label className="text-[10px] text-muted-foreground">Tara ({item.quantity_received}×{taraUnitaria})</Label>
+                          <Label className="text-[10px] text-muted-foreground">Tara (kg)</Label>
                           <div className="h-10 flex items-center font-mono text-sm text-muted-foreground">
-                            -{taraTotal.toFixed(2)} <span className="text-[10px] ml-1">kg</span>
+                            {taraUnitaria.toFixed(1)}
                           </div>
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Volumes</Label>
+                          {isMobile ? (
+                            <button
+                              type="button"
+                              onClick={() => openNumericModal(item.id, 'qtd_volumes', item.qtd_volumes, item.product_name, item.product_unit)}
+                              className="w-full h-10 px-2 rounded-md border border-input bg-background text-left font-mono text-sm hover:bg-accent transition-colors"
+                            >
+                              {item.qtd_volumes}
+                            </button>
+                          ) : (
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              value={item.qtd_volumes}
+                              onChange={(e) => {
+                                updateItem(item.id, 'qtd_volumes', parseInt(e.target.value) || 0);
+                              }}
+                              className="h-10 text-sm font-mono"
+                            />
+                          )}
                         </div>
                         <div>
                           <Label className="text-[10px] text-muted-foreground font-semibold text-primary">Líquido</Label>
                           <div className="h-10 flex items-center font-mono text-sm font-bold text-primary">
-                            {pesoLiquido.toFixed(2)} <span className="text-[10px] ml-1">kg</span>
+                            {pesoLiquido.toFixed(2)}
                           </div>
                         </div>
                       </div>

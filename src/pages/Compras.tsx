@@ -97,21 +97,31 @@ export default function Compras() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 h-12">
-          <TabsTrigger value="novo" className="flex items-center gap-1.5 h-10 text-sm">
+        {/* Pill-style tabs - MD3 */}
+        <TabsList className="grid w-full grid-cols-3 h-14 p-1.5 bg-muted/50 rounded-full border-0">
+          <TabsTrigger 
+            value="novo" 
+            className="flex items-center gap-1.5 h-full text-sm rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+          >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Novo</span>
           </TabsTrigger>
-          <TabsTrigger value="enviados" className="flex items-center gap-1.5 h-10 text-sm">
+          <TabsTrigger 
+            value="enviados" 
+            className="flex items-center gap-1.5 h-full text-sm rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+          >
             <Truck className="h-4 w-4" />
             <span className="hidden sm:inline">Enviados</span>
             {pendingOrders.length > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+              <Badge className="ml-1 h-5 min-w-5 px-1.5 rounded-full bg-amber-100 text-amber-700 text-xs">
                 {pendingOrders.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="recebidos" className="flex items-center gap-1.5 h-10 text-sm">
+          <TabsTrigger 
+            value="recebidos" 
+            className="flex items-center gap-1.5 h-full text-sm rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+          >
             <CheckCircle2 className="h-4 w-4" />
             <span className="hidden sm:inline">Recebidos</span>
           </TabsTrigger>

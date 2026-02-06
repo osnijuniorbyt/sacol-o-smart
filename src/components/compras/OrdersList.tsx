@@ -96,70 +96,72 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
         {orders.map(order => (
           <Card 
             key={order.id} 
-            className={cn(
-              "overflow-hidden transition-all duration-200",
-              "border-l-4",
-              statusConfig[order.status]?.border || 'border-muted'
-            )}
+            className="bg-white shadow-sm hover:shadow-md rounded-2xl border-0 overflow-hidden transition-all duration-200"
           >
             <CardContent className="p-4 sm:p-5">
               {/* Header: Supplier + Status */}
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <Building2 className="h-5 w-5 text-primary flex-shrink-0" />
-                    <h3 className="text-xl sm:text-2xl font-bold truncate">
-                      {order.supplier?.name || 'Fornecedor não definido'}
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4 flex-shrink-0" />
-                    <span>
-                      {format(new Date(order.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </span>
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-semibold truncate">
+                        {order.supplier?.name || 'Fornecedor não definido'}
+                      </h3>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span>
+                          {format(new Date(order.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-col items-end gap-1.5">
                   <Badge 
                     className={cn(
-                      "text-sm px-3 py-1 font-semibold",
-                      statusConfig[order.status]?.bg,
-                      statusConfig[order.status]?.text
+                      "text-xs px-2.5 py-1 font-medium rounded-full",
+                      order.status === 'enviado' && "bg-amber-50 text-amber-700",
+                      order.status === 'recebido' && "bg-green-50 text-green-700",
+                      order.status === 'cancelado' && "bg-red-50 text-red-700",
+                      order.status === 'rascunho' && "bg-gray-100 text-gray-600"
                     )}
                   >
                     {PURCHASE_ORDER_STATUS_LABELS[order.status]}
                   </Badge>
                   {order.edited_at && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
                       ✏️ Editado
                     </Badge>
                   )}
                 </div>
               </div>
 
-              {/* Stats Row: Items + Value */}
+              {/* Stats Row: Items + Value - MD3 Style */}
               <div className="grid grid-cols-2 gap-3 mb-5">
-                <div className="bg-muted/50 rounded-xl p-3 sm:p-4">
+                <div className="bg-gray-50 rounded-2xl p-3 sm:p-4">
                   <div className="flex items-center gap-2 text-muted-foreground mb-1">
                     <Package className="h-4 w-4" />
-                    <span className="text-xs sm:text-sm font-medium">Itens</span>
+                    <span className="text-xs font-medium">Itens</span>
                   </div>
-                  <p className="text-2xl sm:text-3xl font-bold">
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-800">
                     {order.items?.length || 0}
                   </p>
                 </div>
-                <div className="bg-primary/10 rounded-xl p-3 sm:p-4">
-                  <div className="flex items-center gap-2 text-primary mb-1">
+                <div className="bg-green-50 rounded-2xl p-3 sm:p-4">
+                  <div className="flex items-center gap-2 text-green-700 mb-1">
                     <DollarSign className="h-4 w-4" />
-                    <span className="text-xs sm:text-sm font-medium">
-                      {type === 'received' ? 'Valor Pago' : 'Estimado'}
+                    <span className="text-xs font-medium">
+                      {type === 'received' ? 'Pago' : 'Estimado'}
                     </span>
                   </div>
-                  <p className="text-2xl sm:text-3xl font-bold font-mono text-primary">
+                  <p className="text-2xl sm:text-3xl font-bold font-mono text-green-700">
                     R$ {(type === 'received' && order.total_received 
                       ? order.total_received 
                       : order.total_estimated
-                    ).toFixed(2)}
+                    ).toFixed(0)}
                   </p>
                 </div>
               </div>

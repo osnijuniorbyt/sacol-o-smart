@@ -469,21 +469,21 @@ export default function Produtos() {
         </Dialog>
       </div>
 
-      {/* Filters */}
-      <Card>
+      {/* Filters - MD3 Style */}
+      <Card className="bg-card/50 border-0 shadow-none">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome ou PLU..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-14"
+                className="pl-12 h-14 rounded-full bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
               />
             </div>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="h-14 w-full sm:w-48">
+              <SelectTrigger className="h-14 w-full sm:w-48 rounded-full bg-muted/50 border-0">
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
@@ -499,98 +499,95 @@ export default function Produtos() {
         </CardContent>
       </Card>
 
-      {/* Products list */}
+      {/* Products Grid - MD3 Style */}
       {isLoading ? (
-        <p className="text-center text-muted-foreground py-8">Carregando...</p>
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
       ) : filteredProducts.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            <Apple className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p>Nenhum produto encontrado</p>
+        <Card className="bg-white shadow-sm rounded-2xl border-0">
+          <CardContent className="py-12 text-center">
+            <Apple className="mx-auto h-16 w-16 mb-4 text-muted-foreground/30" />
+            <p className="text-muted-foreground text-lg">Nenhum produto encontrado</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {filteredProducts.map(product => {
             const stock = getProductStock(product.id);
             const isLowStock = stock <= product.min_stock;
             const supplierName = getSupplierName(product.supplier_id);
-            const margin = product.custo_compra > 0 
-              ? ((product.price - product.custo_compra) / product.price * 100).toFixed(1)
-              : null;
             
             return (
               <Card 
                 key={product.id} 
-                className={`relative ${!product.is_active ? 'opacity-60' : ''}`}
+                className={`relative bg-white shadow-sm hover:shadow-md rounded-2xl border-0 transition-all duration-200 ${!product.is_active ? 'opacity-60' : ''}`}
               >
                 <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-3">
-                      <ProductImage 
-                        src={product.image_url}
-                        alt={product.name}
-                        category={product.category}
-                        size="lg"
-                      />
-                      <div>
-                        <h3 className="font-medium line-clamp-1">{product.name}</h3>
-                        <p className="text-sm text-muted-foreground">PLU: {product.plu}</p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-10 w-10"
-                      onClick={() => openEditDialog(product)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {/* Edit Button - Subtle in corner */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 h-8 w-8 text-muted-foreground/50 hover:text-foreground hover:bg-muted/50"
+                    onClick={() => openEditDialog(product)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
                   
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Preço</span>
-                      <span className="font-bold text-primary">
-                        {formatCurrency(Number(product.price))}/{product.unit}
-                      </span>
-                    </div>
-                    {product.custo_compra > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Custo</span>
-                        <span className="text-sm">
-                        {formatCurrency(Number(product.custo_compra))}
-                          {margin && (
-                            <span className="ml-1 text-xs opacity-75">(+{margin}%)</span>
-                          )}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Estoque</span>
-                      <span className={`font-medium ${isLowStock ? 'text-destructive' : ''}`}>
-                        {stock.toFixed(3)} {product.unit}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Categoria</span>
-                      <span className="text-sm px-2 py-0.5 rounded bg-muted">
-                        {CATEGORY_LABELS[product.category]}
-                      </span>
-                    </div>
-                    {supplierName && (
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground mt-2 pt-2 border-t">
-                        <Building2 className="h-3 w-3" />
-                        <span className="truncate">{supplierName}</span>
-                      </div>
-                    )}
-                  </div>
-                  
+                  {/* Inactive Badge */}
                   {!product.is_active && (
-                    <div className="absolute top-2 right-2">
-                      <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">
-                        Inativo
-                      </span>
+                    <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      Inativo
+                    </span>
+                  )}
+                  
+                  {/* Centered Image */}
+                  <div className="flex justify-center mb-3 pt-2">
+                    <ProductImage 
+                      src={product.image_url}
+                      alt={product.name}
+                      category={product.category}
+                      size="xl"
+                    />
+                  </div>
+                  
+                  {/* Product Name */}
+                  <h3 className="font-semibold text-center line-clamp-2 mb-1 text-sm leading-tight">
+                    {product.name}
+                  </h3>
+                  
+                  {/* PLU - Discrete */}
+                  <p className="text-xs text-muted-foreground text-center mb-3">
+                    PLU: {product.plu}
+                  </p>
+                  
+                  {/* Price - Highlighted */}
+                  <div className="text-center mb-3">
+                    <span className="text-lg font-bold text-green-700">
+                      {formatCurrency(Number(product.price))}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-1">/{product.unit}</span>
+                  </div>
+                  
+                  {/* Pills: Stock + Category */}
+                  <div className="flex flex-wrap justify-center gap-1.5">
+                    <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${
+                      isLowStock 
+                        ? 'bg-red-50 text-red-700' 
+                        : 'bg-blue-50 text-blue-700'
+                    }`}>
+                      {stock.toFixed(1)} {product.unit}
+                    </span>
+                    <span className="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">
+                      {CATEGORY_LABELS[product.category]}
+                    </span>
+                  </div>
+                  
+                  {/* Supplier - if exists */}
+                  {supplierName && (
+                    <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground mt-2 pt-2 border-t border-gray-100">
+                      <Building2 className="h-3 w-3" />
+                      <span className="truncate">{supplierName}</span>
                     </div>
                   )}
                 </CardContent>

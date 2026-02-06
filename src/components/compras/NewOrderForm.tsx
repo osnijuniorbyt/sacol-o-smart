@@ -504,32 +504,34 @@ export function NewOrderForm({
         </>
       )}
 
-      {/* VIEW: RESUMO */}
+      {/* VIEW: RESUMO - MD3 Style */}
       {activeView === 'resumo' && selectedSupplier && (
-        <Card>
-          <CardContent className="pt-4">
+        <Card className="bg-white shadow-sm rounded-2xl border-0">
+          <CardContent className="pt-5">
             <Label className="text-sm font-medium mb-4 flex items-center gap-2">
               <ClipboardList className="h-4 w-4" />
               Resumo do Pedido
             </Label>
 
             {/* Info Fornecedor */}
-            <div className="p-3 bg-muted rounded-lg mb-4">
+            <div className="p-3 bg-gray-50 rounded-xl mb-4">
               <div className="flex items-center gap-2 text-sm">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{selectedSupplierData?.name}</span>
-              </div>
-              {selectedSupplierData?.phone && (
-                <div className="text-xs text-muted-foreground mt-1 ml-6">
-                  {selectedSupplierData.phone}
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Building2 className="h-4 w-4 text-primary" />
                 </div>
-              )}
+                <div>
+                  <span className="font-semibold">{selectedSupplierData?.name}</span>
+                  {selectedSupplierData?.phone && (
+                    <p className="text-xs text-muted-foreground">{selectedSupplierData.phone}</p>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Lista de itens resumida */}
             {items.length === 0 ? (
-              <div className="py-6 text-center border-2 border-dashed rounded-lg mb-4">
-                <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+              <div className="py-6 text-center border-2 border-dashed rounded-2xl mb-4 bg-gray-50/50">
+                <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground">
                   Nenhum item adicionado. Vá para "Itens" para adicionar produtos.
                 </p>
@@ -539,14 +541,14 @@ export function NewOrderForm({
                 {items.map(item => {
                   const subtotal = item.quantity * (item.unit_price || 0);
                   return (
-                    <div key={item.product_id} className="flex justify-between items-center py-2 border-b border-border/50 last:border-0">
+                    <div key={item.product_id} className="flex justify-between items-center py-2.5 px-3 bg-gray-50/50 rounded-xl">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{item.product_name}</p>
                         <p className="text-xs text-muted-foreground">
                           {item.quantity} cx × R$ {(item.unit_price || 0).toFixed(2)}
                         </p>
                       </div>
-                      <span className="font-mono text-sm font-medium ml-2">
+                      <span className="font-mono text-sm font-semibold ml-2 text-green-700">
                         R$ {subtotal.toFixed(2)}
                       </span>
                     </div>
@@ -555,19 +557,19 @@ export function NewOrderForm({
               </div>
             )}
 
-            {/* Totais */}
-            <div className="border-t pt-4 space-y-2">
+            {/* Totais - Highlighted Card */}
+            <div className="bg-green-50 rounded-2xl p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Total de itens</span>
-                <span>{items.length} produtos</span>
+                <span className="text-green-700/70">Total de itens</span>
+                <span className="font-medium text-green-800">{items.length} produtos</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Total de volumes</span>
-                <span>{totalVolumes} caixas</span>
+                <span className="text-green-700/70">Total de volumes</span>
+                <span className="font-medium text-green-800">{totalVolumes} caixas</span>
               </div>
-              <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                <span>Total Estimado</span>
-                <span className="text-primary font-mono">R$ {totalPedido.toFixed(2)}</span>
+              <div className="flex justify-between text-xl font-bold pt-2 border-t border-green-200">
+                <span className="text-green-800">Total Estimado</span>
+                <span className="text-green-700 font-mono">R$ {totalPedido.toFixed(2)}</span>
               </div>
             </div>
 

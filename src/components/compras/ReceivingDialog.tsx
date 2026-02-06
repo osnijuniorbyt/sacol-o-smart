@@ -591,19 +591,34 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                         value={item.packaging_id || '__none__'}
                         onValueChange={(v) => updateItem(item.id, 'packaging_id', v === '__none__' ? null : v)}
                       >
-                        <SelectTrigger className="h-10">
-                          <SelectValue placeholder="Selecione" />
+                        <SelectTrigger className="h-10 font-mono font-medium">
+                          <SelectValue placeholder="Selecione">
+                            {item.packaging_id && (() => {
+                              const pkg = activePackagings.find(p => p.id === item.packaging_id);
+                              if (!pkg) return 'Selecione';
+                              const displayCode = pkg.codigo || pkg.name.slice(0, 6).toUpperCase();
+                              return displayCode;
+                            })()}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="bg-popover z-50">
                           <SelectItem value="__none__">Nenhum</SelectItem>
-                          {activePackagings.map(pkg => (
-                            <SelectItem key={pkg.id} value={pkg.id} className="py-2">
-                              <div className="flex items-center justify-between gap-2">
-                                <span>{pkg.name}</span>
-                                <span className="text-xs text-muted-foreground">{pkg.tare_weight}kg</span>
-                              </div>
-                            </SelectItem>
-                          ))}
+                          {activePackagings.map(pkg => {
+                            const displayCode = pkg.codigo || pkg.name.slice(0, 6).toUpperCase();
+                            const materialIcon = { plastico: '🧊', madeira: '🪵', papelao: '📦', isopor: '❄️' }[pkg.material] || '📦';
+                            return (
+                              <SelectItem key={pkg.id} value={pkg.id} className="py-2">
+                                <div className="flex flex-col">
+                                  <span className="font-mono font-bold text-sm">
+                                    {materialIcon} {displayCode}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {pkg.name} • {pkg.peso_liquido}kg/vol
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                     </div>

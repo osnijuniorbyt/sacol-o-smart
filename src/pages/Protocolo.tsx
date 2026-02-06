@@ -357,20 +357,40 @@ export default function Protocolo() {
 
             {/* Lista de itens */}
             <Separator className="my-2" />
-            <div className="space-y-1">
-              {order.items?.map(item => (
-                <div key={item.id} className="flex justify-between text-xs">
-                  <span className="truncate flex-1">
-                    {item.product?.name}
-                    {item.packaging && (
-                      <span className="text-muted-foreground ml-1">
-                        ({item.packaging.name})
+            <div className="space-y-2">
+              {order.items?.map(item => {
+                const pkgCode = item.packaging?.codigo || item.packaging?.name?.slice(0, 6).toUpperCase();
+                const pesoLiquidoVol = item.packaging?.peso_liquido || item.estimated_kg || 1;
+                const qtdTotal = item.quantity * pesoLiquidoVol;
+                const custoUnitario = qtdTotal > 0 
+                  ? (item.quantity * (item.unit_cost_estimated || 0)) / qtdTotal 
+                  : 0;
+                const materialIcon = item.packaging?.material 
+                  ? { plastico: '🧊', madeira: '🪵', papelao: '📦', isopor: '❄️' }[item.packaging.material] || '📦'
+                  : '';
+                
+                return (
+                  <div key={item.id} className="space-y-0.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="truncate flex-1 font-medium">
+                        {item.product?.name}
+                        {pkgCode && (
+                          <span className="text-muted-foreground ml-1 font-mono">
+                            {materialIcon} {pkgCode}
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </span>
-                  <span className="font-mono ml-2">{item.quantity} × R${(item.unit_cost_estimated || 0).toFixed(2)}</span>
-                </div>
-              ))}
+                      <span className="font-mono ml-2">{item.quantity} × R${(item.unit_cost_estimated || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-muted-foreground pl-2">
+                      <span>{item.quantity} vol × {pesoLiquidoVol}kg = {qtdTotal.toFixed(1)}kg</span>
+                      <span className="font-mono font-medium text-primary">
+                        R$ {custoUnitario.toFixed(2)}/kg
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

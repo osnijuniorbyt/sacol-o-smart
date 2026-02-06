@@ -28,8 +28,7 @@ import {
   Send,
   ShoppingCart,
   ListOrdered,
-  ClipboardList,
-  PackagePlus
+  ClipboardList
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -447,10 +446,10 @@ export function NewOrderForm({
                       variant="outline"
                       size="icon"
                       onClick={() => setShowCreateProduct(true)}
-                      className="h-9 w-9 border-primary text-primary hover:bg-primary/10"
+                      className="h-10 w-10 border-primary text-primary hover:bg-primary/10"
                       title="Criar novo produto"
                     >
-                      <PackagePlus className="h-4 w-4" />
+                      <Plus className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>

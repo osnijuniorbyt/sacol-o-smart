@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, memo, useCallback } from 'react';
+import { useState, useRef, useEffect, memo, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,12 +12,24 @@ import {
 import { ProductImage } from '@/components/ui/product-image';
 import { X, Plus, Minus } from 'lucide-react';
 import { OrderItem } from './NewOrderForm';
+import { PackagingMaterial } from '@/types/database';
 
 interface Packaging {
   id: string;
+  codigo: string | null;
   name: string;
   tare_weight: number;
+  peso_liquido: number;
+  material: PackagingMaterial;
 }
+
+// Emoji por material
+const MATERIAL_ICON: Record<PackagingMaterial, string> = {
+  plastico: '🧊',
+  madeira: '🪵',
+  papelao: '📦',
+  isopor: '❄️',
+};
 
 interface NewOrderItemRowProps {
   item: OrderItem;
@@ -54,6 +66,23 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
 
   // Timer para debounce de quantidade
   const qtyDebounceRef = useRef<NodeJS.Timeout>();
+
+  // ============ INFO CALCULADA ============
+  const infoCalculada = useMemo(() => {
+    const selectedPkg = packagings.find(p => p.id === displayPackaging);
+    if (!selectedPkg) return null;
+
+    const qtdUnitaria = displayQty * selectedPkg.peso_liquido;
+    const valorTotal = displayQty * (parseFloat(displayPrice) || 0);
+    const custoUnitario = qtdUnitaria > 0 ? valorTotal / qtdUnitaria : 0;
+    
+    return {
+      pkg: selectedPkg,
+      qtdUnitaria,
+      custoUnitario,
+      icon: MATERIAL_ICON[selectedPkg.material] || '📦',
+    };
+  }, [displayPackaging, displayQty, displayPrice, packagings]);
 
   // ============ SYNC DE PROPS (apenas quando NÃO está editando) ============
   useEffect(() => {
@@ -167,6 +196,11 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
     onFieldChange(item.product_id, 'packaging_id', value || null);
   }, [item.product_id, onFieldChange]);
 
+  // Helper para mostrar código ou fallback
+  const getDisplayCode = (pkg: Packaging) => {
+    return pkg.codigo || pkg.name.slice(0, 6).toUpperCase();
+  };
+
   return (
     <div className="p-3 rounded-lg border bg-card">
       <div className="flex items-start gap-3">
@@ -221,20 +255,31 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
               </div>
             </div>
             
-            {/* Vasilhame */}
+            {/* Vasilhame - Mostra CÓDIGO */}
             <div>
               <Label className="text-xs text-muted-foreground">Vasilhame</Label>
               <Select
                 value={displayPackaging}
                 onValueChange={handlePackagingChange}
               >
-                <SelectTrigger className="h-10 text-xs">
-                  <SelectValue placeholder="Selecione" />
+                <SelectTrigger className="h-10 text-xs font-mono font-medium">
+                  <SelectValue placeholder="Selecione">
+                    {displayPackaging && packagings.find(p => p.id === displayPackaging) && (
+                      <span>{getDisplayCode(packagings.find(p => p.id === displayPackaging)!)}</span>
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
                   {packagings.map(pkg => (
-                    <SelectItem key={pkg.id} value={pkg.id} className="text-sm">
-                      {pkg.name}
+                    <SelectItem key={pkg.id} value={pkg.id} className="py-2">
+                      <div className="flex flex-col">
+                        <span className="font-mono font-bold text-sm">
+                          {MATERIAL_ICON[pkg.material]} {getDisplayCode(pkg)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {pkg.name} • {pkg.peso_liquido}kg/vol
+                        </span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -255,6 +300,23 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
               />
             </div>
           </div>
+
+          {/* Info Calculada - mostrar quando tiver vasilhame selecionado */}
+          {infoCalculada && (
+            <div className="mt-2 px-2 py-1.5 bg-muted/50 rounded text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span>{infoCalculada.icon} {infoCalculada.pkg.name}</span>
+              <span>•</span>
+              <span>Tara {infoCalculada.pkg.tare_weight}kg</span>
+              <span>•</span>
+              <span className="font-mono">{displayQty}×{infoCalculada.pkg.peso_liquido}kg = {infoCalculada.qtdUnitaria.toFixed(1)}kg</span>
+              {infoCalculada.custoUnitario > 0 && (
+                <>
+                  <span>•</span>
+                  <span className="font-mono font-medium text-foreground">R$ {infoCalculada.custoUnitario.toFixed(2)}/kg</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -14,16 +14,9 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { ProductImage } from '@/components/ui/product-image';
 import { Product, CATEGORY_LABELS } from '@/types/database';
-import { Search, Plus, Package, Loader2, Sparkles } from 'lucide-react';
+import { Search, Plus, Package, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -47,10 +40,7 @@ export function ProductPickerDialog({
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [showQuickCreate, setShowQuickCreate] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [newProductName, setNewProductName] = useState('');
-  const [newProductCategory, setNewProductCategory] = useState<string>('outros');
 
   // Filtrar produtos não excluídos e pela busca
   const filteredProducts = products.filter(p => {
@@ -72,30 +62,42 @@ export function ProductPickerDialog({
     onSelectProduct(product);
     onOpenChange(false);
     setSearch('');
-    setShowQuickCreate(false);
   };
 
-  const handleShowQuickCreate = () => {
-    setNewProductName(search);
-    setShowQuickCreate(true);
-  };
-
+  // Criar produto direto ao clicar (sem formulário)
   const handleQuickCreate = async () => {
-    if (!newProductName.trim()) {
-      toast.error('Informe o nome do produto');
-      return;
-    }
+    if (!search.trim() || search.length <= 2) return;
 
     setIsCreating(true);
     try {
-      const plu = `P${Date.now().toString().slice(-6)}`;
+      // Buscar maior PLU numérico existente para gerar sequencial
+      const { data: allProducts } = await supabase
+        .from('products')
+        .select('plu')
+        .order('plu', { ascending: false })
+        .limit(200);
+
+      let nextPluNum = 1;
+      if (allProducts && allProducts.length > 0) {
+        for (const item of allProducts) {
+          const numMatch = item.plu.match(/\d+/);
+          if (numMatch) {
+            const num = parseInt(numMatch[0], 10);
+            if (num >= nextPluNum) {
+              nextPluNum = num + 1;
+            }
+          }
+        }
+      }
+
+      const plu = String(nextPluNum).padStart(4, '0');
 
       const { data: newProduct, error } = await supabase
         .from('products')
         .insert({
-          name: newProductName.trim(),
+          name: search.trim(),
           plu,
-          category: newProductCategory as any,
+          category: 'frutas', // Padrão para CEASA
           price: 0,
           min_stock: 0,
           is_active: true,
@@ -105,8 +107,10 @@ export function ProductPickerDialog({
 
       if (error) throw error;
 
-      toast.success(`Produto "${newProductName}" criado!`);
+      toast.success(`Produto "${search}" criado com PLU ${plu}!`);
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      
+      // Selecionar automaticamente
       handleSelect(newProduct as Product);
       
     } catch (error: any) {
@@ -117,13 +121,9 @@ export function ProductPickerDialog({
     }
   };
 
-  const handleCancelQuickCreate = () => {
-    setShowQuickCreate(false);
-    setNewProductName('');
-    setNewProductCategory('outros');
-  };
+  // Mostrar botão criar apenas quando: search > 2 chars E nenhum resultado
+  const showCreateButton = search.length > 2 && filteredProducts.length === 0;
 
-  // JSX inline para evitar remount - MOBILE
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
@@ -147,81 +147,25 @@ export function ProductPickerDialog({
             </div>
 
             <ScrollArea className="flex-1">
-              {showQuickCreate ? (
-                /* FORMULÁRIO DE CRIAÇÃO RÁPIDA - MOBILE */
-                <div className="p-4 space-y-4 bg-primary/5 border-2 border-primary border-dashed rounded-lg mx-4 my-4">
-                  <div className="flex items-center gap-2 text-primary font-medium">
-                    <Sparkles className="h-5 w-5" />
-                    Criar Produto Rápido
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm text-muted-foreground mb-1 block">Nome do Produto *</label>
-                      <Input
-                        value={newProductName}
-                        onChange={(e) => setNewProductName(e.target.value)}
-                        placeholder="Ex: Tomate Italiano"
-                        className="h-12 text-base"
-                        autoFocus
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm text-muted-foreground mb-1 block">Categoria</label>
-                      <Select value={newProductCategory} onValueChange={setNewProductCategory}>
-                        <SelectTrigger className="h-12">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover z-50">
-                          {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                            <SelectItem key={key} value={key}>{label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      onClick={handleCancelQuickCreate}
-                      className="flex-1 h-12"
-                      disabled={isCreating}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      onClick={handleQuickCreate}
-                      className="flex-1 h-12"
-                      disabled={isCreating || !newProductName.trim()}
-                    >
-                      {isCreating ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : (
-                        <>
-                          <Plus className="h-5 w-5 mr-2" />
-                          Criar e Adicionar
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ) : filteredProducts.length === 0 ? (
+              {filteredProducts.length === 0 ? (
                 /* ESTADO VAZIO - MOBILE */
                 <div className="py-8 text-center px-4">
                   <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                   <p className="text-muted-foreground mb-4">
                     {search ? `Nenhum produto encontrado para "${search}"` : 'Nenhum produto encontrado'}
                   </p>
-                  {search && (
+                  {showCreateButton && (
                     <Button
-                      variant="outline"
-                      onClick={handleShowQuickCreate}
-                      className="h-12 border-primary text-primary hover:bg-primary/10"
+                      onClick={handleQuickCreate}
+                      disabled={isCreating}
+                      className="h-14 text-base px-6 w-full max-w-xs"
                     >
-                      <Plus className="h-5 w-5 mr-2" />
-                      Criar "{search}"
+                      {isCreating ? (
+                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      ) : (
+                        <Plus className="h-5 w-5 mr-2" />
+                      )}
+                      {isCreating ? 'Criando...' : `Criar "${search}"`}
                     </Button>
                   )}
                 </div>
@@ -270,7 +214,7 @@ export function ProductPickerDialog({
     );
   }
 
-  // JSX inline para evitar remount - DESKTOP
+  // DESKTOP
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[80vh] flex flex-col p-0">
@@ -293,81 +237,25 @@ export function ProductPickerDialog({
           </div>
 
           <ScrollArea className="flex-1">
-            {showQuickCreate ? (
-              /* FORMULÁRIO DE CRIAÇÃO RÁPIDA - DESKTOP */
-              <div className="p-4 space-y-4 bg-primary/5 border-2 border-primary border-dashed rounded-lg mx-4 my-4">
-                <div className="flex items-center gap-2 text-primary font-medium">
-                  <Sparkles className="h-5 w-5" />
-                  Criar Produto Rápido
-                </div>
-                
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1 block">Nome do Produto *</label>
-                    <Input
-                      value={newProductName}
-                      onChange={(e) => setNewProductName(e.target.value)}
-                      placeholder="Ex: Tomate Italiano"
-                      className="h-12 text-base"
-                      autoFocus
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1 block">Categoria</label>
-                    <Select value={newProductCategory} onValueChange={setNewProductCategory}>
-                      <SelectTrigger className="h-12">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover z-50">
-                        {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>{label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleCancelQuickCreate}
-                    className="flex-1 h-12"
-                    disabled={isCreating}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleQuickCreate}
-                    className="flex-1 h-12"
-                    disabled={isCreating || !newProductName.trim()}
-                  >
-                    {isCreating ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <>
-                        <Plus className="h-5 w-5 mr-2" />
-                        Criar e Adicionar
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            ) : filteredProducts.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               /* ESTADO VAZIO - DESKTOP */
               <div className="py-8 text-center px-4">
                 <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                 <p className="text-muted-foreground mb-4">
                   {search ? `Nenhum produto encontrado para "${search}"` : 'Nenhum produto encontrado'}
                 </p>
-                {search && (
+                {showCreateButton && (
                   <Button
-                    variant="outline"
-                    onClick={handleShowQuickCreate}
-                    className="h-12 border-primary text-primary hover:bg-primary/10"
+                    onClick={handleQuickCreate}
+                    disabled={isCreating}
+                    className="h-14 text-base px-6"
                   >
-                    <Plus className="h-5 w-5 mr-2" />
-                    Criar "{search}"
+                    {isCreating ? (
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    ) : (
+                      <Plus className="h-5 w-5 mr-2" />
+                    )}
+                    {isCreating ? 'Criando...' : `Criar "${search}"`}
                   </Button>
                 )}
               </div>

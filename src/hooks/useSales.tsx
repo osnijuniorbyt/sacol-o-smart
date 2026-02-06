@@ -37,6 +37,48 @@ export function useSales() {
     }
   });
 
+  // Query para buscar itens de vendas de hoje com custo real dos lotes (para cálculo de lucro)
+  const { data: todaySaleItemsWithCost = [] } = useQuery({
+    queryKey: ['sale_items', 'today', 'with_cost'],
+    queryFn: async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const { data, error } = await supabase
+        .from('sale_items')
+        .select(`
+          id,
+          quantity,
+          unit_price,
+          total,
+          batch_id,
+          created_at,
+          stock_batches!sale_items_batch_id_fkey (
+            cost_per_unit
+          )
+        `)
+        .gte('created_at', today.toISOString());
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Calcula o custo real das vendas de hoje usando FIFO
+  const getTodayRealCost = () => {
+    return todaySaleItemsWithCost.reduce((sum, item) => {
+      const costPerUnit = item.stock_batches?.cost_per_unit || 0;
+      return sum + (Number(item.quantity) * Number(costPerUnit));
+    }, 0);
+  };
+
+  // Calcula o lucro real de hoje (Receita - Custo Real)
+  const getTodayRealProfit = () => {
+    const revenue = getTodayTotal();
+    const cost = getTodayRealCost();
+    return revenue - cost;
+  };
+
   const createSale = useMutation({
     mutationFn: async (items: CartItem[]) => {
       const total = items.reduce((sum, item) => sum + item.total, 0);
@@ -96,10 +138,13 @@ export function useSales() {
   return {
     sales,
     todaySales,
+    todaySaleItemsWithCost,
     isLoading,
     error,
     createSale,
     getTodayTotal,
-    getTodayCount
+    getTodayCount,
+    getTodayRealCost,
+    getTodayRealProfit
   };
 }

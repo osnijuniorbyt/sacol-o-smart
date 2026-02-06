@@ -18,8 +18,8 @@ export const CartItemRow = memo(function CartItemRow({
   formatCurrency
 }: CartItemRowProps) {
   return (
-    <div className="border border-border rounded-lg p-3 bg-card">
-      <div className="flex justify-between items-start mb-2">
+    <div className="bg-white shadow-sm rounded-2xl p-4 border-0">
+      <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <ProductImage 
             src={item.product.image_url} 
@@ -28,7 +28,7 @@ export const CartItemRow = memo(function CartItemRow({
             size="md"
           />
           <div className="min-w-0">
-            <p className="font-medium truncate">{item.product.name}</p>
+            <p className="font-semibold truncate">{item.product.name}</p>
             <p className="text-sm text-muted-foreground">
               {formatCurrency(item.unit_price)}/{item.product.unit}
             </p>
@@ -37,35 +37,35 @@ export const CartItemRow = memo(function CartItemRow({
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 text-destructive shrink-0"
+          className="h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl shrink-0"
           onClick={() => onRemove(item.product.id)}
         >
           <Trash2 className="h-5 w-5" />
         </Button>
       </div>
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
             size="icon"
-            className="h-12 w-12"
+            className="h-12 w-12 rounded-xl bg-gray-50 border-0 hover:bg-gray-100"
             onClick={() => onUpdateQuantity(item.product.id, -0.1)}
           >
             <Minus className="h-5 w-5" />
           </Button>
-          <span className="w-24 text-center font-medium text-lg">
-            {item.quantity.toFixed(3)} {item.product.unit}
+          <span className="w-24 text-center font-semibold text-lg font-mono bg-gray-50 py-2 rounded-xl">
+            {item.quantity.toFixed(3)}
           </span>
           <Button
             variant="outline"
             size="icon"
-            className="h-12 w-12"
+            className="h-12 w-12 rounded-xl bg-gray-50 border-0 hover:bg-gray-100"
             onClick={() => onUpdateQuantity(item.product.id, 0.1)}
           >
             <Plus className="h-5 w-5" />
           </Button>
         </div>
-        <span className="font-bold text-primary text-lg">
+        <span className="font-bold text-green-700 text-xl font-mono">
           {formatCurrency(item.total)}
         </span>
       </div>

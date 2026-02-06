@@ -159,38 +159,40 @@ export default function PDV() {
       <div className="flex flex-col lg:grid lg:grid-cols-10 gap-4 h-[calc(100vh-120px)] lg:h-[calc(100vh-120px)]">
         {/* Left Panel - Cart Items (70% on desktop, full on mobile) */}
         <div className="col-span-7 flex flex-col gap-4 flex-1 lg:flex-none min-h-0">
-          {/* Scanner status indicator */}
-          <Card className="bg-card flex-shrink-0">
+          {/* Scanner status indicator - MD3 Style */}
+          <Card className="bg-white shadow-sm rounded-2xl border-0 flex-shrink-0">
             <CardContent className="p-3 lg:p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 lg:h-12 lg:w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Barcode className="h-5 w-5 lg:h-6 lg:w-6 text-primary" />
+                  <div className="h-10 w-10 lg:h-12 lg:w-12 rounded-full bg-green-50 flex items-center justify-center">
+                    <Barcode className="h-5 w-5 lg:h-6 lg:w-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground text-sm lg:text-base">Scanner Ativo</p>
+                    <p className="font-semibold text-foreground text-sm lg:text-base">Scanner Ativo</p>
                     <p className="text-xs lg:text-sm text-muted-foreground hidden sm:block">
                       Aguardando leitura do código de barras...
                     </p>
                   </div>
                 </div>
                 {lastScannedCode && (
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Último:</p>
-                    <p className="font-mono text-xs lg:text-sm">{lastScannedCode}</p>
+                  <div className="text-right bg-gray-50 px-3 py-1.5 rounded-xl">
+                    <p className="text-[10px] text-muted-foreground uppercase">Último</p>
+                    <p className="font-mono text-xs lg:text-sm font-medium">{lastScannedCode}</p>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Cart Items List */}
-          <Card className="flex-1 overflow-hidden flex flex-col bg-card min-h-0">
-            <CardHeader className="pb-2 border-b flex-shrink-0">
+          {/* Cart Items List - MD3 Style */}
+          <Card className="flex-1 overflow-hidden flex flex-col bg-gray-50/50 rounded-2xl border-0 min-h-0">
+            <CardHeader className="pb-2 border-b border-gray-100 flex-shrink-0 bg-white rounded-t-2xl">
               <div className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5" />
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ShoppingCart className="h-4 w-4 text-primary" />
+                </div>
                 <span className="font-semibold">Itens do Carrinho</span>
-                <span className="ml-auto text-muted-foreground">
+                <span className="ml-auto text-xs bg-gray-100 px-2.5 py-1 rounded-full font-medium">
                   {cart.length} {cart.length === 1 ? 'item' : 'itens'}
                 </span>
               </div>
@@ -198,13 +200,15 @@ export default function PDV() {
             <ScrollArea className="flex-1">
               <div className="p-3 lg:p-4">
                 {cart.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 lg:py-16 text-muted-foreground">
-                    <ShoppingCart className="h-12 w-12 lg:h-16 lg:w-16 mb-4 opacity-50" />
-                    <p className="text-base lg:text-lg">Carrinho vazio</p>
-                    <p className="text-sm">Escaneie um produto para começar</p>
+                  <div className="flex flex-col items-center justify-center py-12 lg:py-16">
+                    <div className="h-20 w-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                      <ShoppingCart className="h-10 w-10 text-muted-foreground/30" />
+                    </div>
+                    <p className="text-base lg:text-lg font-medium text-muted-foreground">Carrinho vazio</p>
+                    <p className="text-sm text-muted-foreground/70">Escaneie um produto para começar</p>
                   </div>
                 ) : (
-                  <div className="space-y-2 lg:space-y-3">
+                  <div className="space-y-3 lg:space-y-3">
                     {cart.map(item => (
                       <CartItemRow
                         key={item.product.id}

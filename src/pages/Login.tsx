@@ -72,36 +72,21 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 pt-safe pb-safe relative overflow-hidden">
-      {/* Background premium com gradiente verde escuro */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(150,50%,12%)] via-[hsl(150,45%,16%)] to-[hsl(150,50%,10%)]" />
+      {/* Background - MD3 Green gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(150,45%,15%)] via-[hsl(150,40%,18%)] to-[hsl(150,50%,12%)]" />
       
-      {/* Decoração lateral - faixa pôr do sol */}
-      <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-[hsl(45,80%,70%)] via-[hsl(38,85%,55%)] to-[hsl(25,80%,40%)]" />
-      <div className="absolute right-0 top-0 bottom-0 w-2 bg-gradient-to-b from-[hsl(45,80%,70%)] via-[hsl(38,85%,55%)] to-[hsl(25,80%,40%)]" />
+      {/* Subtle glow effect */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(150,50%,30%,0.15)_0%,_transparent_60%)]" />
       
-      {/* Efeito de brilho sutil */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(36,90%,50%,0.1)_0%,_transparent_50%)]" />
-      
-      {/* Card principal com estética premium */}
+      {/* Card principal - MD3 Style */}
       <div className="relative w-full max-w-md">
-        {/* Borda metálica externa com tons dourados de pôr do sol */}
-        <div className="absolute -inset-[2px] rounded-2xl bg-gradient-to-b from-[hsl(40,80%,70%)] via-[hsl(36,75%,55%)] to-[hsl(30,70%,40%)] opacity-70" />
-        
-        {/* Card interno */}
-        <div className="relative rounded-2xl overflow-hidden">
-          {/* Fundo com gradiente premium cream */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[hsl(40,35%,96%)] via-[hsl(40,30%,94%)] to-[hsl(40,25%,90%)]" />
+        {/* Card interno - White with shadow */}
+        <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden">
           
-          {/* Textura sutil */}
-          <div className="absolute inset-0 opacity-30" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          }} />
-          
-          <div className="relative p-4 sm:p-6">
-            {/* Logo Container Premium - Container maior com logo integrada */}
-            <div className="relative mb-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 overflow-hidden rounded-t-2xl">
-              {/* Container maior para a logo */}
-              <div className="relative h-[280px] sm:h-[320px]">
+          <div className="relative p-5 sm:p-6">
+            {/* Logo Container - MD3 Clean */}
+            <div className="relative mb-6 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 overflow-hidden">
+              <div className="relative h-[240px] sm:h-[280px] bg-gradient-to-b from-[hsl(150,40%,18%)] to-[hsl(150,45%,15%)]">
                 {/* Logo preenchendo o container */}
                 <img 
                   src={logoLogin}
@@ -109,38 +94,23 @@ export default function Login() {
                   className="absolute inset-0 w-full h-full object-cover object-center"
                 />
                 
-                {/* Gradiente sutil na base com tons de pôr do sol */}
-                <div 
-                  className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(to bottom, transparent 0%, hsl(35,50%,75%) 100%)',
-                  }}
-                />
-                
-                {/* Borda metálica inferior dourada com shimmer */}
-                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[hsl(38,80%,60%)] to-transparent z-10" />
-                <div 
-                  className="absolute bottom-0 left-0 right-0 h-[3px] animate-shimmer z-10"
-                  style={{
-                    background: 'linear-gradient(90deg, transparent, hsl(40,85%,65%), hsl(45,40%,90%), hsl(40,85%,65%), transparent)',
-                    backgroundSize: '200% 100%',
-                  }}
-                />
+                {/* Fade to white */}
+                <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
               </div>
             </div>
             
-            {/* Tabs com estilo premium */}
-            <Tabs defaultValue="login" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2 h-14 p-1 bg-[hsl(40,20%,88%)] rounded-xl">
+            {/* Tabs - MD3 Pill Style */}
+            <Tabs defaultValue="login" className="space-y-5">
+              <TabsList className="grid w-full grid-cols-2 h-14 p-1.5 bg-gray-100 rounded-full">
                 <TabsTrigger 
                   value="login" 
-                  className="h-12 text-base font-semibold rounded-lg data-[state=active]:bg-white data-[state=active]:text-accent data-[state=active]:shadow-md transition-all"
+                  className="h-full text-base font-semibold rounded-full data-[state=active]:bg-white data-[state=active]:shadow-md transition-all"
                 >
                   Entrar
                 </TabsTrigger>
                 <TabsTrigger 
                   value="register" 
-                  className="h-12 text-base font-semibold rounded-lg data-[state=active]:bg-white data-[state=active]:text-accent data-[state=active]:shadow-md transition-all"
+                  className="h-full text-base font-semibold rounded-full data-[state=active]:bg-white data-[state=active]:shadow-md transition-all"
                 >
                   Cadastrar
                 </TabsTrigger>
@@ -149,27 +119,27 @@ export default function Login() {
               <TabsContent value="login">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-accent font-medium">E-mail</Label>
+                    <Label htmlFor="email" className="text-gray-700 font-medium">E-mail</Label>
                     <Input
                       id="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="seu@email.com"
-                      className="h-14 bg-white/80 border-[hsl(40,25%,80%)] focus:border-primary focus:ring-primary/30 text-base rounded-xl"
+                      className="h-14 bg-gray-50 border-0 focus:ring-2 focus:ring-primary/30 text-base rounded-xl"
                       autoComplete="email"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-accent font-medium">Senha</Label>
+                    <Label htmlFor="password" className="text-gray-700 font-medium">Senha</Label>
                     <Input
                       id="password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="h-14 bg-white/80 border-[hsl(40,25%,80%)] focus:border-primary focus:ring-primary/30 text-base rounded-xl"
+                      className="h-14 bg-gray-50 border-0 focus:ring-2 focus:ring-primary/30 text-base rounded-xl"
                       autoComplete="current-password"
                       required
                     />
@@ -182,17 +152,17 @@ export default function Login() {
                       setResetMessage('');
                       setResetDialogOpen(true);
                     }}
-                    className="text-sm text-accent hover:text-primary font-medium hover:underline transition-colors"
+                    className="text-sm text-gray-500 hover:text-primary font-medium hover:underline transition-colors"
                   >
                     Esqueci minha senha
                   </button>
                   
-                  {error && <p className="text-sm text-destructive font-medium">{error}</p>}
+                  {error && <p className="text-sm text-red-600 font-medium bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
                   
-                  {/* Botão premium com gradiente laranja */}
+                  {/* Botão - MD3 Style */}
                   <Button 
                     type="submit" 
-                    className="w-full h-16 text-lg font-bold rounded-xl bg-gradient-to-b from-[hsl(36,90%,55%)] via-[hsl(36,90%,50%)] to-[hsl(36,90%,40%)] hover:from-[hsl(36,90%,60%)] hover:via-[hsl(36,90%,55%)] hover:to-[hsl(36,90%,45%)] text-white shadow-lg shadow-[hsl(36,90%,30%,0.4)] transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border-t border-[hsl(36,80%,70%,0.5)]" 
+                    className="w-full h-14 text-lg font-bold rounded-xl shadow-lg transition-all duration-200 hover:scale-[1.02]" 
                     disabled={loading}
                   >
                     {loading ? 'Entrando...' : 'Entrar'}
@@ -203,44 +173,44 @@ export default function Login() {
               <TabsContent value="register">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="register-email" className="text-accent font-medium">E-mail</Label>
+                    <Label htmlFor="register-email" className="text-gray-700 font-medium">E-mail</Label>
                     <Input
                       id="register-email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="seu@email.com"
-                      className="h-14 bg-white/80 border-[hsl(40,25%,80%)] focus:border-primary focus:ring-primary/30 text-base rounded-xl"
+                      className="h-14 bg-gray-50 border-0 focus:ring-2 focus:ring-primary/30 text-base rounded-xl"
                       autoComplete="email"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="register-password" className="text-accent font-medium">Senha</Label>
+                    <Label htmlFor="register-password" className="text-gray-700 font-medium">Senha</Label>
                     <Input
                       id="register-password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="h-14 bg-white/80 border-[hsl(40,25%,80%)] focus:border-primary focus:ring-primary/30 text-base rounded-xl"
+                      className="h-14 bg-gray-50 border-0 focus:ring-2 focus:ring-primary/30 text-base rounded-xl"
                       autoComplete="new-password"
                       minLength={6}
                       required
                     />
                   </div>
                   
-                  <div className="bg-primary/10 rounded-xl p-4 border border-primary/20">
-                    <p className="text-sm text-accent/80 font-medium">
+                  <div className="bg-amber-50 rounded-xl p-4">
+                    <p className="text-sm text-amber-800 font-medium">
                       Após o cadastro, um administrador precisará aprovar seu acesso ao sistema.
                     </p>
                   </div>
                   
-                  {error && <p className="text-sm text-destructive font-medium">{error}</p>}
+                  {error && <p className="text-sm text-red-600 font-medium bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
                   
                   <Button 
                     type="submit" 
-                    className="w-full h-16 text-lg font-bold rounded-xl bg-gradient-to-b from-[hsl(36,90%,55%)] via-[hsl(36,90%,50%)] to-[hsl(36,90%,40%)] hover:from-[hsl(36,90%,60%)] hover:via-[hsl(36,90%,55%)] hover:to-[hsl(36,90%,45%)] text-white shadow-lg shadow-[hsl(36,90%,30%,0.4)] transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border-t border-[hsl(36,80%,70%,0.5)]" 
+                    className="w-full h-14 text-lg font-bold rounded-xl shadow-lg transition-all duration-200 hover:scale-[1.02]" 
                     disabled={loading}
                   >
                     {loading ? 'Cadastrando...' : 'Cadastrar'}
@@ -252,12 +222,14 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Reset Password Dialog */}
+      {/* Reset Password Dialog - MD3 Style */}
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-gradient-to-b from-[hsl(40,35%,96%)] to-[hsl(40,30%,92%)] border-[hsl(36,60%,60%)]">
+        <DialogContent className="sm:max-w-md bg-white rounded-2xl border-0 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-accent">
-              <Mail className="w-5 h-5 text-primary" />
+            <DialogTitle className="flex items-center gap-2 text-gray-800">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-primary" />
+              </div>
               Recuperar Senha
             </DialogTitle>
             <DialogDescription>
@@ -267,25 +239,25 @@ export default function Login() {
           
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reset-email" className="text-accent">E-mail</Label>
+              <Label htmlFor="reset-email" className="text-gray-700">E-mail</Label>
               <Input
                 id="reset-email"
                 type="email"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="h-12 bg-white/80 border-[hsl(40,25%,80%)]"
+                className="h-12 bg-gray-50 border-0 rounded-xl"
                 required
               />
             </div>
             
             {resetMessage && (
-              <div className={`text-sm ${resetMessage.includes('enviado') ? 'text-accent' : 'text-destructive'}`}>
+              <div className={`text-sm rounded-xl p-3 ${resetMessage.includes('enviado') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
                 <p className="font-medium">{resetMessage}</p>
                 {resetMessage.includes('enviado') && (
-                  <div className="mt-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
-                    <p className="text-xs text-accent font-medium mb-1">📧 Dicas importantes:</p>
-                    <ul className="text-xs text-accent/70 space-y-1 list-disc list-inside">
+                  <div className="mt-3 p-3 bg-white/50 rounded-lg">
+                    <p className="text-xs font-medium mb-1">📧 Dicas importantes:</p>
+                    <ul className="text-xs space-y-1 list-disc list-inside opacity-80">
                       <li>Verifique também a pasta de spam</li>
                       <li>Se o botão não aparecer, copie o link do email</li>
                       <li>O link expira em 1 hora</li>
@@ -300,14 +272,14 @@ export default function Login() {
                 type="button"
                 variant="outline"
                 onClick={() => setResetDialogOpen(false)}
-                className="border-[hsl(40,25%,75%)]"
+                className="rounded-xl"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={resetLoading}
-                className="bg-gradient-to-b from-primary to-[hsl(36,90%,40%)] hover:from-[hsl(36,90%,55%)] hover:to-[hsl(36,90%,45%)]"
+                className="rounded-xl"
               >
                 {resetLoading ? 'Enviando...' : 'Enviar Link'}
               </Button>

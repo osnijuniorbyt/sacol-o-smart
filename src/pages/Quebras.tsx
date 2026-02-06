@@ -184,20 +184,20 @@ export default function Quebras() {
     <div className="space-y-6 pb-24">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Quebras</h1>
-        <p className="text-muted-foreground">Registro de perdas e prejuízos</p>
+        <h1 className="text-2xl font-bold">Quebras</h1>
+        <p className="text-sm text-muted-foreground">Registro de perdas e prejuízos</p>
       </div>
 
-      {/* Summary */}
-      <Card className="border-destructive/20 bg-destructive/5">
-        <CardContent className="p-6">
+      {/* Summary - MD3 Style */}
+      <Card className="bg-red-50/50 shadow-sm rounded-2xl border-0">
+        <CardContent className="p-5">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/20">
-              <AlertTriangle className="h-7 w-7 text-destructive" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100">
+              <AlertTriangle className="h-7 w-7 text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Prejuízo Total</p>
-              <p className="text-3xl font-bold text-destructive">
+              <p className="text-sm text-red-600/70 font-medium">Prejuízo Total</p>
+              <p className="text-3xl font-bold text-red-700 font-mono">
                 {formatCurrency(getTotalLoss())}
               </p>
             </div>
@@ -205,15 +205,19 @@ export default function Quebras() {
         </CardContent>
       </Card>
 
-      {/* Breakages list */}
+      {/* Breakages list - MD3 Style */}
       {isLoading ? (
-        <p className="text-center text-muted-foreground py-8">Carregando...</p>
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-red-500 border-t-transparent" />
+        </div>
       ) : breakages.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            <Trash2 className="mx-auto h-16 w-16 mb-4 opacity-50" />
-            <p className="text-lg">Nenhuma quebra registrada</p>
-            <p className="text-sm">Clique no botão vermelho para registrar uma perda</p>
+        <Card className="bg-white shadow-sm rounded-2xl border-0">
+          <CardContent className="py-12 text-center">
+            <div className="h-20 w-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="h-10 w-10 text-muted-foreground/30" />
+            </div>
+            <p className="text-lg font-medium text-muted-foreground">Nenhuma quebra registrada</p>
+            <p className="text-sm text-muted-foreground/70">Clique no botão vermelho para registrar uma perda</p>
           </CardContent>
         </Card>
       ) : (
@@ -221,13 +225,13 @@ export default function Quebras() {
           {breakages.map(breakage => {
             const product = products.find(p => p.id === breakage.product_id);
             return (
-              <Card key={breakage.id}>
+              <Card key={breakage.id} className="bg-red-50/30 shadow-sm rounded-2xl border-0 overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium">{product?.name || 'Produto'}</h3>
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getReasonColor(breakage.reason)}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold">{product?.name || 'Produto'}</h3>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getReasonColor(breakage.reason)}`}>
                           {BREAKAGE_REASON_LABELS[breakage.reason]}
                         </span>
                       </div>
@@ -235,16 +239,16 @@ export default function Quebras() {
                         {Number(breakage.quantity).toFixed(3)} {product?.unit || 'kg'} × {formatCurrency(Number(breakage.cost_per_unit))}
                       </p>
                       {breakage.notes && (
-                        <p className="text-sm text-muted-foreground mt-1 italic">
+                        <p className="text-sm text-muted-foreground mt-2 italic bg-white/50 px-3 py-1.5 rounded-lg">
                           "{breakage.notes}"
                         </p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-destructive">
+                      <p className="text-xl font-bold text-red-600 font-mono">
                         -{formatCurrency(Number(breakage.total_loss))}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {format(new Date(breakage.created_at), 'dd/MM/yyyy HH:mm')}
                       </p>
                     </div>

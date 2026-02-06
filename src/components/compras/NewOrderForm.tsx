@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,13 +56,28 @@ export function NewOrderForm({ suppliers, allProducts, onOrderSent }: NewOrderFo
   const [isSaving, setIsSaving] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
   const [activeView, setActiveView] = useState<'itens' | 'resumo'>('itens');
+  
+  // REF para evitar re-inicialização quando React Query refetcha
+  // Só carrega histórico quando o fornecedor MUDA (não em refetchs)
+  const lastInitializedSupplierRef = useRef<string | null>(null);
 
   const { products: supplierProducts, productsWithHistory, isLoading: loadingHistory } = useSupplierProducts(selectedSupplier);
   const selectedSupplierData = suppliers.find(s => s.id === selectedSupplier);
 
-  // Quando muda o fornecedor, carrega os produtos do histórico
+  // Carrega histórico APENAS na primeira vez que um fornecedor é selecionado
+  // NÃO recarrega em refetchs do React Query
   useEffect(() => {
-    if (selectedSupplier && productsWithHistory.length > 0) {
+    // Só inicializa se:
+    // 1. Tem fornecedor selecionado
+    // 2. Histórico carregou
+    // 3. É um fornecedor DIFERENTE do último inicializado
+    if (
+      selectedSupplier && 
+      productsWithHistory.length > 0 && 
+      lastInitializedSupplierRef.current !== selectedSupplier
+    ) {
+      lastInitializedSupplierRef.current = selectedSupplier;
+      
       const initialItems: OrderItem[] = productsWithHistory.map(sp => ({
         product_id: sp.product_id,
         product_name: sp.product_name,
@@ -73,12 +88,21 @@ export function NewOrderForm({ suppliers, allProducts, onOrderSent }: NewOrderFo
         unit_price: sp.ultimo_preco > 0 ? sp.ultimo_preco : null,
       }));
       setItems(initialItems);
-    } else if (selectedSupplier) {
+    } else if (
+      selectedSupplier && 
+      !loadingHistory && 
+      productsWithHistory.length === 0 &&
+      lastInitializedSupplierRef.current !== selectedSupplier
+    ) {
+      // Fornecedor sem histórico - inicializa vazio
+      lastInitializedSupplierRef.current = selectedSupplier;
       setItems([]);
     }
-  }, [selectedSupplier, productsWithHistory, allProducts]);
+  }, [selectedSupplier, productsWithHistory, allProducts, loadingHistory]);
 
   const handleSupplierChange = (supplierId: string) => {
+    // Reseta a ref para permitir nova inicialização
+    lastInitializedSupplierRef.current = null;
     setSelectedSupplier(supplierId);
     setItems([]);
   };

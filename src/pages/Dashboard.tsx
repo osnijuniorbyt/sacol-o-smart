@@ -162,10 +162,29 @@ export default function Dashboard() {
       sum + Number(o.total_received || o.total_estimated || 0), 0
     );
 
-    // Pending orders value
+    // Pending orders value (purchase cost)
     const pendingValue = pendingOrders.reduce((sum, o) => 
       sum + Number(o.total_estimated || 0), 0
     );
+
+    // Calculate predicted sales and profit from pending orders
+    let vendaPrevista = 0;
+    pendingOrders.forEach(order => {
+      if (order.items) {
+        order.items.forEach(item => {
+          // Get product selling price
+          const product = products.find(p => p.id === item.product_id);
+          if (product) {
+            // Venda = quantity * selling price per kg
+            const estimatedKg = Number(item.estimated_kg || 0);
+            vendaPrevista += estimatedKg * Number(product.price || 0);
+          }
+        });
+      }
+    });
+
+    // Lucro Previsto = Venda Prevista - Custo de Compra (pendingValue)
+    const lucroPrevisto = vendaPrevista - pendingValue;
 
     // Orders created in last 7 days
     const ordersLast7Days = orders.filter(o =>
@@ -184,9 +203,11 @@ export default function Dashboard() {
       totalReceivedToday,
       draftCount: draftOrders.length,
       totalReceived7Days,
-      ordersLast7Days: ordersLast7Days.length
+      ordersLast7Days: ordersLast7Days.length,
+      vendaPrevista,
+      lucroPrevisto
     };
-  }, [orders, pendingOrders, draftOrders]);
+  }, [orders, pendingOrders, draftOrders, products]);
 
   // Data for scatter plot (Supplier toxic ranking simulation)
   // Since we don't have supplier data, we'll use product categories as proxy
@@ -365,7 +386,7 @@ export default function Dashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Pedidos Pendentes */}
             <div className="text-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
               <div className="flex items-center justify-center gap-1 text-amber-600 mb-1">
@@ -377,6 +398,34 @@ export default function Dashboard() {
               </div>
               <div className="text-[10px] text-muted-foreground">
                 {formatCurrency(purchaseMetrics.pendingValue)}
+              </div>
+            </div>
+
+            {/* Venda Prevista */}
+            <div className="text-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
+                <DollarSign className="h-4 w-4" />
+                <span className="text-xs font-medium">Venda Prevista</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                {formatCurrency(purchaseMetrics.vendaPrevista)}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                dos pendentes
+              </div>
+            </div>
+
+            {/* Lucro Previsto */}
+            <div className={`text-center p-3 rounded-lg ${purchaseMetrics.lucroPrevisto >= 0 ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'} border`}>
+              <div className={`flex items-center justify-center gap-1 mb-1 ${purchaseMetrics.lucroPrevisto >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <TrendingUp className="h-4 w-4" />
+                <span className="text-xs font-medium">Lucro Previsto</span>
+              </div>
+              <div className={`text-xl sm:text-2xl font-bold ${purchaseMetrics.lucroPrevisto >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(purchaseMetrics.lucroPrevisto)}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                venda - custo
               </div>
             </div>
 

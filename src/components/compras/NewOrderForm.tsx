@@ -82,10 +82,23 @@ export function NewOrderForm({
   const selectedSupplierData = suppliers.find(s => s.id === selectedSupplier);
 
   // ====== APLICA SUGESTÃO DO PEDIDO SUGERIDO ======
+  // Ref para evitar re-aplicação quando o state é limpo
+  const suggestionAppliedRef = useRef<string | null>(null);
+  
   useEffect(() => {
+    // Verifica se tem dados válidos para aplicar
     if (!suggestedItems || !suggestedSupplierId || suggestedItems.length === 0) {
       return;
     }
+    
+    // Evita re-aplicar a mesma sugestão
+    const suggestionKey = `${suggestedSupplierId}-${suggestedItems.length}`;
+    if (suggestionAppliedRef.current === suggestionKey) {
+      return;
+    }
+    suggestionAppliedRef.current = suggestionKey;
+
+    console.log('[NewOrderForm] Aplicando sugestão:', { suggestedSupplierId, itemsCount: suggestedItems.length });
 
     // Preenche com os itens da sugestão
     const newItems: OrderItem[] = suggestedItems.map(si => {
@@ -107,8 +120,11 @@ export function NewOrderForm({
     setItems(newItems);
     setActiveView('itens');
 
-    // Notifica que a sugestão foi consumida
-    onSuggestionConsumed?.();
+    // Notifica que a sugestão foi consumida (limpa o state no pai)
+    // Usa setTimeout para garantir que os setStates acima foram processados
+    setTimeout(() => {
+      onSuggestionConsumed?.();
+    }, 100);
   }, [suggestedItems, suggestedSupplierId, allProducts, onSuggestionConsumed]);
 
   // Carrega histórico APENAS UMA VEZ quando fornecedor é selecionado

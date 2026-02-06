@@ -16,11 +16,8 @@ import {
 } from '@/components/ui/drawer';
 import { ProductImage } from '@/components/ui/product-image';
 import { Product, CATEGORY_LABELS } from '@/types/database';
-import { Search, Plus, Minus, Package, Loader2, Check, ShoppingCart } from 'lucide-react';
+import { Search, Plus, Minus, Package, Check, ShoppingCart } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
 
 interface SelectedProduct {
   product: Product;
@@ -48,9 +45,7 @@ export function ProductPickerDialog({
   onSelectMultiple,
 }: ProductPickerDialogProps) {
   const isMobile = useIsMobile();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
   const [selections, setSelections] = useState<Map<string, SelectedProduct>>(new Map());
 
   // Filtrar produtos não excluídos e pela busca
@@ -143,63 +138,6 @@ export function ProductPickerDialog({
     onOpenChange(isOpen);
   };
 
-  // Criar produto direto ao clicar (sem formulário)
-  const handleQuickCreate = async () => {
-    if (!search.trim() || search.length <= 2) return;
-
-    setIsCreating(true);
-    try {
-      const { data: allProducts } = await supabase
-        .from('products')
-        .select('plu')
-        .order('plu', { ascending: false })
-        .limit(200);
-
-      let nextPluNum = 1;
-      if (allProducts && allProducts.length > 0) {
-        for (const item of allProducts) {
-          const numMatch = item.plu.match(/\d+/);
-          if (numMatch) {
-            const num = parseInt(numMatch[0], 10);
-            if (num >= nextPluNum) {
-              nextPluNum = num + 1;
-            }
-          }
-        }
-      }
-
-      const plu = String(nextPluNum).padStart(4, '0');
-
-      const { data: newProduct, error } = await supabase
-        .from('products')
-        .insert({
-          name: search.trim(),
-          plu,
-          category: 'outros',
-          price: 0,
-          min_stock: 0,
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast.success(`Produto "${search}" criado com PLU ${plu}!`);
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      
-      // Selecionar automaticamente
-      handleSelect(newProduct as Product);
-      
-    } catch (error: any) {
-      console.error('Erro ao criar produto:', error);
-      toast.error('Erro ao criar produto: ' + error.message);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const showCreateButton = search.length > 2 && filteredProducts.length === 0;
   const totalSelected = Array.from(selections.values()).reduce((sum, s) => sum + s.quantity, 0);
 
   // Componente de item de produto reutilizável
@@ -289,8 +227,8 @@ export function ProductPickerDialog({
     ) : null
   );
 
-  // Conteúdo compartilhado entre mobile e desktop
-  const Content = () => (
+  // Conteúdo da busca e listagem
+  const searchAndListContent = (
     <>
       {/* Busca */}
       <div className="p-4 border-b">
@@ -316,23 +254,12 @@ export function ProductPickerDialog({
         {filteredProducts.length === 0 ? (
           <div className="py-8 text-center px-4">
             <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-            <p className="text-muted-foreground mb-4">
-              {search ? `Nenhum produto encontrado para "${search}"` : 'Nenhum produto encontrado'}
+            <p className="text-muted-foreground">
+              {search ? `Nenhum produto encontrado para "${search}"` : 'Nenhum produto disponível'}
             </p>
-            {showCreateButton && (
-              <Button
-                onClick={handleQuickCreate}
-                disabled={isCreating}
-                className="h-14 text-base px-6 w-full max-w-xs"
-              >
-                {isCreating ? (
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                ) : (
-                  <Plus className="h-5 w-5 mr-2" />
-                )}
-                {isCreating ? 'Criando...' : `Criar "${search}"`}
-              </Button>
-            )}
+            <p className="text-sm text-muted-foreground mt-2">
+              Use o botão "Novo Produto" para cadastrar
+            </p>
           </div>
         ) : (
           <div className="p-4 space-y-4">
@@ -366,7 +293,7 @@ export function ProductPickerDialog({
             </DrawerTitle>
           </DrawerHeader>
           <div className="flex flex-col flex-1 overflow-hidden">
-            <Content />
+            {searchAndListContent}
           </div>
         </DrawerContent>
       </Drawer>
@@ -383,7 +310,7 @@ export function ProductPickerDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col flex-1 overflow-hidden">
-          <Content />
+          {searchAndListContent}
         </div>
       </DialogContent>
     </Dialog>

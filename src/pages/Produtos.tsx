@@ -524,7 +524,7 @@ export default function Produtos() {
               frutas: 'bg-amber-50',
               legumes: 'bg-orange-50',
               temperos: 'bg-purple-50',
-              outros: 'bg-gray-100',
+              outros: 'bg-gray-50',
             };
             
             const categoryEmojis: Record<string, string> = {
@@ -535,17 +535,17 @@ export default function Produtos() {
               outros: '📦',
             };
             
-            const bgColor = categoryBgColors[product.category] || 'bg-gray-100';
+            const bgColor = categoryBgColors[product.category] || 'bg-gray-50';
             const emoji = categoryEmojis[product.category] || '📦';
             
             return (
               <Card 
                 key={product.id} 
-                className={`relative bg-white shadow-sm hover:shadow-md rounded-2xl border-0 transition-all duration-200 overflow-hidden ${!product.is_active ? 'opacity-60' : ''}`}
+                className={`bg-white shadow-sm hover:shadow-md rounded-2xl border-0 transition-all duration-200 overflow-hidden ${!product.is_active ? 'opacity-60' : ''}`}
               >
-                {/* Image Area - Compact h-32 with pastel background */}
-                <div className={`relative h-32 ${bgColor} rounded-t-2xl flex items-center justify-center`}>
-                  {/* Edit Button - Subtle in corner */}
+                {/* Image Area - Fixed h-32 with pastel background */}
+                <div className={`relative h-32 ${bgColor} flex items-center justify-center`}>
+                  {/* Edit Button */}
                   <Button
                     variant="ghost"
                     size="icon"
@@ -562,12 +562,12 @@ export default function Produtos() {
                     </span>
                   )}
                   
-                  {/* Image or Emoji - Fixed size */}
+                  {/* Image or Emoji - Fixed size h-20 w-20 */}
                   {product.image_url ? (
                     <img
                       src={product.image_url}
                       alt={product.name}
-                      className="w-16 h-16 object-contain"
+                      className="h-20 w-20 object-contain"
                       loading="lazy"
                     />
                   ) : (
@@ -575,8 +575,8 @@ export default function Produtos() {
                   )}
                 </div>
                 
-                {/* Content Area */}
-                <CardContent className="p-3">
+                {/* Content Area - p-4 */}
+                <CardContent className="p-4 pt-3">
                   {/* Product Name */}
                   <h3 className="font-semibold text-center line-clamp-2 mb-0.5 text-sm leading-tight">
                     {product.name}

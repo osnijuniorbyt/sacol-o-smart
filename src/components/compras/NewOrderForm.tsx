@@ -41,13 +41,31 @@ export interface OrderItem {
   unit_price: number | null;
 }
 
+// Tipo para itens vindos da sugestão
+interface SuggestedOrderItem {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_cost: number | null;
+}
+
 interface NewOrderFormProps {
   suppliers: Supplier[];
   allProducts: Product[];
   onOrderSent: () => void;
+  suggestedItems?: SuggestedOrderItem[] | null;
+  suggestedSupplierId?: string | null;
+  onSuggestionConsumed?: () => void;
 }
 
-export function NewOrderForm({ suppliers, allProducts, onOrderSent }: NewOrderFormProps) {
+export function NewOrderForm({ 
+  suppliers, 
+  allProducts, 
+  onOrderSent,
+  suggestedItems,
+  suggestedSupplierId,
+  onSuggestionConsumed
+}: NewOrderFormProps) {
   const queryClient = useQueryClient();
   const { activePackagings } = usePackagings();
   
@@ -62,6 +80,36 @@ export function NewOrderForm({ suppliers, allProducts, onOrderSent }: NewOrderFo
 
   const { products: supplierProducts, productsWithHistory, isLoading: loadingHistory } = useSupplierProducts(selectedSupplier);
   const selectedSupplierData = suppliers.find(s => s.id === selectedSupplier);
+
+  // ====== APLICA SUGESTÃO DO PEDIDO SUGERIDO ======
+  useEffect(() => {
+    if (!suggestedItems || !suggestedSupplierId || suggestedItems.length === 0) {
+      return;
+    }
+
+    // Preenche com os itens da sugestão
+    const newItems: OrderItem[] = suggestedItems.map(si => {
+      const product = allProducts.find(p => p.id === si.product_id);
+      return {
+        product_id: si.product_id,
+        product_name: si.product_name,
+        product_image: product?.image_url || null,
+        category: product?.category || 'outros',
+        quantity: si.quantity,
+        packaging_id: null, // Será preenchido se houver histórico
+        unit_price: si.unit_cost,
+      };
+    });
+
+    // Atualiza o fornecedor (desliga a inicialização automática)
+    initializedForSupplierRef.current = suggestedSupplierId;
+    setSelectedSupplier(suggestedSupplierId);
+    setItems(newItems);
+    setActiveView('itens');
+
+    // Notifica que a sugestão foi consumida
+    onSuggestionConsumed?.();
+  }, [suggestedItems, suggestedSupplierId, allProducts, onSuggestionConsumed]);
 
   // Carrega histórico APENAS UMA VEZ quando fornecedor é selecionado
   // Usa ref para garantir que NÃO roda novamente mesmo se productsWithHistory mudar

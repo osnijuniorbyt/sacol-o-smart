@@ -6,13 +6,21 @@ import { useSuppliers } from '@/hooks/useSuppliers';
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders';
 import { OrdersList } from '@/components/compras/OrdersList';
 import { SuggestedOrderDialog } from '@/components/compras/SuggestedOrderDialog';
-import { NewOrderForm } from '@/components/compras/NewOrderForm';
+import { NewOrderForm, OrderItem } from '@/components/compras/NewOrderForm';
 import { 
   Plus, 
   Truck,
   CheckCircle2,
   Loader2
 } from 'lucide-react';
+
+// Tipo para itens vindos da sugestão
+interface SuggestedOrderItem {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_cost: number | null;
+}
 
 export default function Compras() {
   const { activeProducts, isLoading: loadingProducts } = useProducts();
@@ -25,6 +33,10 @@ export default function Compras() {
   } = usePurchaseOrders();
   
   const [activeTab, setActiveTab] = useState('novo');
+  
+  // Estado para receber dados do Pedido Sugerido
+  const [suggestedItems, setSuggestedItems] = useState<SuggestedOrderItem[] | null>(null);
+  const [suggestedSupplierId, setSuggestedSupplierId] = useState<string | null>(null);
 
   // Scroll to top when changing tabs
   useEffect(() => {
@@ -45,6 +57,22 @@ export default function Compras() {
     setActiveTab('enviados');
   };
 
+  // Handler que recebe os dados do Pedido Sugerido
+  const handleApplySuggestion = (
+    items: SuggestedOrderItem[],
+    supplierId: string
+  ) => {
+    setSuggestedItems(items);
+    setSuggestedSupplierId(supplierId);
+    setActiveTab('novo');
+  };
+
+  // Limpar sugestão quando for consumida pelo NewOrderForm
+  const handleSuggestionConsumed = () => {
+    setSuggestedItems(null);
+    setSuggestedSupplierId(null);
+  };
+
   if (loadingSuppliers || loadingProducts || loadingOrders) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -63,10 +91,7 @@ export default function Compras() {
         <SuggestedOrderDialog
           suppliers={activeSuppliers}
           products={activeProducts}
-          onApplySuggestion={() => {
-            // A sugestão agora é aplicada diretamente no NewOrderForm
-            setActiveTab('novo');
-          }}
+          onApplySuggestion={handleApplySuggestion}
         />
       </div>
 
@@ -97,6 +122,9 @@ export default function Compras() {
             suppliers={activeSuppliers}
             allProducts={activeProducts}
             onOrderSent={handleOrderSent}
+            suggestedItems={suggestedItems}
+            suggestedSupplierId={suggestedSupplierId}
+            onSuggestionConsumed={handleSuggestionConsumed}
           />
         </TabsContent>
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,18 +9,15 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerFooter,
 } from '@/components/ui/drawer';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { PurchaseOrder } from '@/types/database';
+import { PurchaseOrder, PurchaseOrderItem } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -32,11 +29,12 @@ import {
   Package,
   Scale,
   Truck,
-  DollarSign,
   AlertTriangle,
   MessageCircle,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Tag,
+  Percent
 } from 'lucide-react';
 
 interface ClosingProtocolDialogProps {
@@ -45,6 +43,16 @@ interface ClosingProtocolDialogProps {
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
+
+interface ItemPricing {
+  margem: number;
+  precoVenda: number;
+  custoUnitario: number;
+  pesoLiquido: number;
+  custoTotal: number;
+}
+
+const DEFAULT_MARGEM = 60;
 
 export function ClosingProtocolDialog({ 
   order, 
@@ -62,9 +70,68 @@ export function ClosingProtocolDialog({
   // Conferência de peso
   const [pesoBalancaReal, setPesoBalancaReal] = useState<number>(0);
   
+  // Precificação por item
+  const [itemsPricing, setItemsPricing] = useState<Record<string, ItemPricing>>({});
+  
   const [isApproving, setIsApproving] = useState(false);
 
-  // Cálculos
+  // Inicializa pricing quando order muda
+  useEffect(() => {
+    if (!order?.items) return;
+    
+    const initialPricing: Record<string, ItemPricing> = {};
+    
+    order.items.forEach((item) => {
+      const custoTotal = item.quantity * (item.unit_cost_estimated || 0);
+      // Peso líquido = estimated_kg - tare_total (aproximação)
+      const pesoLiquido = Math.max(0.1, (item.estimated_kg || 1) - (item.tare_total || 0));
+      const custoUnitario = custoTotal / pesoLiquido;
+      const margem = DEFAULT_MARGEM;
+      const precoVenda = custoUnitario / (1 - margem / 100);
+      
+      initialPricing[item.id] = {
+        margem,
+        precoVenda,
+        custoUnitario,
+        pesoLiquido,
+        custoTotal,
+      };
+    });
+    
+    setItemsPricing(initialPricing);
+  }, [order?.items]);
+
+  // Funções bidirecionais de precificação
+  const handleMargemChange = (itemId: string, newMargem: number) => {
+    setItemsPricing((prev) => {
+      const item = prev[itemId];
+      if (!item) return prev;
+      
+      const margem = Math.max(0, Math.min(99.9, newMargem));
+      const precoVenda = item.custoUnitario / (1 - margem / 100);
+      
+      return {
+        ...prev,
+        [itemId]: { ...item, margem, precoVenda },
+      };
+    });
+  };
+
+  const handlePrecoVendaChange = (itemId: string, newPreco: number) => {
+    setItemsPricing((prev) => {
+      const item = prev[itemId];
+      if (!item || newPreco <= item.custoUnitario) return prev;
+      
+      const margem = (1 - item.custoUnitario / newPreco) * 100;
+      
+      return {
+        ...prev,
+        [itemId]: { ...item, precoVenda: newPreco, margem },
+      };
+    });
+  };
+
+  // Cálculos de resumo
   const resumo = useMemo(() => {
     if (!order?.items) return null;
 
@@ -73,7 +140,7 @@ export function ClosingProtocolDialog({
       (sum, i) => sum + (i.quantity * (i.unit_cost_estimated || 0)), 0
     );
     const pesoNota = order.items.reduce(
-      (sum, i) => sum + (i.quantity * (i.estimated_kg || 1)), 0
+      (sum, i) => sum + (i.estimated_kg || 1), 0
     );
     
     return {
@@ -83,6 +150,22 @@ export function ClosingProtocolDialog({
       valorTotal: valorProdutos + valorFrete + outrosCustos,
     };
   }, [order?.items, valorFrete, outrosCustos]);
+
+  // Totais de precificação
+  const precificacaoTotais = useMemo(() => {
+    const items = Object.values(itemsPricing);
+    if (items.length === 0) return { totalCusto: 0, margemPonderada: 0 };
+    
+    const totalCusto = items.reduce((sum, i) => sum + i.custoTotal, 0);
+    const totalPesoLiquido = items.reduce((sum, i) => sum + i.pesoLiquido, 0);
+    
+    // Margem ponderada pelo peso líquido
+    const margemPonderada = totalPesoLiquido > 0
+      ? items.reduce((sum, i) => sum + (i.margem * i.pesoLiquido), 0) / totalPesoLiquido
+      : 0;
+    
+    return { totalCusto, margemPonderada };
+  }, [itemsPricing]);
 
   const diferencaPeso = useMemo(() => {
     if (!resumo || !pesoBalancaReal) return null;
@@ -149,20 +232,31 @@ export function ClosingProtocolDialog({
             unit_cost_actual: item.unit_cost_estimated,
           })
           .eq('id', item.id);
+
+        // Atualiza preço de venda do produto
+        const pricing = itemsPricing[item.id];
+        if (pricing && item.product_id) {
+          await supabase
+            .from('products')
+            .update({ price: pricing.precoVenda })
+            .eq('id', item.product_id);
+        }
       }
 
-      // Atualiza pedido como recebido
-      await supabase
+      // Atualiza pedido como FECHADO (não recebido)
+      const { error } = await supabase
         .from('purchase_orders')
         .update({
-          status: 'recebido',
+          status: 'fechado',
           total_received: resumo.valorTotal,
           received_at: new Date().toISOString(),
           notes: descricaoCustos ? `Frete: R$${valorFrete} | Outros: R$${outrosCustos} (${descricaoCustos})` : null,
         })
         .eq('id', order.id);
 
-      toast.success('Pedido aprovado! Estoque gerado automaticamente.');
+      if (error) throw error;
+
+      toast.success('Pedido fechado! Preços atualizados e estoque gerado.');
       onSuccess();
       onOpenChange(false);
       
@@ -171,6 +265,7 @@ export function ClosingProtocolDialog({
       setOutrosCustos(0);
       setDescricaoCustos('');
       setPesoBalancaReal(0);
+      setItemsPricing({});
       
     } catch (error: any) {
       console.error('Erro ao aprovar:', error);
@@ -313,6 +408,91 @@ export function ClosingProtocolDialog({
           </CardContent>
         </Card>
 
+        {/* PRECIFICAÇÃO POR ITEM */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              Precificação por Item
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {order.items?.map((item) => {
+              const pricing = itemsPricing[item.id];
+              if (!pricing) return null;
+              
+              return (
+                <div key={item.id} className="p-3 bg-muted/50 rounded-lg space-y-2">
+                  <div className="font-medium text-sm truncate">
+                    {item.product?.name || 'Produto'}
+                  </div>
+                  
+                  {/* Info calculada */}
+                  <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                    <div>
+                      <span className="block">Peso Líq.</span>
+                      <span className="font-mono text-foreground">{pricing.pesoLiquido.toFixed(1)} kg</span>
+                    </div>
+                    <div>
+                      <span className="block">Custo Total</span>
+                      <span className="font-mono text-foreground">R$ {pricing.custoTotal.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <span className="block">Custo/kg</span>
+                      <span className="font-mono text-foreground">R$ {pricing.custoUnitario.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Inputs bidirecionais */}
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Percent className="h-3 w-3" />
+                        Margem %
+                      </Label>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        step="1"
+                        min="0"
+                        max="99"
+                        value={pricing.margem.toFixed(1)}
+                        onChange={(e) => handleMargemChange(item.id, parseFloat(e.target.value) || 0)}
+                        className="h-10 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Preço Venda (R$/kg)</Label>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        min={pricing.custoUnitario}
+                        value={pricing.precoVenda.toFixed(2)}
+                        onChange={(e) => handlePrecoVendaChange(item.id, parseFloat(e.target.value) || 0)}
+                        className="h-10 font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Totais de Precificação */}
+            <Separator />
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="text-center p-2 bg-muted rounded-lg">
+                <div className="text-xs text-muted-foreground">Total Custo</div>
+                <div className="font-mono font-bold">R$ {precificacaoTotais.totalCusto.toFixed(2)}</div>
+              </div>
+              <div className="text-center p-2 bg-primary/10 rounded-lg">
+                <div className="text-xs text-muted-foreground">Margem Ponderada</div>
+                <div className="font-mono font-bold text-primary">{precificacaoTotais.margemPonderada.toFixed(1)}%</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* TOTAL */}
         <Card className="bg-primary/5 border-primary">
           <CardContent className="py-4">
@@ -348,7 +528,7 @@ export function ClosingProtocolDialog({
         ) : (
           <CheckCircle2 className="h-4 w-4 mr-2" />
         )}
-        {isApproving ? 'Aprovando...' : 'Aprovar e Gerar Estoque'}
+        {isApproving ? 'Fechando...' : 'Fechar e Atualizar Preços'}
       </Button>
     </div>
   );

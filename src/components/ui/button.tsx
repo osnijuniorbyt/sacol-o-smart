@@ -9,21 +9,21 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Primary - matches sidebar active item style
-        default: "bg-gradient-to-r from-primary via-primary to-primary text-primary-foreground shadow-md hover:shadow-lg hover:brightness-110 border-t border-primary/30",
+        // Primary = #E8920B (laranja) para ações principais
+        default: "bg-primary text-primary-foreground shadow-md hover:shadow-lg hover:brightness-110",
         // Destructive
         destructive: "bg-danger text-danger-foreground hover:bg-danger/90 shadow-md",
-        // Outline with warm border
-        outline: "border-2 border-primary/40 bg-background hover:bg-primary/10 hover:border-primary text-foreground",
-        // Secondary with cream tones
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border",
+        // Outline = borda verde escuro #1B4332
+        outline: "border-2 border-accent bg-background hover:bg-accent/10 text-accent",
+        // Secondary = borda #1B4332, texto #1B4332
+        secondary: "bg-background border-2 border-accent text-accent hover:bg-accent/10",
         // Ghost - subtle hover
         ghost: "hover:bg-accent/10 hover:text-accent",
         // Link
         link: "text-primary underline-offset-4 hover:underline",
-        // Success - green accent
+        // Success - verde claro #2D6A4F
         success: "bg-success text-success-foreground hover:bg-success/90 shadow-md",
-        // Warning - amber/orange
+        // Warning - laranja
         warning: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-md",
       },
       size: {

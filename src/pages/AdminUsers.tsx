@@ -33,8 +33,8 @@ export default function AdminUsers() {
     open: boolean;
     type: 'approve' | 'revoke';
     userId: string;
-    userEmail: string;
-  }>({ open: false, type: 'approve', userId: '', userEmail: '' });
+    userName: string;
+  }>({ open: false, type: 'approve', userId: '', userName: '' });
 
   useEffect(() => {
     if (activeTab === 'pending') {
@@ -59,7 +59,7 @@ export default function AdminUsers() {
   const UserRow = ({ user }: { user: typeof users[0] }) => (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gradient-to-r from-white to-amber-50/30 rounded-xl border border-amber-100 gap-3">
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-emerald-800 truncate">{user.email}</p>
+        <p className="font-medium text-emerald-800 truncate">{user.full_name || 'Usuário sem nome'}</p>
         <p className="text-sm text-emerald-600">
           Cadastrado em {format(new Date(user.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
         </p>
@@ -94,7 +94,7 @@ export default function AdminUsers() {
               open: true,
               type: 'revoke',
               userId: user.id,
-              userEmail: user.email,
+              userName: user.full_name || 'Usuário',
             })}
           >
             <XCircle className="w-4 h-4 mr-1" />
@@ -108,7 +108,7 @@ export default function AdminUsers() {
               open: true,
               type: 'approve',
               userId: user.id,
-              userEmail: user.email,
+              userName: user.full_name || 'Usuário',
             })}
           >
             <CheckCircle className="w-4 h-4 mr-1" />
@@ -268,13 +268,13 @@ export default function AdminUsers() {
             <AlertDialogDescription>
               {confirmDialog.type === 'approve' ? (
                 <>
-                  Deseja aprovar o acesso de <strong>{confirmDialog.userEmail}</strong> ao sistema?
+                  Deseja aprovar o acesso de <strong>{confirmDialog.userName}</strong> ao sistema?
                   <br />
                   O usuário poderá acessar todas as funcionalidades após a aprovação.
                 </>
               ) : (
                 <>
-                  Deseja revogar o acesso de <strong>{confirmDialog.userEmail}</strong>?
+                  Deseja revogar o acesso de <strong>{confirmDialog.userName}</strong>?
                   <br />
                   O usuário não conseguirá mais acessar o sistema até ser aprovado novamente.
                 </>

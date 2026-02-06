@@ -348,7 +348,6 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           created_at: string
-          email: string
           full_name: string | null
           id: string
           is_approved: boolean
@@ -358,7 +357,6 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
-          email: string
           full_name?: string | null
           id: string
           is_approved?: boolean
@@ -368,7 +366,6 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
-          email?: string
           full_name?: string | null
           id?: string
           is_approved?: boolean

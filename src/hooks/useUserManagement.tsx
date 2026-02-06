@@ -4,7 +4,6 @@ import { useToast } from '@/hooks/use-toast';
 
 interface UserProfile {
   id: string;
-  email: string;
   full_name: string | null;
   is_approved: boolean;
   approved_at: string | null;

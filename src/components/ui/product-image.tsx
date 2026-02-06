@@ -25,12 +25,34 @@ const categoryEmojis: Record<ProductCategory, string> = {
   outros: '📦',
 };
 
-const categoryColors: Record<ProductCategory, string> = {
-  frutas: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
-  verduras: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
-  legumes: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
-  temperos: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
-  outros: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+// Pastel backgrounds by category - ALWAYS applied
+const getCategoryBg = (category: ProductCategory): string => {
+  const bgColors: Record<ProductCategory, string> = {
+    verduras: 'bg-green-50',
+    frutas: 'bg-amber-50',
+    legumes: 'bg-orange-50',
+    temperos: 'bg-purple-50',
+    outros: 'bg-gray-100',
+  };
+  return bgColors[category] || 'bg-gray-100';
+};
+
+// Adjust emoji size based on container size
+const emojiSizes = {
+  xs: 'text-sm',
+  sm: 'text-base',
+  md: 'text-lg',
+  lg: 'text-3xl',
+  xl: 'text-5xl',
+};
+
+// Image sizes relative to container
+const imageSizes = {
+  xs: 'h-6 w-6',
+  sm: 'h-8 w-8',
+  md: 'h-10 w-10',
+  lg: 'h-20 w-20',
+  xl: 'h-40 w-40',
 };
 
 export function ProductImage({ 
@@ -41,47 +63,29 @@ export function ProductImage({
   className 
 }: ProductImageProps) {
   const sizeClass = sizes[size];
+  const bgClass = getCategoryBg(category);
   
-  // If there's an image URL, show the image
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={alt}
-        className={cn(
-          sizeClass,
-          'rounded-lg object-cover flex-shrink-0',
-          className
-        )}
-        loading="lazy"
-      />
-    );
-  }
-  
-  // Placeholder with category emoji
-  const emoji = categoryEmojis[category];
-  const colorClass = categoryColors[category];
-  
-  // Adjust emoji size based on container size
-  const emojiSizes = {
-    xs: 'text-sm',
-    sm: 'text-base',
-    md: 'text-lg',
-    lg: 'text-3xl',
-    xl: 'text-5xl',
-  };
-  
+  // ALWAYS render container with pastel background
   return (
     <div
       className={cn(
         sizeClass,
-        colorClass,
+        bgClass,
         'rounded-lg flex items-center justify-center flex-shrink-0',
         className
       )}
       title={CATEGORY_LABELS[category]}
     >
-      <span className={emojiSizes[size]}>{emoji}</span>
+      {src ? (
+        <img
+          src={src}
+          alt={alt}
+          className={cn(imageSizes[size], 'object-contain')}
+          loading="lazy"
+        />
+      ) : (
+        <span className={emojiSizes[size]}>{categoryEmojis[category]}</span>
+      )}
     </div>
   );
 }

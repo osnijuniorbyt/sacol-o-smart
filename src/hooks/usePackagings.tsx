@@ -21,10 +21,13 @@ export function usePackagings() {
 
   const createPackaging = useMutation({
     mutationFn: async (packaging: {
+      codigo?: string | null;
       name: string;
       tare_weight: number;
+      peso_liquido: number;
       material: PackagingMaterial;
       is_returnable?: boolean;
+      is_active?: boolean;
     }) => {
       const { data, error } = await supabase
         .from('packagings')
@@ -37,10 +40,10 @@ export function usePackagings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['packagings'] });
-      toast.success('Embalagem cadastrada com sucesso!');
+      toast.success('Vasilhame cadastrado com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error('Erro ao cadastrar embalagem: ' + error.message);
+      toast.error('Erro ao cadastrar vasilhame: ' + error.message);
     }
   });
 
@@ -58,10 +61,10 @@ export function usePackagings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['packagings'] });
-      toast.success('Embalagem atualizada com sucesso!');
+      toast.success('Vasilhame atualizado com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error('Erro ao atualizar embalagem: ' + error.message);
+      toast.error('Erro ao atualizar vasilhame: ' + error.message);
     }
   });
 
@@ -76,10 +79,10 @@ export function usePackagings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['packagings'] });
-      toast.success('Embalagem excluída com sucesso!');
+      toast.success('Vasilhame excluído com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error('Erro ao excluir embalagem: ' + error.message);
+      toast.error('Erro ao excluir vasilhame: ' + error.message);
     }
   });
 

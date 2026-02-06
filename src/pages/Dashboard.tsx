@@ -11,7 +11,8 @@ import { useSales } from '@/hooks/useSales';
 import { useStock } from '@/hooks/useStock';
 import { useBreakages } from '@/hooks/useBreakages';
 import { useProducts } from '@/hooks/useProducts';
-import { 
+import { usePurchaseOrders } from '@/hooks/usePurchaseOrders';
+import {
   BarChart, 
   Bar, 
   XAxis, 
@@ -35,7 +36,10 @@ import {
   Clock,
   Target,
   Wallet,
-  BarChart3
+  BarChart3,
+  ShoppingCart,
+  Truck,
+  FileText
 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -45,6 +49,7 @@ export default function Dashboard() {
   const { getExpiringBatches, batches, getProductStock } = useStock();
   const { breakages, getTotalLoss, getRecentBreakages } = useBreakages();
   const { products } = useProducts();
+  const { orders, pendingOrders, receivedOrders, draftOrders } = usePurchaseOrders();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -137,6 +142,51 @@ export default function Dashboard() {
     }
     return data;
   }, [sales, breakages]);
+
+  // Purchase order metrics
+  const purchaseMetrics = useMemo(() => {
+    const today = new Date();
+    const todayStart = startOfDay(today);
+    const todayEnd = endOfDay(today);
+    const last7DaysStart = startOfDay(subDays(today, 7));
+
+    // Orders received today
+    const receivedToday = orders.filter(o => 
+      o.status === 'recebido' && 
+      o.received_at &&
+      isWithinInterval(new Date(o.received_at), { start: todayStart, end: todayEnd })
+    );
+
+    // Total received value today
+    const totalReceivedToday = receivedToday.reduce((sum, o) => 
+      sum + Number(o.total_received || o.total_estimated || 0), 0
+    );
+
+    // Pending orders value
+    const pendingValue = pendingOrders.reduce((sum, o) => 
+      sum + Number(o.total_estimated || 0), 0
+    );
+
+    // Orders created in last 7 days
+    const ordersLast7Days = orders.filter(o =>
+      isWithinInterval(new Date(o.created_at), { start: last7DaysStart, end: todayEnd })
+    );
+
+    // Total value last 7 days (received only)
+    const totalReceived7Days = ordersLast7Days
+      .filter(o => o.status === 'recebido')
+      .reduce((sum, o) => sum + Number(o.total_received || o.total_estimated || 0), 0);
+
+    return {
+      pendingCount: pendingOrders.length,
+      pendingValue,
+      receivedTodayCount: receivedToday.length,
+      totalReceivedToday,
+      draftCount: draftOrders.length,
+      totalReceived7Days,
+      ordersLast7Days: ordersLast7Days.length
+    };
+  }, [orders, pendingOrders, draftOrders]);
 
   // Data for scatter plot (Supplier toxic ranking simulation)
   // Since we don't have supplier data, we'll use product categories as proxy
@@ -305,6 +355,75 @@ export default function Dashboard() {
         </Card>
         </div>
       </TooltipProvider>
+
+      {/* Resumo de Compras */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <ShoppingCart className="h-5 w-5 text-primary" />
+            Resumo de Compras
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {/* Pedidos Pendentes */}
+            <div className="text-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <div className="flex items-center justify-center gap-1 text-amber-600 mb-1">
+                <Truck className="h-4 w-4" />
+                <span className="text-xs font-medium">Pendentes</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-bold text-amber-600">
+                {purchaseMetrics.pendingCount}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {formatCurrency(purchaseMetrics.pendingValue)}
+              </div>
+            </div>
+
+            {/* Recebidos Hoje */}
+            <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+              <div className="flex items-center justify-center gap-1 text-green-600 mb-1">
+                <Package className="h-4 w-4" />
+                <span className="text-xs font-medium">Recebido Hoje</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600">
+                {purchaseMetrics.receivedTodayCount}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {formatCurrency(purchaseMetrics.totalReceivedToday)}
+              </div>
+            </div>
+
+            {/* Rascunhos */}
+            <div className="text-center p-3 rounded-lg bg-muted/50 border border-border">
+              <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+                <FileText className="h-4 w-4" />
+                <span className="text-xs font-medium">Rascunhos</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-bold">
+                {purchaseMetrics.draftCount}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                a finalizar
+              </div>
+            </div>
+
+            {/* Total 7 dias */}
+            <div className="text-center p-3 rounded-lg bg-primary/5 border border-primary/20">
+              <div className="flex items-center justify-center gap-1 text-primary mb-1">
+                <BarChart3 className="h-4 w-4" />
+                <span className="text-xs font-medium">Últimos 7 dias</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-bold text-primary">
+                {purchaseMetrics.ordersLast7Days}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {formatCurrency(purchaseMetrics.totalReceived7Days)}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stacked Bar Chart - Revenue vs Costs */}
       <Card>

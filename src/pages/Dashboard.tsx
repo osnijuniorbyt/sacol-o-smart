@@ -21,31 +21,24 @@ import {
   Tooltip, 
   Legend, 
   ResponsiveContainer,
-  ScatterChart,
-  Scatter,
-  ZAxis,
-  Cell,
-  ReferenceLine
 } from 'recharts';
 import { 
   DollarSign, 
   TrendingUp, 
   TrendingDown,
-  AlertTriangle, 
   Package,
   Clock,
   Target,
   Wallet,
-  BarChart3,
   ShoppingCart
 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function Dashboard() {
-  const { sales, getTodayTotal, getTodayCount, getTodayRealProfit, getTodayRealCost } = useSales();
+  const { sales, getTodayTotal, getTodayRealProfit, getTodayRealCost } = useSales();
   const { getExpiringBatches, batches, getProductStock } = useStock();
-  const { breakages, getTotalLoss, getRecentBreakages } = useBreakages();
+  const { breakages } = useBreakages();
   const { products } = useProducts();
   const { orders } = usePurchaseOrders();
 
@@ -151,7 +144,6 @@ export default function Dashboard() {
     return data;
   }, [sales, breakages]);
 
-  // Purchase order metrics
   // Purchase order metrics - focused on TODAY
   const purchaseMetrics = useMemo(() => {
     const today = new Date();
@@ -188,51 +180,6 @@ export default function Dashboard() {
     };
   }, [orders]);
 
-  // Data for scatter plot (Supplier toxic ranking simulation)
-  // Since we don't have supplier data, we'll use product categories as proxy
-  const scatterData = useMemo(() => {
-    const productMetrics = products.map(product => {
-      // Get all breakages for this product marked as "danificado" (from supplier)
-      const productBreakages = breakages.filter(b => 
-        b.product_id === product.id && b.reason === 'danificado'
-      );
-      const totalBreakageQty = productBreakages.reduce((sum, b) => sum + Number(b.quantity), 0);
-      
-      // Get total stock received for this product
-      const totalReceived = batches
-        .filter(b => b.product_id === product.id)
-        .reduce((sum, b) => sum + Number(b.quantity), 0) + totalBreakageQty;
-
-      const defectRate = totalReceived > 0 ? totalBreakageQty / totalReceived : 0;
-
-      // Average cost
-      const productBatches = batches.filter(b => b.product_id === product.id);
-      const avgCost = productBatches.length > 0
-        ? productBatches.reduce((sum, b) => sum + Number(b.cost_per_unit), 0) / productBatches.length
-        : 0;
-
-      return {
-        name: product.name,
-        category: product.category,
-        avgPrice: avgCost,
-        defectRate: defectRate * 100, // percentage
-        // Quadrant: expensive (>5) and bad (>10% defect)
-        isToxic: avgCost > 5 && defectRate > 0.1,
-        z: totalReceived // size based on volume
-      };
-    }).filter(p => p.avgPrice > 0 || p.defectRate > 0);
-
-    return productMetrics;
-  }, [products, breakages, batches]);
-
-  // Calculate quadrant thresholds
-  const priceThreshold = useMemo(() => {
-    const prices = scatterData.map(d => d.avgPrice).filter(p => p > 0);
-    return prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : 5;
-  }, [scatterData]);
-
-  const defectThreshold = 10; // 10% defect rate threshold
-
   // Low stock products
   const lowStockProducts = products.filter(product => {
     const totalStock = getProductStock(product.id);
@@ -244,127 +191,123 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard Inteligente</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
             {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
-        <Badge variant="outline" className="w-fit">
-          <BarChart3 className="h-3 w-3 mr-1" />
-          Análise em tempo real
-        </Badge>
       </div>
 
-      {/* Main Metrics - 2x2 on mobile, 4 columns on desktop - COMPACT */}
+      {/* Main Metrics - MD3 Style: White cards, soft shadows */}
       <TooltipProvider>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-        {/* Lucro do Dia */}
-        <Card className={metrics.todayProfit >= 0 ? 'border-success/30 bg-success-muted' : 'border-danger/30 bg-danger-muted'}>
-          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
-            <ShadcnTooltip>
-              <TooltipTrigger asChild>
-                <CardTitle className="text-[10px] sm:text-xs font-medium cursor-help">
-                  Lucro do Dia {metrics.hasRealCostData ? '' : '~'}
-                </CardTitle>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{metrics.hasRealCostData 
-                  ? 'Lucro real calculado com custo dos lotes vendidos (FIFO)'
-                  : 'Estimativa usando margem de 60% (sem vendas com custo rastreado)'
-                }</p>
-              </TooltipContent>
-            </ShadcnTooltip>
-            {metrics.todayProfit >= 0 ? (
-              <TrendingUp className="h-3.5 w-3.5 text-success" />
-            ) : (
-              <TrendingDown className="h-3.5 w-3.5 text-danger" />
-            )}
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className={`text-lg sm:text-xl font-bold ${metrics.todayProfit >= 0 ? 'text-success' : 'text-danger'}`}>
-              {formatCurrency(metrics.todayProfit)}
-            </div>
-            <p className="text-[10px] text-muted-foreground">
-              {metrics.hasRealCostData ? 'Receita - Custo Real' : 'Receita - Custo ~60%'}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Lucro do Dia */}
+          <Card className="bg-card shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 p-4">
+              <ShadcnTooltip>
+                <TooltipTrigger asChild>
+                  <CardTitle className="text-xs font-medium text-muted-foreground cursor-help">
+                    Lucro do Dia {metrics.hasRealCostData ? '' : '~'}
+                  </CardTitle>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{metrics.hasRealCostData 
+                    ? 'Lucro real calculado com custo dos lotes vendidos (FIFO)'
+                    : 'Estimativa usando margem de 60% (sem vendas com custo rastreado)'
+                  }</p>
+                </TooltipContent>
+              </ShadcnTooltip>
+              {metrics.todayProfit >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-red-500" />
+              )}
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className={`text-2xl font-bold ${metrics.todayProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(metrics.todayProfit)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {metrics.hasRealCostData ? 'Receita - Custo Real' : 'Receita - Custo ~60%'}
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Margem Real */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
-            <ShadcnTooltip>
-              <TooltipTrigger asChild>
-                <CardTitle className="text-[10px] sm:text-xs font-medium cursor-help">Margem Real</CardTitle>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Percentual de lucro sobre o preço de venda (baseado em custo_compra dos produtos)</p>
-              </TooltipContent>
-            </ShadcnTooltip>
-            <Target className="h-3.5 w-3.5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className={`text-lg sm:text-xl font-bold ${metrics.realMargin >= 0.3 ? 'text-success' : 'text-warning'}`}>
-              {formatPercent(metrics.realMargin)}
-            </div>
-            <p className="text-[10px] text-muted-foreground">
-              Preço - Custo
-            </p>
-          </CardContent>
-        </Card>
+          {/* Margem Real */}
+          <Card className="bg-card shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 p-4">
+              <ShadcnTooltip>
+                <TooltipTrigger asChild>
+                  <CardTitle className="text-xs font-medium text-muted-foreground cursor-help">Margem Real</CardTitle>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Percentual de lucro sobre o preço de venda</p>
+                </TooltipContent>
+              </ShadcnTooltip>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className={`text-2xl font-bold ${metrics.realMargin >= 0.3 ? 'text-green-600' : 'text-amber-600'}`}>
+                {formatPercent(metrics.realMargin)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Preço - Custo
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Estoque em Valor */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
-            <ShadcnTooltip>
-              <TooltipTrigger asChild>
-                <CardTitle className="text-[10px] sm:text-xs font-medium cursor-help">Estoque (R$)</CardTitle>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Valor total do estoque em R$</p>
-              </TooltipContent>
-            </ShadcnTooltip>
-            <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="text-lg sm:text-xl font-bold text-foreground">
-              {formatCurrency(metrics.stockValue)}
-            </div>
-            <p className="text-[10px] text-muted-foreground">
-              {batches.length} lotes
-            </p>
-          </CardContent>
-        </Card>
+          {/* Estoque em Valor */}
+          <Card className="bg-card shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 p-4">
+              <ShadcnTooltip>
+                <TooltipTrigger asChild>
+                  <CardTitle className="text-xs font-medium text-muted-foreground cursor-help">Estoque (R$)</CardTitle>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Valor total do estoque em R$</p>
+                </TooltipContent>
+              </ShadcnTooltip>
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="text-2xl font-bold text-foreground">
+                {formatCurrency(metrics.stockValue)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {batches.length} lotes ativos
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Vencendo em 3 dias */}
-        <Card className={metrics.expiringCount > 0 ? 'border-warning/30 bg-warning-muted' : ''}>
-          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
-            <ShadcnTooltip>
-              <TooltipTrigger asChild>
-                <CardTitle className="text-[10px] sm:text-xs font-medium cursor-help">Vencendo</CardTitle>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Produtos próximos da data de validade</p>
-              </TooltipContent>
-            </ShadcnTooltip>
-            <Clock className="h-3.5 w-3.5 text-warning" />
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className={`text-lg sm:text-xl font-bold ${metrics.expiringCount > 0 ? 'text-warning' : 'text-success'}`}>
-              {metrics.expiringCount}
-            </div>
-            <p className="text-[10px] text-muted-foreground">
-              em 3 dias
-            </p>
-          </CardContent>
-        </Card>
+          {/* Vencendo em 3 dias */}
+          <Card className="bg-card shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 p-4">
+              <ShadcnTooltip>
+                <TooltipTrigger asChild>
+                  <CardTitle className="text-xs font-medium text-muted-foreground cursor-help">Vencendo</CardTitle>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Produtos próximos da data de validade</p>
+                </TooltipContent>
+              </ShadcnTooltip>
+              <Clock className={`h-4 w-4 ${metrics.expiringCount > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className={`text-2xl font-bold ${metrics.expiringCount > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                {metrics.expiringCount}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                em 3 dias
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </TooltipProvider>
 
-      {/* Resumo de Compras */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+      {/* Resumo de Compras - MD3 Style: Pastel backgrounds */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
             <ShoppingCart className="h-5 w-5 text-primary" />
             Resumo de Compras
           </CardTitle>
@@ -372,57 +315,57 @@ export default function Dashboard() {
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {/* Compras Hoje */}
-            <div className="text-center p-3 rounded-lg bg-warning-muted border border-warning/20">
-              <div className="flex items-center justify-center gap-1 text-warning mb-1">
+            <div className="text-center p-4 rounded-2xl bg-amber-50">
+              <div className="flex items-center justify-center gap-1.5 text-amber-700 mb-2">
                 <ShoppingCart className="h-4 w-4" />
                 <span className="text-xs font-medium">Compras Hoje</span>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-warning">
+              <div className="text-xl sm:text-2xl font-bold text-amber-700">
                 {formatCurrency(purchaseMetrics.comprasHoje)}
               </div>
-              <div className="text-[10px] text-muted-foreground">
+              <div className="text-[10px] text-amber-600/70 mt-1">
                 total estimado
               </div>
             </div>
 
             {/* Pedidos Hoje */}
-            <div className="text-center p-3 rounded-lg bg-info-muted border border-info/20">
-              <div className="flex items-center justify-center gap-1 text-info mb-1">
+            <div className="text-center p-4 rounded-2xl bg-blue-50">
+              <div className="flex items-center justify-center gap-1.5 text-blue-700 mb-2">
                 <Package className="h-4 w-4" />
                 <span className="text-xs font-medium">Pedidos Hoje</span>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-info">
+              <div className="text-xl sm:text-2xl font-bold text-blue-700">
                 {purchaseMetrics.pedidosHoje}
               </div>
-              <div className="text-[10px] text-muted-foreground">
+              <div className="text-[10px] text-blue-600/70 mt-1">
                 pedidos criados
               </div>
             </div>
 
             {/* Venda Prevista */}
-            <div className="text-center p-3 rounded-lg bg-success-muted border border-success/20">
-              <div className="flex items-center justify-center gap-1 text-success mb-1">
+            <div className="text-center p-4 rounded-2xl bg-green-50">
+              <div className="flex items-center justify-center gap-1.5 text-green-700 mb-2">
                 <TrendingUp className="h-4 w-4" />
                 <span className="text-xs font-medium">Venda Prevista</span>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-success">
+              <div className="text-xl sm:text-2xl font-bold text-green-700">
                 {formatCurrency(purchaseMetrics.vendaPrevista)}
               </div>
-              <div className="text-[10px] text-muted-foreground">
+              <div className="text-[10px] text-green-600/70 mt-1">
                 receita esperada
               </div>
             </div>
 
             {/* Lucro Previsto */}
-            <div className={`text-center p-3 rounded-lg ${purchaseMetrics.lucroPrevisto >= 0 ? 'bg-success-muted border-success/20' : 'bg-danger-muted border-danger/20'} border`}>
-              <div className={`flex items-center justify-center gap-1 mb-1 ${purchaseMetrics.lucroPrevisto >= 0 ? 'text-success' : 'text-danger'}`}>
+            <div className={`text-center p-4 rounded-2xl ${purchaseMetrics.lucroPrevisto >= 0 ? 'bg-purple-50' : 'bg-red-50'}`}>
+              <div className={`flex items-center justify-center gap-1.5 mb-2 ${purchaseMetrics.lucroPrevisto >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
                 <DollarSign className="h-4 w-4" />
                 <span className="text-xs font-medium">Lucro Previsto</span>
               </div>
-              <div className={`text-xl sm:text-2xl font-bold ${purchaseMetrics.lucroPrevisto >= 0 ? 'text-success' : 'text-danger'}`}>
+              <div className={`text-xl sm:text-2xl font-bold ${purchaseMetrics.lucroPrevisto >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
                 {formatCurrency(purchaseMetrics.lucroPrevisto)}
               </div>
-              <div className="text-[10px] text-muted-foreground">
+              <div className={`text-[10px] mt-1 ${purchaseMetrics.lucroPrevisto >= 0 ? 'text-purple-600/70' : 'text-red-600/70'}`}>
                 venda - compras
               </div>
             </div>
@@ -430,28 +373,26 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Stacked Bar Chart - Revenue vs Costs */}
-      <Card>
+      {/* Stacked Bar Chart - Revenue vs Costs - MD3 Style: Softer colors */}
+      <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
             <DollarSign className="h-5 w-5" />
             Receita vs Custos (7 dias)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[200px] sm:h-[250px]">
+          <div className="h-[220px] sm:h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stackedBarData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis 
                   dataKey="day" 
-                  tick={{ fontSize: 12 }}
-                  className="text-muted-foreground"
+                  tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                 />
                 <YAxis 
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                   tickFormatter={(v) => `R$${v}`}
-                  className="text-muted-foreground"
                 />
                 <Tooltip 
                   formatter={(value: number, name: string) => [
@@ -467,7 +408,8 @@ export default function Dashboard() {
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--popover))', 
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                   }}
                 />
                 <Legend 
@@ -478,136 +420,42 @@ export default function Dashboard() {
                     value === 'custoQuebra' ? 'Custo Quebra' : 'Lucro'
                   }
                 />
-                <Bar dataKey="receita" stackId="a" fill="hsl(150, 60%, 35%)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="custoMercadoria" stackId="b" fill="hsl(150, 20%, 40%)" />
-                <Bar dataKey="custoQuebra" stackId="b" fill="hsl(0, 70%, 50%)" radius={[4, 4, 0, 0]} />
+                {/* MD3 Softer colors: green-400, gray-400, red-400 */}
+                <Bar dataKey="receita" stackId="a" fill="#4ade80" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="custoMercadoria" stackId="b" fill="#9ca3af" />
+                <Bar dataKey="custoQuebra" stackId="b" fill="#f87171" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="flex flex-wrap gap-4 mt-4 justify-center text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-success"></div>
-              <span className="text-muted-foreground">Receita (verde)</span>
+              <div className="w-3 h-3 rounded-full bg-green-400"></div>
+              <span className="text-muted-foreground">Receita</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-muted-foreground"></div>
+              <div className="w-3 h-3 rounded-full bg-gray-400"></div>
               <span className="text-muted-foreground">Custo Mercadoria</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-danger"></div>
+              <div className="w-3 h-3 rounded-full bg-red-400"></div>
               <span className="text-muted-foreground">Custo Quebra</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Scatter Plot - Toxic Supplier Ranking */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <AlertTriangle className="h-5 w-5 text-danger" />
-            Ranking Fornecedor Tóxico
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Produtos no quadrante vermelho: Caro + Alto índice de defeito
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[220px] sm:h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  type="number" 
-                  dataKey="avgPrice" 
-                  name="Preço Médio"
-                  tick={{ fontSize: 12 }}
-                  label={{ value: 'Preço Médio (R$/kg)', position: 'bottom', fontSize: 12 }}
-                  className="text-muted-foreground"
-                />
-                <YAxis 
-                  type="number" 
-                  dataKey="defectRate" 
-                  name="% Defeito"
-                  tick={{ fontSize: 12 }}
-                  label={{ value: '% Defeito', angle: -90, position: 'insideLeft', fontSize: 12 }}
-                  className="text-muted-foreground"
-                />
-                <ZAxis type="number" dataKey="z" range={[50, 400]} />
-                <Tooltip 
-                  cursor={{ strokeDasharray: '3 3' }}
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-popover border rounded-lg p-3 shadow-lg">
-                          <p className="font-medium">{data.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Preço: {formatCurrency(data.avgPrice)}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Defeito: {data.defectRate.toFixed(1)}%
-                          </p>
-                          {data.isToxic && (
-                            <Badge variant="destructive" className="mt-2">
-                              ⚠️ Fornecedor Tóxico
-                            </Badge>
-                          )}
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                {/* Reference lines for quadrants */}
-                <ReferenceLine 
-                  x={priceThreshold} 
-                  stroke="hsl(38, 92%, 50%)" 
-                  strokeDasharray="5 5"
-                  label={{ value: 'Preço Médio', position: 'top', fontSize: 10 }}
-                />
-                <ReferenceLine 
-                  y={defectThreshold} 
-                  stroke="hsl(38, 92%, 50%)" 
-                  strokeDasharray="5 5"
-                  label={{ value: '10% defeito', position: 'right', fontSize: 10 }}
-                />
-                <Scatter name="Produtos" data={scatterData}>
-                  {scatterData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.isToxic ? 'hsl(0, 70%, 50%)' : 'hsl(150, 60%, 35%)'}
-                      strokeWidth={entry.isToxic ? 2 : 0}
-                      stroke="hsl(0, 70%, 50%)"
-                    />
-                  ))}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex flex-wrap gap-4 mt-4 justify-center text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-success"></div>
-              <span className="text-muted-foreground">Bom fornecedor</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-danger"></div>
-              <span className="text-muted-foreground">Tóxico (Caro + Ruim)</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Bottom cards - Alerts */}
+      {/* Bottom cards - Alerts - MD3 Style */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Low stock alerts */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-warning" />
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <Package className="h-5 w-5 text-amber-500" />
               Estoque Baixo
               {lowStockProducts.length > 0 && (
-                <Badge variant="secondary">{lowStockProducts.length}</Badge>
+                <Badge variant="warning-pastel" className="ml-auto">
+                  {lowStockProducts.length}
+                </Badge>
               )}
             </CardTitle>
           </CardHeader>
@@ -621,14 +469,14 @@ export default function Dashboard() {
                 {lowStockProducts.slice(0, 5).map(product => {
                   const totalStock = getProductStock(product.id);
                   return (
-                    <div key={product.id} className="flex items-center justify-between">
+                    <div key={product.id} className="flex items-center justify-between p-2 rounded-xl bg-muted/30">
                       <div>
-                        <p className="font-medium">{product.name}</p>
+                        <p className="font-medium text-sm">{product.name}</p>
                         <p className="text-xs text-muted-foreground">
                           Mín: {product.min_stock} {product.unit}
                         </p>
                       </div>
-                      <Badge variant="destructive">
+                      <Badge variant="danger-pastel">
                         {totalStock.toFixed(1)} {product.unit}
                       </Badge>
                     </div>
@@ -640,13 +488,15 @@ export default function Dashboard() {
         </Card>
 
         {/* Expiring batches */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-warning" />
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <Clock className="h-5 w-5 text-amber-500" />
               Vencendo em Breve
               {metrics.expiringCount > 0 && (
-                <Badge variant="secondary">{metrics.expiringCount}</Badge>
+                <Badge variant="warning-pastel" className="ml-auto">
+                  {metrics.expiringCount}
+                </Badge>
               )}
             </CardTitle>
           </CardHeader>
@@ -660,14 +510,14 @@ export default function Dashboard() {
                 {getExpiringBatches(3).slice(0, 5).map(batch => {
                   const product = products.find(p => p.id === batch.product_id);
                   return (
-                    <div key={batch.id} className="flex items-center justify-between">
+                    <div key={batch.id} className="flex items-center justify-between p-2 rounded-xl bg-muted/30">
                       <div>
-                        <p className="font-medium">{product?.name || 'Produto'}</p>
+                        <p className="font-medium text-sm">{product?.name || 'Produto'}</p>
                         <p className="text-xs text-muted-foreground">
                           {Number(batch.quantity).toFixed(2)} {product?.unit || 'kg'}
                         </p>
                       </div>
-                      <Badge variant="outline" className="text-warning border-warning">
+                      <Badge variant="warning-pastel">
                         {batch.expiry_date && format(new Date(batch.expiry_date), 'dd/MM')}
                       </Badge>
                     </div>

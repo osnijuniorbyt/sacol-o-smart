@@ -1,3 +1,4 @@
+// Layout component with MD3 redesign - v2
 import { ReactNode, useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {

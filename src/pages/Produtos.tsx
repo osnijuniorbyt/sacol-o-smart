@@ -518,17 +518,38 @@ export default function Produtos() {
             const isLowStock = stock <= product.min_stock;
             const supplierName = getSupplierName(product.supplier_id);
             
+            // Pastel backgrounds based on category - ALWAYS applied
+            const categoryBgColors: Record<string, string> = {
+              verduras: 'bg-green-50',
+              frutas: 'bg-amber-50',
+              legumes: 'bg-orange-50',
+              temperos: 'bg-purple-50',
+              outros: 'bg-gray-100',
+            };
+            
+            const categoryEmojis: Record<string, string> = {
+              frutas: '🍎',
+              verduras: '🥬',
+              legumes: '🥕',
+              temperos: '🌿',
+              outros: '📦',
+            };
+            
+            const bgColor = categoryBgColors[product.category] || 'bg-gray-100';
+            const emoji = categoryEmojis[product.category] || '📦';
+            
             return (
               <Card 
                 key={product.id} 
-                className={`relative bg-white shadow-sm hover:shadow-md rounded-2xl border-0 transition-all duration-200 ${!product.is_active ? 'opacity-60' : ''}`}
+                className={`relative bg-white shadow-sm hover:shadow-md rounded-2xl border-0 transition-all duration-200 overflow-hidden ${!product.is_active ? 'opacity-60' : ''}`}
               >
-                <CardContent className="p-4">
+                {/* Image Area - Compact h-32 with pastel background */}
+                <div className={`relative h-32 ${bgColor} rounded-t-2xl flex items-center justify-center`}>
                   {/* Edit Button - Subtle in corner */}
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute top-2 right-2 h-8 w-8 text-muted-foreground/50 hover:text-foreground hover:bg-muted/50"
+                    className="absolute top-2 right-2 h-8 w-8 text-foreground/40 hover:text-foreground hover:bg-white/50 z-10"
                     onClick={() => openEditDialog(product)}
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -536,33 +557,38 @@ export default function Produtos() {
                   
                   {/* Inactive Badge */}
                   {!product.is_active && (
-                    <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full bg-white/80 text-muted-foreground z-10">
                       Inativo
                     </span>
                   )}
                   
-                  {/* Centered Image */}
-                  <div className="flex justify-center mb-3 pt-2">
-                    <ProductImage 
+                  {/* Image or Emoji - Fixed size */}
+                  {product.image_url ? (
+                    <img
                       src={product.image_url}
                       alt={product.name}
-                      category={product.category}
-                      size="xl"
+                      className="w-16 h-16 object-contain"
+                      loading="lazy"
                     />
-                  </div>
-                  
+                  ) : (
+                    <span className="text-5xl">{emoji}</span>
+                  )}
+                </div>
+                
+                {/* Content Area */}
+                <CardContent className="p-3">
                   {/* Product Name */}
-                  <h3 className="font-semibold text-center line-clamp-2 mb-1 text-sm leading-tight">
+                  <h3 className="font-semibold text-center line-clamp-2 mb-0.5 text-sm leading-tight">
                     {product.name}
                   </h3>
                   
                   {/* PLU - Discrete */}
-                  <p className="text-xs text-muted-foreground text-center mb-3">
+                  <p className="text-xs text-muted-foreground text-center mb-2">
                     PLU: {product.plu}
                   </p>
                   
                   {/* Price - Highlighted */}
-                  <div className="text-center mb-3">
+                  <div className="text-center mb-2">
                     <span className="text-lg font-bold text-green-700">
                       {formatCurrency(Number(product.price))}
                     </span>

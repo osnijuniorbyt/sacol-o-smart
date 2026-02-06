@@ -502,9 +502,16 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                         </button>
                       ) : (
                         <Input
+                          type="text"
                           inputMode="decimal"
+                          pattern="[0-9]*[.,]?[0-9]*"
                           value={item.quantity_received}
-                          onChange={(e) => updateItem(item.id, 'quantity_received', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(',', '.');
+                            if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                              updateItem(item.id, 'quantity_received', parseFloat(val) || 0);
+                            }
+                          }}
                           className="h-12 text-lg font-mono mt-1"
                         />
                       )}
@@ -528,9 +535,16 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                         </button>
                       ) : (
                         <Input
+                          type="text"
                           inputMode="decimal"
+                          pattern="[0-9]*[.,]?[0-9]*"
                           value={item.unit_cost_actual}
-                          onChange={(e) => updateItem(item.id, 'unit_cost_actual', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(',', '.');
+                            if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                              updateItem(item.id, 'unit_cost_actual', parseFloat(val) || 0);
+                            }
+                          }}
                           className="h-12 text-lg font-mono mt-1"
                         />
                       )}

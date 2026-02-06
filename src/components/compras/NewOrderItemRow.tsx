@@ -205,9 +205,10 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
                 <Input
                   type="text"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   value={displayQty}
                   onChange={handleQtyInputChange}
-                  className="h-10 text-center font-mono w-12 px-1"
+                  className="h-10 text-center font-mono w-14 px-1 text-base"
                 />
                 <Button
                   variant="outline"
@@ -246,9 +247,10 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
               <Input
                 type="text"
                 inputMode="decimal"
+                pattern="[0-9]*[.,]?[0-9]*"
                 value={displayPrice}
                 onChange={handlePriceChange}
-                className="h-10 text-right font-mono"
+                className="h-10 text-right font-mono text-base"
                 placeholder="0,00"
               />
             </div>

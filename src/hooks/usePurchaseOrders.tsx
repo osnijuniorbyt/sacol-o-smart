@@ -108,20 +108,45 @@ export function usePurchaseOrders() {
     }
   });
 
+  // Finalize order (change status to 'fechado')
+  const finalizeOrder = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .update({ status: 'fechado' as const })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase_orders'] });
+      toast.success('Pedido finalizado!');
+    },
+    onError: (error: Error) => {
+      toast.error('Erro ao finalizar: ' + error.message);
+    }
+  });
+
   // Filter orders by status
   const pendingOrders = orders.filter(o => o.status === 'enviado');
   const receivedOrders = orders.filter(o => o.status === 'recebido');
   const draftOrders = orders.filter(o => o.status === 'rascunho');
+  const closedOrders = orders.filter(o => o.status === 'fechado');
 
   return {
     orders,
     pendingOrders,
     receivedOrders,
     draftOrders,
+    closedOrders,
     isLoading,
     error,
     updateOrderStatus,
     updateOrderItem,
-    deleteOrder
+    deleteOrder,
+    finalizeOrder
   };
 }

@@ -43,7 +43,7 @@ import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fn
 import { ptBR } from 'date-fns/locale';
 
 export default function Dashboard() {
-  const { sales, getTodayTotal, getTodayCount } = useSales();
+  const { sales, getTodayTotal, getTodayCount, getTodayRealProfit, getTodayRealCost } = useSales();
   const { getExpiringBatches, batches, getProductStock } = useStock();
   const { breakages, getTotalLoss, getRecentBreakages } = useBreakages();
   const { products } = useProducts();
@@ -66,10 +66,8 @@ export default function Dashboard() {
     const todayStart = startOfDay(today);
     const todayEnd = endOfDay(today);
 
-    // Today's revenue
-    const todayRevenue = sales
-      .filter(s => isWithinInterval(new Date(s.created_at), { start: todayStart, end: todayEnd }))
-      .reduce((sum, s) => sum + Number(s.total), 0);
+    // Today's revenue (from hook)
+    const todayRevenue = getTodayTotal();
 
     // Today's breakage loss
     const todayBreakageLoss = breakages
@@ -83,24 +81,30 @@ export default function Dashboard() {
     // Products expiring in 3 days
     const expiringIn3Days = getExpiringBatches(3);
 
-    // Profit calculation (simplified using 60% cost assumption)
-    const estimatedCost = todayRevenue * 0.6;
-    const todayProfit = todayRevenue - estimatedCost - todayBreakageLoss;
+    // LUCRO REAL: usa custo dos lotes vendidos via FIFO (dados reais do banco)
+    const realCost = getTodayRealCost();
+    const hasRealCostData = realCost > 0;
+    
+    // Se temos dados de custo real, usa; senão fallback para estimativa 60%
+    const todayProfit = hasRealCostData 
+      ? getTodayRealProfit() - todayBreakageLoss
+      : todayRevenue - (todayRevenue * 0.6) - todayBreakageLoss;
 
-    // Real margin calculation - use custo_compra from products (R$/kg) for accurate comparison
-    // This compares price (R$/kg) with custo_compra (R$/kg) for proper unit alignment
+    // MARGEM REAL: calcula a partir de custo_compra dos produtos (R$/kg vs R$/kg)
     const productsWithCost = products.filter(p => p.custo_compra && p.custo_compra > 0 && p.price > 0);
     
     let realMargin = 0;
     if (productsWithCost.length > 0) {
-      // Calculate weighted margin based on products with known costs
       const marginSum = productsWithCost.reduce((sum, p) => {
         const margin = (Number(p.price) - Number(p.custo_compra!)) / Number(p.price);
         return sum + margin;
       }, 0);
       realMargin = marginSum / productsWithCost.length;
+    } else if (hasRealCostData && todayRevenue > 0) {
+      // Calcula margem baseado nas vendas reais do dia
+      realMargin = (todayRevenue - realCost) / todayRevenue;
     } else {
-      // Fallback: use 60% target margin when no cost data available
+      // Fallback: margem alvo de 60%
       realMargin = 0.60;
     }
 
@@ -110,9 +114,10 @@ export default function Dashboard() {
       stockValue,
       expiringCount: expiringIn3Days.length,
       todayProfit,
-      realMargin
+      realMargin,
+      hasRealCostData
     };
-  }, [sales, batches, breakages, products, getExpiringBatches]);
+  }, [sales, batches, breakages, products, getExpiringBatches, getTodayTotal, getTodayRealProfit, getTodayRealCost]);
 
   // Data for stacked bar chart (last 7 days)
   const stackedBarData = useMemo(() => {
@@ -258,10 +263,15 @@ export default function Dashboard() {
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0 p-3">
             <ShadcnTooltip>
               <TooltipTrigger asChild>
-                <CardTitle className="text-[10px] sm:text-xs font-medium cursor-help">Lucro do Dia</CardTitle>
+                <CardTitle className="text-[10px] sm:text-xs font-medium cursor-help">
+                  Lucro do Dia {metrics.hasRealCostData ? '' : '~'}
+                </CardTitle>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Diferença entre receita e custos do dia atual</p>
+                <p>{metrics.hasRealCostData 
+                  ? 'Lucro real calculado com custo dos lotes vendidos (FIFO)'
+                  : 'Estimativa usando margem de 60% (sem vendas com custo rastreado)'
+                }</p>
               </TooltipContent>
             </ShadcnTooltip>
             {metrics.todayProfit >= 0 ? (
@@ -275,7 +285,7 @@ export default function Dashboard() {
               {formatCurrency(metrics.todayProfit)}
             </div>
             <p className="text-[10px] text-muted-foreground">
-              Receita - Custos
+              {metrics.hasRealCostData ? 'Receita - Custo Real' : 'Receita - Custo ~60%'}
             </p>
           </CardContent>
         </Card>
@@ -288,7 +298,7 @@ export default function Dashboard() {
                 <CardTitle className="text-[10px] sm:text-xs font-medium cursor-help">Margem Real</CardTitle>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Percentual de lucro sobre o preço de venda</p>
+                <p>Percentual de lucro sobre o preço de venda (baseado em custo_compra dos produtos)</p>
               </TooltipContent>
             </ShadcnTooltip>
             <Target className="h-3.5 w-3.5 text-muted-foreground" />

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SupplierProduct {
@@ -26,16 +27,21 @@ export function useSupplierProducts(supplierId: string | null) {
       return (data || []) as SupplierProduct[];
     },
     enabled: !!supplierId,
+    // DESABILITA refetch automático para evitar sobrescrever edições do usuário
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: Infinity, // Dados nunca ficam "stale" automaticamente
   });
 
-  // Produtos com histórico (comprados antes desse fornecedor)
-  const productsWithHistory = products.filter(p => p.quantidade_compras > 0);
-  
-  // Todos os produtos (incluindo sem histórico)
-  const allProducts = products;
+  // Memoiza para evitar criar novo array a cada render
+  const productsWithHistory = useMemo(
+    () => products.filter(p => p.quantidade_compras > 0),
+    [products]
+  );
 
   return {
-    products: allProducts,
+    products,
     productsWithHistory,
     isLoading,
     error,

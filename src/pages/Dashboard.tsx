@@ -161,37 +161,9 @@ export default function Dashboard() {
     // Pedidos Hoje = count of orders created today
     const pedidosHoje = ordersToday.length;
 
-    // Venda Prevista = total_kg * preço de venda do produto
-    // Os itens já vêm com product via join do Supabase
-    // Fallback: total_estimated * 2.5
-    let vendaPrevista = 0;
-    let hasItems = false;
-    
-    ordersToday.forEach(order => {
-      if (order.items && order.items.length > 0) {
-        hasItems = true;
-        order.items.forEach(item => {
-          // O produto vem do join (item.product), não precisa buscar
-          const product = item.product;
-          // total_kg = quantity (caixas) * estimated_kg (kg por caixa)
-          const totalKg = Number(item.quantity || 1) * Number(item.estimated_kg || 0);
-          
-          if (product && Number(product.price) > 0) {
-            // Venda = total_kg * preço de venda por kg
-            vendaPrevista += totalKg * Number(product.price);
-          } else {
-            // Fallback: custo do item * 2.5 (margem de 150%)
-            const itemCost = totalKg * Number(item.unit_cost_estimated || 0);
-            vendaPrevista += itemCost * 2.5;
-          }
-        });
-      }
-    });
-
-    // If no items found, use fallback: total_estimated * 2.5
-    if (!hasItems && comprasHoje > 0) {
-      vendaPrevista = comprasHoje * 2.5;
-    }
+    // Venda Prevista = Compras Hoje * 2.5 (markup padrão sacolão/hortifruti)
+    // Margem média de 150% sobre o custo
+    const vendaPrevista = comprasHoje * 2.5;
 
     // Lucro Previsto = Venda Prevista - Compras Hoje
     const lucroPrevisto = vendaPrevista - comprasHoje;

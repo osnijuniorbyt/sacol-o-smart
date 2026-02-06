@@ -24,6 +24,7 @@ import {
   Building2,
   Users,
   Box,
+  MoreHorizontal,
 } from 'lucide-react';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
@@ -44,6 +45,14 @@ const navItems = [
   { path: '/produtos', label: 'Produtos', icon: Apple },
   { path: '/vasilhames', label: 'Vasilhames', icon: Box },
   { path: '/fornecedores', label: 'Fornecedores', icon: Building2 },
+];
+
+// Mobile bottom nav items
+const mobileNavItems = [
+  { path: '/', label: 'Home', icon: LayoutDashboard },
+  { path: '/pdv', label: 'PDV', icon: ShoppingCart },
+  { path: '/compras', label: 'Compras', icon: Truck },
+  { path: '/estoque', label: 'Estoque', icon: Package },
 ];
 
 export default function Layout({ children }: LayoutProps) {
@@ -120,16 +129,16 @@ export default function Layout({ children }: LayoutProps) {
   }, [sidebarOpen]);
 
   return (
-    <div ref={mainRef} className="min-h-screen bg-gradient-to-br from-[hsl(42,35%,96%)] via-[hsl(40,30%,94%)] to-[hsl(38,35%,92%)]">
-      {/* Mobile header - #1B4332 base */}
-      <header className="lg:hidden flex items-center justify-between p-4 header-mobile pl-safe pr-safe border-b-2 border-primary/40 bg-gradient-to-r from-[hsl(153,43%,15%)] via-[hsl(153,41%,20%)] to-[hsl(153,43%,15%)] shadow-lg">
+    <div ref={mainRef} className="min-h-screen bg-background">
+      {/* Mobile header - Clean MD3 style */}
+      <header className="md:hidden flex items-center justify-between px-4 header-mobile pl-safe pr-safe bg-[hsl(153,43%,15%)] shadow-md">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="h-12 w-12 text-primary/80 hover:text-primary hover:bg-white/10"
+          className="h-11 w-11 text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
         >
-          <Menu className="h-6 w-6" />
+          <Menu className="h-5 w-5" />
         </Button>
         
         {/* Logo centralizada */}
@@ -138,69 +147,43 @@ export default function Layout({ children }: LayoutProps) {
         <SyncStatusIndicator />
       </header>
 
-      {/* Swipe indicator */}
+      {/* Swipe indicator - simplified */}
       <div 
         className={cn(
-          "lg:hidden fixed left-0 top-1/2 -translate-y-1/2 z-30 transition-all duration-500",
+          "md:hidden fixed left-0 top-1/2 -translate-y-1/2 z-30 transition-all duration-300",
           sidebarOpen ? "opacity-0 -translate-x-full" : "opacity-100"
         )}
       >
-        <div className="relative flex items-center">
-          {/* Glow effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/50 to-transparent blur-lg w-8 h-20 rounded-r-full" />
-          
-          {/* Main indicator */}
-          <div className="relative bg-gradient-to-b from-[hsl(153,43%,15%)] via-[hsl(153,41%,18%)] to-[hsl(153,43%,12%)] rounded-r-2xl shadow-lg border-y border-r border-primary/40 overflow-hidden">
-            <div className="px-1.5 py-4 flex flex-col items-center gap-1">
-              {/* Animated chevrons */}
-              <ChevronRight className="h-4 w-4 text-primary animate-[pulse_1.5s_ease-in-out_infinite]" />
-              <ChevronRight className="h-4 w-4 text-primary/70 animate-[pulse_1.5s_ease-in-out_0.2s_infinite]" />
-              <ChevronRight className="h-4 w-4 text-primary/50 animate-[pulse_1.5s_ease-in-out_0.4s_infinite]" />
-            </div>
-            
-            {/* Shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent pointer-events-none" />
-          </div>
+        <div className="bg-[hsl(153,43%,15%)] rounded-r-xl px-1 py-3 shadow-lg">
+          <ChevronRight className="h-4 w-4 text-primary animate-pulse" />
         </div>
       </div>
 
       {/* Sidebar overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/40 z-40 md:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar - #1B4332 to #2D6A4F gradient */}
+      {/* Sidebar - #1B4332 solid background */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-64 bg-gradient-to-b from-[hsl(153,43%,15%)] via-[hsl(153,41%,20%)] to-[hsl(153,43%,15%)] transform transition-transform duration-300 ease-out lg:translate-x-0 lg:left-3 lg:top-3 lg:bottom-3 lg:h-auto lg:rounded-2xl lg:border lg:border-primary/30",
-          "shadow-2xl lg:shadow-[0_8px_32px_-4px_hsl(38,92%,48%,0.25)]",
+          "fixed top-0 left-0 z-50 h-full w-64 bg-[hsl(153,43%,15%)] transform transition-transform duration-300 ease-out md:translate-x-0 md:left-3 md:top-3 md:bottom-3 md:h-auto md:rounded-2xl",
+          "shadow-xl",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex flex-col h-full lg:rounded-2xl overflow-hidden">
+        <div className="flex flex-col h-full md:rounded-2xl overflow-hidden">
           {/* Logo container */}
-          <div className="relative border-b border-primary/20">
-            <div className="relative overflow-hidden h-[140px] lg:rounded-t-2xl">
-              {/* Border ring */}
-              <div className="absolute inset-0 lg:rounded-t-2xl ring-1 ring-inset ring-primary/25" />
-              
-              {/* Shimmer */}
-              <div 
-                className="absolute bottom-0 left-0 right-0 h-[2px] animate-shimmer z-10 opacity-50"
-                style={{
-                  background: 'linear-gradient(90deg, transparent, hsl(38,92%,48%), hsl(45,30%,85%), hsl(38,92%,48%), transparent)',
-                  backgroundSize: '200% 100%',
-                }}
-              />
-              
+          <div className="relative border-b border-white/10">
+            <div className="relative overflow-hidden h-[140px] md:rounded-t-2xl">
               {/* Logo */}
               <img 
                 src={logoFull}
                 alt="Horti Campos"
-                className="w-full h-full object-cover object-center lg:rounded-t-2xl"
+                className="w-full h-full object-cover object-center md:rounded-t-2xl"
               />
               
               {/* Close button for mobile */}
@@ -208,7 +191,7 @@ export default function Layout({ children }: LayoutProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden absolute top-2 right-2 h-8 w-8 text-accent hover:text-accent/80 hover:bg-white/20 flex-shrink-0 z-20 rounded-full"
+                className="md:hidden absolute top-2 right-2 h-8 w-8 text-white/80 hover:text-white hover:bg-white/10 rounded-xl z-20"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -216,7 +199,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {allNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -226,16 +209,16 @@ export default function Layout({ children }: LayoutProps) {
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all",
+                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
                     isActive
-                      ? "bg-primary text-white shadow-lg shadow-primary/40"
-                      : "hover:bg-white/5 text-[hsl(40,30%,85%)] hover:text-primary active:bg-white/10"
+                      ? "bg-primary text-white shadow-md"
+                      : "hover:bg-white/10 text-white/80 hover:text-white"
                   )}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="font-medium flex-1">{item.label}</span>
                   {'shortcut' in item && item.shortcut && (
-                    <span className="text-xs opacity-60 hidden lg:inline">{item.shortcut}</span>
+                    <span className="text-xs opacity-50 hidden md:inline">{item.shortcut}</span>
                   )}
                 </Link>
               );
@@ -248,10 +231,10 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Logout button */}
-          <div className="p-3 border-t border-primary/25">
+          <div className="p-3 border-t border-white/10">
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-[hsl(40,30%,80%)] hover:text-primary hover:bg-white/5"
+              className="w-full justify-start gap-3 h-11 text-white/70 hover:text-white hover:bg-white/10 rounded-xl"
               onClick={signOut}
             >
               <LogOut className="h-5 w-5" />
@@ -262,13 +245,13 @@ export default function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* Main content */}
-      <main className="lg:ml-[280px] min-h-screen bg-gradient-to-br from-[hsl(42,35%,96%)] via-[hsl(40,30%,94%)] to-[hsl(38,35%,92%)]">
-        <div className="p-4 lg:p-6 pb-safe">
+      <main className="md:ml-[280px] min-h-screen pb-20 md:pb-0">
+        <div className="p-4 md:p-6">
           {/* Breadcrumb - página atual */}
-          <Breadcrumb className="mb-4">
+          <Breadcrumb className="mb-6">
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbPage className="text-foreground/70 text-sm font-medium">
+                <BreadcrumbPage className="text-muted-foreground text-sm font-medium">
                   {allNavItems.find(item => item.path === location.pathname)?.label || 'Página'}
                 </BreadcrumbPage>
               </BreadcrumbItem>
@@ -277,6 +260,44 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation - MD3 Style */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border shadow-lg fixed-bottom-safe">
+        <div className="flex items-center justify-around px-2 py-2">
+          {mobileNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex flex-col items-center justify-center py-2 px-4 rounded-2xl transition-all duration-200 min-w-[64px]",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon className={cn("h-5 w-5 mb-1", isActive && "text-primary")} />
+                <span className={cn(
+                  "text-[10px] font-medium",
+                  isActive && "text-primary"
+                )}>
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+          {/* More button to open sidebar */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="flex flex-col items-center justify-center py-2 px-4 rounded-2xl transition-all text-muted-foreground hover:text-foreground min-w-[64px]"
+          >
+            <MoreHorizontal className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Mais</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

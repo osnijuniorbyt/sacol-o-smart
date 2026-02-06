@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Camera, X, Loader2, ImagePlus, Trash2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Camera, X, Loader2, ImagePlus, ChevronDown, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 const MAX_PHOTOS = 5;
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB
@@ -70,6 +72,7 @@ async function compressImage(file: File): Promise<Blob> {
 
 export function ReceivingPhotos({ orderId, photos, onPhotosChange, disabled }: ReceivingPhotosProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,6 +88,7 @@ export function ReceivingPhotos({ orderId, photos, onPhotosChange, disabled }: R
     
     const filesToProcess = Array.from(files).slice(0, remainingSlots);
     setIsUploading(true);
+    setIsExpanded(true); // Expand when adding photos
     
     for (const file of filesToProcess) {
       // Validate file type
@@ -182,43 +186,9 @@ export function ReceivingPhotos({ orderId, photos, onPhotosChange, disabled }: R
 
   const canAddMore = photos.length < MAX_PHOTOS && !disabled;
 
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">
-          Fotos do Recebimento ({photos.length}/{MAX_PHOTOS})
-        </span>
-        
-        {canAddMore && (
-          <div className="flex gap-2">
-            {/* Camera button (mobile) */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => cameraInputRef.current?.click()}
-              disabled={isUploading}
-            >
-              <Camera className="h-4 w-4 mr-1" />
-              Câmera
-            </Button>
-            
-            {/* Gallery button */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-            >
-              <ImagePlus className="h-4 w-4 mr-1" />
-              Galeria
-            </Button>
-          </div>
-        )}
-      </div>
-      
-      {/* Hidden file inputs */}
+  // Hidden file inputs
+  const FileInputs = () => (
+    <>
       <input
         ref={cameraInputRef}
         type="file"
@@ -235,72 +205,110 @@ export function ReceivingPhotos({ orderId, photos, onPhotosChange, disabled }: R
         onChange={handleFileSelect}
         className="hidden"
       />
+    </>
+  );
+
+  return (
+    <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+      <FileInputs />
       
-      {/* Photo grid */}
-      {photos.length > 0 ? (
-        <div className="grid grid-cols-3 gap-2">
-          {photos.map((photo, index) => (
-            <Card 
-              key={photo.url} 
-              className="relative aspect-square overflow-hidden group"
-            >
-              <img
-                src={photo.url}
-                alt={`Foto ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
-              
-              {/* Loading overlay */}
-              {photo.isUploading && (
-                <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              )}
-              
-              {/* Remove button */}
-              {!photo.isUploading && !disabled && (
-                <button
-                  type="button"
-                  onClick={() => handleRemovePhoto(photo)}
-                  className="absolute top-1 right-1 p-1.5 rounded-full bg-destructive/90 text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </Card>
-          ))}
-          
-          {/* Add more button (if space available) */}
-          {canAddMore && photos.length > 0 && (
-            <button
+      {/* Compact header - always visible */}
+      <div className="flex items-center justify-between py-2 border rounded-lg px-3 bg-muted/30">
+        <CollapsibleTrigger asChild>
+          <button 
+            type="button"
+            className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+          >
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+            <Camera className="h-4 w-4" />
+            <span>Fotos ({photos.length}/{MAX_PHOTOS})</span>
+          </button>
+        </CollapsibleTrigger>
+        
+        {/* Quick add buttons - always visible */}
+        {canAddMore && (
+          <div className="flex gap-1">
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => cameraInputRef.current?.click()}
               disabled={isUploading}
-              className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-1 text-muted-foreground"
+              className="h-8 px-2"
             >
-              <Camera className="h-6 w-6" />
-              <span className="text-xs">Adicionar</span>
-            </button>
-          )}
-        </div>
-      ) : (
-        /* Empty state */
-        <button
-          type="button"
-          onClick={() => cameraInputRef.current?.click()}
-          disabled={isUploading || disabled}
-          className="w-full h-24 rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground"
-        >
-          {isUploading ? (
-            <Loader2 className="h-6 w-6 animate-spin" />
-          ) : (
-            <>
-              <Camera className="h-8 w-8" />
-              <span className="text-sm">Tire fotos do recebimento</span>
-            </>
-          )}
-        </button>
-      )}
-    </div>
+              {isUploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="h-8 px-2"
+            >
+              <ImagePlus className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+      
+      {/* Expandable photo thumbnails */}
+      <CollapsibleContent>
+        {photos.length > 0 && (
+          <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+            {photos.map((photo, index) => (
+              <div 
+                key={photo.url} 
+                className="relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border"
+              >
+                <img
+                  src={photo.url}
+                  alt={`Foto ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                
+                {/* Loading overlay */}
+                {photo.isUploading && (
+                  <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  </div>
+                )}
+                
+                {/* Remove button */}
+                {!photo.isUploading && !disabled && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(photo)}
+                    className="absolute top-0.5 right-0.5 p-1 rounded-full bg-destructive/90 text-destructive-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+            
+            {/* Add more button inline */}
+            {canAddMore && (
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={isUploading}
+                className="flex-shrink-0 w-16 h-16 rounded-md border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 transition-colors flex items-center justify-center text-muted-foreground"
+              >
+                <Camera className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

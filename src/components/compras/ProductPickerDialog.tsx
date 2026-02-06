@@ -257,8 +257,8 @@ export function ProductPickerDialog({
             <p className="text-muted-foreground">
               {search ? `Nenhum produto encontrado para "${search}"` : 'Nenhum produto disponível'}
             </p>
-            <p className="text-xs text-muted-foreground/70 mt-3">
-              Use o botão [+] ao lado do campo de busca para cadastrar novos produtos
+            <p className="text-xs text-muted-foreground/70 mt-3 leading-relaxed">
+              Feche esta janela e use o botão <span className="font-semibold text-primary">[+]</span> ao lado de "Itens do Pedido" para cadastrar novos produtos.
             </p>
           </div>
         ) : (

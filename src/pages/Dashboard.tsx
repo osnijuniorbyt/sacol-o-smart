@@ -37,9 +37,7 @@ import {
   Target,
   Wallet,
   BarChart3,
-  ShoppingCart,
-  Truck,
-  FileText
+  ShoppingCart
 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -49,7 +47,7 @@ export default function Dashboard() {
   const { getExpiringBatches, batches, getProductStock } = useStock();
   const { breakages, getTotalLoss, getRecentBreakages } = useBreakages();
   const { products } = useProducts();
-  const { orders, pendingOrders, receivedOrders, draftOrders } = usePurchaseOrders();
+  const { orders } = usePurchaseOrders();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -144,70 +142,64 @@ export default function Dashboard() {
   }, [sales, breakages]);
 
   // Purchase order metrics
+  // Purchase order metrics - focused on TODAY
   const purchaseMetrics = useMemo(() => {
     const today = new Date();
     const todayStart = startOfDay(today);
     const todayEnd = endOfDay(today);
-    const last7DaysStart = startOfDay(subDays(today, 7));
 
-    // Orders received today
-    const receivedToday = orders.filter(o => 
-      o.status === 'recebido' && 
-      o.received_at &&
-      isWithinInterval(new Date(o.received_at), { start: todayStart, end: todayEnd })
+    // Orders created today (any status)
+    const ordersToday = orders.filter(o => 
+      isWithinInterval(new Date(o.created_at), { start: todayStart, end: todayEnd })
     );
 
-    // Total received value today
-    const totalReceivedToday = receivedToday.reduce((sum, o) => 
-      sum + Number(o.total_received || o.total_estimated || 0), 0
-    );
-
-    // Pending orders value (purchase cost)
-    const pendingValue = pendingOrders.reduce((sum, o) => 
+    // Compras Hoje = sum of total_estimated from all orders created today
+    const comprasHoje = ordersToday.reduce((sum, o) => 
       sum + Number(o.total_estimated || 0), 0
     );
 
-    // Calculate predicted sales and profit from pending orders
+    // Pedidos Hoje = count of orders created today
+    const pedidosHoje = ordersToday.length;
+
+    // Venda Prevista = For each item in today's orders, quantity * product.price
+    // Fallback: total_estimated * 2.5
     let vendaPrevista = 0;
-    pendingOrders.forEach(order => {
-      if (order.items) {
+    let hasItems = false;
+    
+    ordersToday.forEach(order => {
+      if (order.items && order.items.length > 0) {
+        hasItems = true;
         order.items.forEach(item => {
-          // Get product selling price
           const product = products.find(p => p.id === item.product_id);
-          if (product) {
-            // Venda = quantity * selling price per kg
+          if (product && Number(product.price) > 0) {
+            // quantity (unidades) * estimated_kg (kg por unidade) * price (preço por kg)
             const estimatedKg = Number(item.estimated_kg || 0);
-            vendaPrevista += estimatedKg * Number(product.price || 0);
+            const qty = Number(item.quantity || 0);
+            vendaPrevista += qty * estimatedKg * Number(product.price);
+          } else {
+            // Fallback: use item estimated cost * 2.5
+            const itemCost = Number(item.estimated_kg || 0) * Number(item.unit_cost_estimated || 0);
+            vendaPrevista += itemCost * 2.5;
           }
         });
       }
     });
 
-    // Lucro Previsto = Venda Prevista - Custo de Compra (pendingValue)
-    const lucroPrevisto = vendaPrevista - pendingValue;
+    // If no items found, use fallback: total_estimated * 2.5
+    if (!hasItems && comprasHoje > 0) {
+      vendaPrevista = comprasHoje * 2.5;
+    }
 
-    // Orders created in last 7 days
-    const ordersLast7Days = orders.filter(o =>
-      isWithinInterval(new Date(o.created_at), { start: last7DaysStart, end: todayEnd })
-    );
-
-    // Total value last 7 days (received only)
-    const totalReceived7Days = ordersLast7Days
-      .filter(o => o.status === 'recebido')
-      .reduce((sum, o) => sum + Number(o.total_received || o.total_estimated || 0), 0);
+    // Lucro Previsto = Venda Prevista - Compras Hoje
+    const lucroPrevisto = vendaPrevista - comprasHoje;
 
     return {
-      pendingCount: pendingOrders.length,
-      pendingValue,
-      receivedTodayCount: receivedToday.length,
-      totalReceivedToday,
-      draftCount: draftOrders.length,
-      totalReceived7Days,
-      ordersLast7Days: ordersLast7Days.length,
+      comprasHoje,
+      pedidosHoje,
       vendaPrevista,
       lucroPrevisto
     };
-  }, [orders, pendingOrders, draftOrders, products]);
+  }, [orders, products]);
 
   // Data for scatter plot (Supplier toxic ranking simulation)
   // Since we don't have supplier data, we'll use product categories as proxy
@@ -386,88 +378,60 @@ export default function Dashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {/* Pedidos Pendentes */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {/* Compras Hoje */}
             <div className="text-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
               <div className="flex items-center justify-center gap-1 text-amber-600 mb-1">
-                <Truck className="h-4 w-4" />
-                <span className="text-xs font-medium">Pendentes</span>
+                <ShoppingCart className="h-4 w-4" />
+                <span className="text-xs font-medium">Compras Hoje</span>
               </div>
               <div className="text-xl sm:text-2xl font-bold text-amber-600">
-                {purchaseMetrics.pendingCount}
+                {formatCurrency(purchaseMetrics.comprasHoje)}
               </div>
               <div className="text-[10px] text-muted-foreground">
-                {formatCurrency(purchaseMetrics.pendingValue)}
+                total estimado
+              </div>
+            </div>
+
+            {/* Pedidos Hoje */}
+            <div className="text-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
+                <Package className="h-4 w-4" />
+                <span className="text-xs font-medium">Pedidos Hoje</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                {purchaseMetrics.pedidosHoje}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                pedidos criados
               </div>
             </div>
 
             {/* Venda Prevista */}
-            <div className="text-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
-                <DollarSign className="h-4 w-4" />
+            <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+              <div className="flex items-center justify-center gap-1 text-green-600 mb-1">
+                <TrendingUp className="h-4 w-4" />
                 <span className="text-xs font-medium">Venda Prevista</span>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-blue-600">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">
                 {formatCurrency(purchaseMetrics.vendaPrevista)}
               </div>
               <div className="text-[10px] text-muted-foreground">
-                dos pendentes
+                receita esperada
               </div>
             </div>
 
             {/* Lucro Previsto */}
             <div className={`text-center p-3 rounded-lg ${purchaseMetrics.lucroPrevisto >= 0 ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'} border`}>
               <div className={`flex items-center justify-center gap-1 mb-1 ${purchaseMetrics.lucroPrevisto >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                <TrendingUp className="h-4 w-4" />
+                <DollarSign className="h-4 w-4" />
                 <span className="text-xs font-medium">Lucro Previsto</span>
               </div>
               <div className={`text-xl sm:text-2xl font-bold ${purchaseMetrics.lucroPrevisto >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(purchaseMetrics.lucroPrevisto)}
               </div>
               <div className="text-[10px] text-muted-foreground">
-                venda - custo
-              </div>
-            </div>
-
-            {/* Recebidos Hoje */}
-            <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-              <div className="flex items-center justify-center gap-1 text-green-600 mb-1">
-                <Package className="h-4 w-4" />
-                <span className="text-xs font-medium">Recebido Hoje</span>
-              </div>
-              <div className="text-xl sm:text-2xl font-bold text-green-600">
-                {purchaseMetrics.receivedTodayCount}
-              </div>
-              <div className="text-[10px] text-muted-foreground">
-                {formatCurrency(purchaseMetrics.totalReceivedToday)}
-              </div>
-            </div>
-
-            {/* Rascunhos */}
-            <div className="text-center p-3 rounded-lg bg-muted/50 border border-border">
-              <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
-                <FileText className="h-4 w-4" />
-                <span className="text-xs font-medium">Rascunhos</span>
-              </div>
-              <div className="text-xl sm:text-2xl font-bold">
-                {purchaseMetrics.draftCount}
-              </div>
-              <div className="text-[10px] text-muted-foreground">
-                a finalizar
-              </div>
-            </div>
-
-            {/* Total 7 dias */}
-            <div className="text-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-              <div className="flex items-center justify-center gap-1 text-primary mb-1">
-                <BarChart3 className="h-4 w-4" />
-                <span className="text-xs font-medium">Últimos 7 dias</span>
-              </div>
-              <div className="text-xl sm:text-2xl font-bold text-primary">
-                {purchaseMetrics.ordersLast7Days}
-              </div>
-              <div className="text-[10px] text-muted-foreground">
-                {formatCurrency(purchaseMetrics.totalReceived7Days)}
+                venda - compras
               </div>
             </div>
           </div>

@@ -43,7 +43,7 @@ export function ProductGrid({
   }
 
   return (
-    <Card>
+    <Card className="bg-white shadow-sm rounded-2xl border-0">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Package className="h-5 w-5" />
@@ -59,16 +59,16 @@ export function ProductGrid({
             return (
               <div 
                 key={product.id}
-                className={`relative p-3 rounded-lg border-2 transition-all ${
+                className={`relative p-3 rounded-2xl transition-all ${
                   qty > 0 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border hover:border-primary/50'
+                    ? 'bg-green-50 shadow-sm' 
+                    : 'bg-gray-50 hover:bg-gray-100'
                 }`}
               >
                 {/* Badge de quantidade */}
                 {qty > 0 && (
                   <Badge 
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center bg-green-600 text-white"
                   >
                     {qty}
                   </Badge>
@@ -82,7 +82,7 @@ export function ProductGrid({
                     size="sm"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">
+                    <div className="text-sm font-semibold truncate">
                       {product.name}
                     </div>
                     <ProductSupplierIndicator 
@@ -93,8 +93,8 @@ export function ProductGrid({
                 </div>
                 
                 {lastPrice > 0 && (
-                  <div className="text-xs text-muted-foreground mb-2">
-                    Último: R$ {lastPrice.toFixed(2)}/cx
+                  <div className="text-xs text-green-700 font-medium mb-2">
+                    R$ {lastPrice.toFixed(2)}/cx
                   </div>
                 )}
                 
@@ -103,7 +103,7 @@ export function ProductGrid({
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-10 w-10"
+                      className="h-10 w-10 rounded-xl bg-white border-gray-200"
                       onClick={() => onDecrement(product.id)}
                     >
                       <Minus className="h-4 w-4" />
@@ -112,7 +112,7 @@ export function ProductGrid({
                   <Button
                     variant={qty > 0 ? "default" : "outline"}
                     size="icon"
-                    className="h-10 flex-1"
+                    className={`h-10 flex-1 rounded-xl ${qty > 0 ? '' : 'bg-white border-gray-200 hover:bg-gray-100'}`}
                     onClick={() => onAddProduct(product)}
                   >
                     <Plus className="h-5 w-5" />

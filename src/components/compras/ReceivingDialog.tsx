@@ -123,6 +123,9 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   const [isInitialized, setIsInitialized] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   
+  // Flag to skip auto-save right after clearing draft (prevents re-creating it immediately)
+  const skipNextAutoSaveRef = useRef(false);
+  
   // Auto-save hook
   const { hasDraft, lastSaved, loadDraft, saveDraft, clearDraft } = useReceivingDraft(order?.id);
   
@@ -254,6 +257,8 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
 
   // Start fresh (discard draft)
   const startFresh = useCallback(() => {
+    // Set flag to skip the next auto-save (prevents re-creating draft immediately)
+    skipNextAutoSaveRef.current = true;
     clearDraft();
     setItems(initializeFromOrder());
     setGeneralNotes('');
@@ -263,12 +268,10 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
     setShowDraftDialog(false);
   }, [clearDraft, initializeFromOrder]);
 
-  // Handle dialog open
+  // Handle dialog open - only check draft on initial open
   useEffect(() => {
-    if (open && order?.items) {
-      setIsInitialized(false);
-      
-      // Check if there's a draft for this order
+    if (open && order?.items && !isInitialized) {
+      // Only check for draft on initial dialog open
       if (hasDraft) {
         setShowDraftDialog(true);
       } else {
@@ -278,12 +281,19 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
     
     if (!open) {
       setIsInitialized(false);
+      setShowDraftDialog(false);
     }
-  }, [open, order, hasDraft]);
+  }, [open, order?.items?.length, hasDraft, isInitialized, startFresh]);
 
   // Auto-save when items or notes change
   useEffect(() => {
     if (!isInitialized || !order?.id) return;
+    
+    // Skip auto-save if flag is set (after startFresh to prevent re-creating draft)
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      return;
+    }
     
     const draftItems: DraftItemData[] = items.map(item => ({
       id: item.id,

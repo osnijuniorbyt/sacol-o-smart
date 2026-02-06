@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ProductPickerDialog } from './ProductPickerDialog';
+import { CreateProductSheet } from './CreateProductSheet';
 import { NewOrderItemRow } from './NewOrderItemRow';
 import { useSupplierProducts, SupplierProduct } from '@/hooks/useSupplierProducts';
 import { usePackagings } from '@/hooks/usePackagings';
@@ -27,7 +28,8 @@ import {
   Send,
   ShoppingCart,
   ListOrdered,
-  ClipboardList
+  ClipboardList,
+  PackagePlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -73,6 +75,7 @@ export function NewOrderForm({
   const [items, setItems] = useState<OrderItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
+  const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [activeView, setActiveView] = useState<'itens' | 'resumo'>('itens');
   
   // REF para controlar inicialização única por fornecedor
@@ -232,6 +235,29 @@ export function NewOrderForm({
 
   // Determina se deve usar multi-seleção (quando não há histórico de produtos)
   const useMultiSelect = productsWithHistory.length === 0 && !loadingHistory;
+
+  // Handler para produto criado via CreateProductSheet
+  const handleProductCreated = useCallback((product: Product) => {
+    // Verifica se já existe no pedido
+    const existingIndex = items.findIndex(i => i.product_id === product.id);
+    if (existingIndex >= 0) {
+      toast.info('Produto já está no pedido');
+      return;
+    }
+
+    // Adiciona ao pedido com quantidade 1
+    setItems(prev => [...prev, {
+      product_id: product.id,
+      product_name: product.name,
+      product_image: product.image_url,
+      category: product.category,
+      quantity: 1,
+      packaging_id: null,
+      unit_price: product.custo_compra || null,
+    }]);
+    
+    toast.success(`"${product.name}" adicionado ao pedido!`);
+  }, [items]);
 
   const handleUpdateItem = useCallback((productId: string, field: keyof OrderItem, value: any) => {
     setItems(prev => prev.map(item =>
@@ -410,11 +436,23 @@ export function NewOrderForm({
                     <ShoppingCart className="h-4 w-4" />
                     Itens do Pedido
                   </Label>
-                  {items.length > 0 && (
-                    <Badge variant="secondary">
-                      {items.length} produtos • {totalVolumes} vol.
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {items.length > 0 && (
+                      <Badge variant="secondary">
+                        {items.length} produtos • {totalVolumes} vol.
+                      </Badge>
+                    )}
+                    {/* Botão [+] para criar novo produto */}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowCreateProduct(true)}
+                      className="h-9 w-9 border-primary text-primary hover:bg-primary/10"
+                      title="Criar novo produto"
+                    >
+                      <PackagePlus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 {loadingHistory ? (
@@ -600,6 +638,13 @@ export function NewOrderForm({
         onSelectProduct={handleAddProductFromCatalog}
         multiSelect={useMultiSelect}
         onSelectMultiple={handleAddMultipleProducts}
+      />
+
+      {/* Sheet para criar novo produto */}
+      <CreateProductSheet
+        open={showCreateProduct}
+        onOpenChange={setShowCreateProduct}
+        onProductCreated={handleProductCreated}
       />
     </div>
   );

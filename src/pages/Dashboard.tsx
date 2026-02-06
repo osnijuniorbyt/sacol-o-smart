@@ -161,9 +161,11 @@ export default function Dashboard() {
     // Pedidos Hoje = count of orders created today
     const pedidosHoje = ordersToday.length;
 
-    // Venda Prevista = Compras Hoje * 2.5 (markup padrão sacolão/hortifruti)
-    // Margem média de 150% sobre o custo
-    const vendaPrevista = comprasHoje * 2.5;
+    // Venda Prevista = Compras Hoje / (1 - margem)
+    // Margem média de sacolão/hortifruti: 60%
+    // Fórmula: Venda = Custo / (1 - 0.60) = Custo / 0.40 = Custo * 2.5
+    const margemMedia = 0.60; // 60% de margem
+    const vendaPrevista = comprasHoje / (1 - margemMedia);
 
     // Lucro Previsto = Venda Prevista - Compras Hoje
     const lucroPrevisto = vendaPrevista - comprasHoje;

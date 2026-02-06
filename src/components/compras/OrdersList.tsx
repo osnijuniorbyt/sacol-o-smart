@@ -15,8 +15,7 @@ import {
   Pencil,
   FileText,
   DollarSign,
-  ChevronRight,
-  CheckCheck
+  ChevronRight
 } from 'lucide-react';
 import { PurchaseOrder, PURCHASE_ORDER_STATUS_LABELS } from '@/types/database';
 import { ReceivingDialog } from './ReceivingDialog';
@@ -30,13 +29,11 @@ interface OrdersListProps {
   orders: PurchaseOrder[];
   type: 'pending' | 'received';
   onDelete?: (id: string) => void;
-  onFinalize?: (id: string) => void;
   onRefresh: () => void;
   isDeleting?: boolean;
-  isFinalizing?: boolean;
 }
 
-export function OrdersList({ orders, type, onDelete, onFinalize, onRefresh, isDeleting, isFinalizing }: OrdersListProps) {
+export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: OrdersListProps) {
   const navigate = useNavigate();
   const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
@@ -238,26 +235,6 @@ export function OrdersList({ orders, type, onDelete, onFinalize, onRefresh, isDe
                     </span>
                   </div>
                   <PhotoGallery orderId={order.id} order={order} compact />
-                  
-                  {/* Botão Finalizar */}
-                  {onFinalize && (
-                    <Button
-                      className={cn(
-                        "w-full h-14 text-base font-semibold transition-all duration-150 bg-emerald-600 hover:bg-emerald-700",
-                        clickedButton === `finalizar-${order.id}` && "scale-95 opacity-80"
-                      )}
-                      onClick={() => handleButtonClick(`finalizar-${order.id}`, () => onFinalize(order.id))}
-                      disabled={isFinalizing}
-                    >
-                      {isFinalizing ? (
-                        <Loader2 className="mr-3 h-6 w-6 animate-spin" />
-                      ) : (
-                        <CheckCheck className="mr-3 h-6 w-6" />
-                      )}
-                      Finalizar Pedido
-                      <ChevronRight className="ml-auto h-5 w-5" />
-                    </Button>
-                  )}
                 </div>
               )}
             </CardContent>

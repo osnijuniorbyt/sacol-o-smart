@@ -5,26 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]",
   {
     variants: {
       variant: {
-        // Primary = #E8920B (laranja) para ações principais
-        default: "bg-primary text-primary-foreground shadow-md hover:shadow-lg hover:brightness-110",
+        // Primary = amber-600 para ações principais
+        default: "bg-primary text-primary-foreground shadow-sm hover:shadow-md hover:scale-[1.02] hover:brightness-105",
         // Destructive
-        destructive: "bg-danger text-danger-foreground hover:bg-danger/90 shadow-md",
-        // Outline = borda verde escuro #1B4332
-        outline: "border-2 border-accent bg-background hover:bg-accent/10 text-accent",
-        // Secondary = borda #1B4332, texto #1B4332
-        secondary: "bg-background border-2 border-accent text-accent hover:bg-accent/10",
+        destructive: "bg-danger text-danger-foreground hover:bg-danger/90 shadow-sm hover:shadow-md",
+        // Outline = borda sutil
+        outline: "border border-border bg-background hover:bg-muted/50 text-foreground hover:scale-[1.02]",
+        // Secondary
+        secondary: "bg-secondary border border-border text-secondary-foreground hover:bg-muted/50 hover:scale-[1.02]",
         // Ghost - subtle hover
-        ghost: "hover:bg-accent/10 hover:text-accent",
+        ghost: "hover:bg-muted/50 hover:text-foreground",
         // Link
         link: "text-primary underline-offset-4 hover:underline",
         // Success - verde claro #2D6A4F
-        success: "bg-success text-success-foreground hover:bg-success/90 shadow-md",
+        success: "bg-success text-success-foreground hover:bg-success/90 shadow-sm hover:shadow-md hover:scale-[1.02]",
         // Warning - laranja
-        warning: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-md",
+        warning: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-sm hover:shadow-md hover:scale-[1.02]",
       },
       size: {
         default: "h-10 px-4 py-2",

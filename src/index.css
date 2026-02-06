@@ -9,15 +9,15 @@
 
 @layer base {
   :root {
-    /* Premium cream/beige background */
-    --background: 40 30% 96%;
+    /* Modern neutral background - #FAFAF7 */
+    --background: 60 7% 97%;
     --foreground: 153 43% 15%;
 
-    /* Card with subtle warm tone */
-    --card: 40 25% 98%;
+    /* Card with clean white */
+    --card: 0 0% 100%;
     --card-foreground: 153 43% 15%;
 
-    --popover: 40 25% 98%;
+    --popover: 0 0% 100%;
     --popover-foreground: 153 43% 15%;
 
     /* Primary = #E8920B (laranja/âmbar) */
@@ -25,11 +25,11 @@
     --primary-foreground: 0 0% 100%;
 
     /* Secondary = verde escuro #1B4332 para bordas e texto */
-    --secondary: 40 20% 92%;
+    --secondary: 60 5% 96%;
     --secondary-foreground: 153 43% 15%;
 
-    --muted: 40 15% 92%;
-    --muted-foreground: 153 30% 35%;
+    --muted: 60 5% 94%;
+    --muted-foreground: 220 10% 45%;
 
     /* Accent = verde escuro #1B4332 */
     --accent: 153 43% 15%;
@@ -38,11 +38,12 @@
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 40 25% 82%;
-    --input: 40 20% 88%;
+    /* Softer borders for MD3 style */
+    --border: 220 10% 92%;
+    --input: 220 10% 94%;
     --ring: 38 92% 48%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
     
     /* Brand Palette - Cores exatas do menu lateral */
     /* #E8920B = hsl(38, 92%, 48%) */
@@ -54,35 +55,35 @@
     /* #2D6A4F = hsl(153, 41%, 30%) */
     --brand-green-light: 153 41% 30%;
     --brand-green-dark: 153 43% 15%;
-    --brand-cream: 40 30% 96%;
+    --brand-cream: 60 7% 97%;
 
-    /* Semantic Colors - Status */
+    /* Semantic Colors - Status (Pastel for MD3) */
     /* Success light = para "Recebido" */
     --success: 153 41% 30%;
     --success-foreground: 0 0% 100%;
-    --success-muted: 153 30% 92%;
+    --success-muted: 145 40% 94%;
     /* Success dark = para "Fechado" */
     --success-dark: 153 43% 15%;
     
     --warning: 38 92% 48%;
     --warning-foreground: 0 0% 100%;
-    --warning-muted: 38 60% 92%;
+    --warning-muted: 45 80% 94%;
     
     --info: 200 70% 45%;
     --info-foreground: 0 0% 100%;
-    --info-muted: 200 50% 92%;
+    --info-muted: 200 60% 94%;
 
     --danger: 0 70% 50%;
     --danger-foreground: 0 0% 100%;
-    --danger-muted: 0 50% 94%;
+    --danger-muted: 0 60% 95%;
 
     /* Sidebar - #1B4332 to #2D6A4F gradient */
     --sidebar-background: 153 43% 15%;
-    --sidebar-foreground: 40 30% 95%;
+    --sidebar-foreground: 60 7% 95%;
     --sidebar-primary: 38 92% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 153 41% 22%;
-    --sidebar-accent-foreground: 40 30% 95%;
+    --sidebar-accent-foreground: 60 7% 95%;
     --sidebar-border: 153 35% 20%;
     --sidebar-ring: 38 92% 48%;
   }
@@ -198,7 +199,7 @@
   }
 }
 
-/* Premium gradient utilities */
+/* Material Design 3 utilities */
 @layer utilities {
   .gradient-brand {
     background: linear-gradient(135deg, hsl(var(--brand-green-dark)) 0%, hsl(var(--brand-green)) 50%, hsl(var(--brand-green-dark)) 100%);
@@ -209,7 +210,26 @@
   }
   
   .gradient-premium {
-    background: linear-gradient(145deg, hsl(40 35% 96%) 0%, hsl(40 30% 92%) 50%, hsl(40 25% 88%) 100%);
+    background: linear-gradient(145deg, hsl(60 7% 97%) 0%, hsl(60 5% 95%) 50%, hsl(60 5% 93%) 100%);
+  }
+  
+  /* MD3 Elevation shadows */
+  .shadow-elevation-1 {
+    box-shadow: 
+      0 1px 2px 0 rgba(0, 0, 0, 0.05),
+      0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+  
+  .shadow-elevation-2 {
+    box-shadow: 
+      0 2px 4px -1px rgba(0, 0, 0, 0.06),
+      0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  .shadow-elevation-3 {
+    box-shadow: 
+      0 4px 6px -2px rgba(0, 0, 0, 0.05),
+      0 10px 15px -3px rgba(0, 0, 0, 0.1);
   }
   
   .shadow-premium {
@@ -226,6 +246,16 @@
   
   .glow-orange {
     box-shadow: 0 0 20px -5px hsl(36 90% 50% / 0.4);
+  }
+  
+  /* MD3 Card styles */
+  .card-md3 {
+    @apply bg-card rounded-2xl border border-border/50 shadow-sm transition-shadow duration-200 hover:shadow-md;
+  }
+  
+  /* Interactive hover scale */
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98];
   }
 }
 

@@ -98,24 +98,29 @@ export function SuggestedOrderDialog({
     
     setIsLoading(true);
     try {
-      const supplierProducts = products.filter(p => p.supplier_id === selectedSupplier);
+      // Busca produtos do histórico de compras (supplier_product_associations)
+      // Esta é a mesma fonte usada pelo NewOrderForm
+      const { data: supplierProductsData, error: spaError } = await supabase
+        .rpc('get_supplier_products', { p_supplier_id: selectedSupplier });
       
-      if (supplierProducts.length === 0) {
+      if (spaError) throw spaError;
+      
+      const supplierProductIds = (supplierProductsData || []).map((sp: any) => sp.product_id);
+      
+      if (supplierProductIds.length === 0) {
         setSuggestions([]);
-        toast.info('Este fornecedor não possui produtos cadastrados');
+        toast.info('Este fornecedor não possui histórico de compras');
         setIsLoading(false);
         return;
       }
 
-      const productIds = supplierProducts.map(p => p.id);
-      
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysToAnalyze);
       
       const { data: salesData, error: salesError } = await supabase
         .from('sale_items')
         .select('product_id, quantity, created_at')
-        .in('product_id', productIds)
+        .in('product_id', supplierProductIds)
         .gte('created_at', startDate.toISOString());
       
       if (salesError) throw salesError;
@@ -123,7 +128,7 @@ export function SuggestedOrderDialog({
       const { data: stockData, error: stockError } = await supabase
         .from('stock_batches')
         .select('product_id, quantity')
-        .in('product_id', productIds)
+        .in('product_id', supplierProductIds)
         .gt('quantity', 0);
       
       if (stockError) throw stockError;
@@ -138,26 +143,28 @@ export function SuggestedOrderDialog({
         stockByProduct[batch.product_id] = (stockByProduct[batch.product_id] || 0) + Number(batch.quantity);
       });
 
-      const suggestedItems: SuggestedItem[] = supplierProducts.map(product => {
-        const totalSold = salesByProduct[product.id] || 0;
+      // Mapeia os dados do histórico com vendas e estoque
+      const suggestedItems: SuggestedItem[] = (supplierProductsData || []).map((sp: any) => {
+        const product = products.find(p => p.id === sp.product_id);
+        const totalSold = salesByProduct[sp.product_id] || 0;
         const avgDaily = totalSold / daysToAnalyze;
-        const currentStock = stockByProduct[product.id] || 0;
+        const currentStock = stockByProduct[sp.product_id] || 0;
         const daysOfStock = avgDaily > 0 ? currentStock / avgDaily : 999;
         
         const neededKg = Math.max(0, (avgDaily * daysToStock) - currentStock);
-        const pesoPorUnidade = (product as any).peso_por_unidade || 22;
+        const pesoPorUnidade = product?.peso_por_unidade || 22;
         const suggestedBoxes = Math.ceil(neededKg / pesoPorUnidade);
         
         return {
-          product_id: product.id,
-          product_name: product.name,
-          product_image: product.image_url || null,
-          product_category: product.category,
+          product_id: sp.product_id,
+          product_name: sp.product_name,
+          product_image: product?.image_url || null,
+          product_category: product?.category || 'outros' as ProductCategory,
           avg_daily_sales: avgDaily,
           current_stock: currentStock,
           days_of_stock: daysOfStock,
           suggested_qty: suggestedBoxes,
-          last_price: (product as any).ultimo_preco_caixa || null,
+          last_price: sp.ultimo_preco || null,
         };
       });
 

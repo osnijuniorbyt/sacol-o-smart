@@ -161,7 +161,8 @@ export default function Dashboard() {
     // Pedidos Hoje = count of orders created today
     const pedidosHoje = ordersToday.length;
 
-    // Venda Prevista = For each item in today's orders, quantity * product.price
+    // Venda Prevista = total_kg * preço de venda do produto
+    // Os itens já vêm com product via join do Supabase
     // Fallback: total_estimated * 2.5
     let vendaPrevista = 0;
     let hasItems = false;
@@ -170,15 +171,17 @@ export default function Dashboard() {
       if (order.items && order.items.length > 0) {
         hasItems = true;
         order.items.forEach(item => {
-          const product = products.find(p => p.id === item.product_id);
+          // O produto vem do join (item.product), não precisa buscar
+          const product = item.product;
+          // total_kg = quantity (caixas) * estimated_kg (kg por caixa)
+          const totalKg = Number(item.quantity || 1) * Number(item.estimated_kg || 0);
+          
           if (product && Number(product.price) > 0) {
-            // quantity (unidades) * estimated_kg (kg por unidade) * price (preço por kg)
-            const estimatedKg = Number(item.estimated_kg || 0);
-            const qty = Number(item.quantity || 0);
-            vendaPrevista += qty * estimatedKg * Number(product.price);
+            // Venda = total_kg * preço de venda por kg
+            vendaPrevista += totalKg * Number(product.price);
           } else {
-            // Fallback: use item estimated cost * 2.5
-            const itemCost = Number(item.estimated_kg || 0) * Number(item.unit_cost_estimated || 0);
+            // Fallback: custo do item * 2.5 (margem de 150%)
+            const itemCost = totalKg * Number(item.unit_cost_estimated || 0);
             vendaPrevista += itemCost * 2.5;
           }
         });
@@ -199,7 +202,7 @@ export default function Dashboard() {
       vendaPrevista,
       lucroPrevisto
     };
-  }, [orders, products]);
+  }, [orders]);
 
   // Data for scatter plot (Supplier toxic ranking simulation)
   // Since we don't have supplier data, we'll use product categories as proxy

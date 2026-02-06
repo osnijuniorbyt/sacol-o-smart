@@ -97,7 +97,7 @@ export function ProductPickerDialog({
         .insert({
           name: search.trim(),
           plu,
-          category: 'frutas', // Padrão para CEASA
+          category: 'outros', // Padrão Hortii
           price: 0,
           min_stock: 0,
           is_active: true,

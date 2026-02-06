@@ -71,13 +71,6 @@ export default function Dashboard() {
       .filter(s => isWithinInterval(new Date(s.created_at), { start: todayStart, end: todayEnd }))
       .reduce((sum, s) => sum + Number(s.total), 0);
 
-    // Today's cost (from batches sold - simplified as we don't track cost per sale)
-    // Using average cost from batches
-    const avgCostPerUnit = batches.length > 0
-      ? batches.reduce((sum, b) => sum + Number(b.cost_per_unit) * Number(b.quantity), 0) /
-        batches.reduce((sum, b) => sum + Number(b.quantity), 0)
-      : 0;
-
     // Today's breakage loss
     const todayBreakageLoss = breakages
       .filter(b => isWithinInterval(new Date(b.created_at), { start: todayStart, end: todayEnd }))
@@ -90,13 +83,26 @@ export default function Dashboard() {
     // Products expiring in 3 days
     const expiringIn3Days = getExpiringBatches(3);
 
-    // Profit calculation (simplified)
-    const estimatedCost = todayRevenue * 0.6; // Assuming 60% cost
+    // Profit calculation (simplified using 60% cost assumption)
+    const estimatedCost = todayRevenue * 0.6;
     const todayProfit = todayRevenue - estimatedCost - todayBreakageLoss;
 
-    // Real margin (average)
-    const avgSalePrice = products.reduce((sum, p) => sum + Number(p.price), 0) / (products.length || 1);
-    const realMargin = avgSalePrice > 0 ? (avgSalePrice - avgCostPerUnit) / avgSalePrice : 0;
+    // Real margin calculation - use custo_compra from products (R$/kg) for accurate comparison
+    // This compares price (R$/kg) with custo_compra (R$/kg) for proper unit alignment
+    const productsWithCost = products.filter(p => p.custo_compra && p.custo_compra > 0 && p.price > 0);
+    
+    let realMargin = 0;
+    if (productsWithCost.length > 0) {
+      // Calculate weighted margin based on products with known costs
+      const marginSum = productsWithCost.reduce((sum, p) => {
+        const margin = (Number(p.price) - Number(p.custo_compra!)) / Number(p.price);
+        return sum + margin;
+      }, 0);
+      realMargin = marginSum / productsWithCost.length;
+    } else {
+      // Fallback: use 60% target margin when no cost data available
+      realMargin = 0.60;
+    }
 
     return {
       todayRevenue,
@@ -104,8 +110,7 @@ export default function Dashboard() {
       stockValue,
       expiringCount: expiringIn3Days.length,
       todayProfit,
-      realMargin,
-      avgCostPerUnit
+      realMargin
     };
   }, [sales, batches, breakages, products, getExpiringBatches]);
 

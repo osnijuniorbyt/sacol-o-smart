@@ -27,9 +27,6 @@ interface NewOrderItemRowProps {
   onRemove: (productId: string) => void;
 }
 
-// Tempo de trava de edição (ms) - bloqueia sync de props enquanto usuário edita
-const EDIT_LOCK_DURATION = 3000;
-
 export const NewOrderItemRow = memo(function NewOrderItemRow({
   item,
   packagings,
@@ -37,139 +34,136 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
   onFieldChange,
   onRemove,
 }: NewOrderItemRowProps) {
-  // ============ ESTADOS LOCAIS OTIMISTAS ============
-  // Cada campo tem seu próprio estado local + flag de edição
+  // ============ REFS para valores estáveis durante edição ============
+  // Usamos refs para evitar problemas de closure/stale state
   
-  // Quantidade
-  const [localQuantity, setLocalQuantity] = useState(item.quantity);
-  const [isEditingQty, setIsEditingQty] = useState(false);
-  const qtyLockTimerRef = useRef<NodeJS.Timeout>();
-  const qtyDebounceRef = useRef<NodeJS.Timeout>();
+  const quantityRef = useRef(item.quantity);
+  const priceRef = useRef(item.unit_price);
+  const packagingRef = useRef(item.packaging_id);
   
-  // Preço
-  const [localPrice, setLocalPrice] = useState<string>(
+  // Timestamp da última edição - se < 3s, ignora props
+  const lastEditTimeRef = useRef<number>(0);
+  const EDIT_LOCK_MS = 3000;
+  
+  // Estados para renderização
+  const [displayQty, setDisplayQty] = useState(item.quantity);
+  const [displayPrice, setDisplayPrice] = useState(
     item.unit_price !== null ? String(item.unit_price) : ''
   );
-  const [isEditingPrice, setIsEditingPrice] = useState(false);
-  const priceLockTimerRef = useRef<NodeJS.Timeout>();
-  
-  // Vasilhame
-  const [localPackaging, setLocalPackaging] = useState(item.packaging_id || '');
-  const [isEditingPkg, setIsEditingPkg] = useState(false);
-  const pkgLockTimerRef = useRef<NodeJS.Timeout>();
+  const [displayPackaging, setDisplayPackaging] = useState(item.packaging_id || '');
+
+  // Timer para debounce de quantidade
+  const qtyDebounceRef = useRef<NodeJS.Timeout>();
 
   // ============ SYNC DE PROPS (apenas quando NÃO está editando) ============
-  
-  // Sync quantidade
   useEffect(() => {
-    if (!isEditingQty) {
-      setLocalQuantity(item.quantity);
+    const now = Date.now();
+    const isEditing = (now - lastEditTimeRef.current) < EDIT_LOCK_MS;
+    
+    // Se está editando, NÃO sobrescreve valores locais
+    if (isEditing) {
+      return;
     }
-  }, [item.quantity, isEditingQty]);
-  
-  // Sync preço
-  useEffect(() => {
-    if (!isEditingPrice) {
-      setLocalPrice(item.unit_price !== null ? String(item.unit_price) : '');
+    
+    // Sync quantidade
+    if (item.quantity !== quantityRef.current) {
+      quantityRef.current = item.quantity;
+      setDisplayQty(item.quantity);
     }
-  }, [item.unit_price, isEditingPrice]);
-  
-  // Sync vasilhame
-  useEffect(() => {
-    if (!isEditingPkg) {
-      setLocalPackaging(item.packaging_id || '');
+    
+    // Sync preço
+    if (item.unit_price !== priceRef.current) {
+      priceRef.current = item.unit_price;
+      setDisplayPrice(item.unit_price !== null ? String(item.unit_price) : '');
     }
-  }, [item.packaging_id, isEditingPkg]);
+    
+    // Sync vasilhame
+    if (item.packaging_id !== packagingRef.current) {
+      packagingRef.current = item.packaging_id;
+      setDisplayPackaging(item.packaging_id || '');
+    }
+  }, [item.quantity, item.unit_price, item.packaging_id]);
 
-  // Cleanup timers on unmount
+  // Cleanup
   useEffect(() => {
     return () => {
-      if (qtyLockTimerRef.current) clearTimeout(qtyLockTimerRef.current);
       if (qtyDebounceRef.current) clearTimeout(qtyDebounceRef.current);
-      if (priceLockTimerRef.current) clearTimeout(priceLockTimerRef.current);
-      if (pkgLockTimerRef.current) clearTimeout(pkgLockTimerRef.current);
     };
   }, []);
 
   // ============ HANDLERS DE QUANTIDADE ============
   
-  const activateQtyLock = useCallback(() => {
-    setIsEditingQty(true);
-    if (qtyLockTimerRef.current) clearTimeout(qtyLockTimerRef.current);
-    qtyLockTimerRef.current = setTimeout(() => {
-      setIsEditingQty(false);
-    }, EDIT_LOCK_DURATION);
-  }, []);
-
   const handleIncrement = useCallback(() => {
-    const newQty = localQuantity + 1;
-    setLocalQuantity(newQty);
-    activateQtyLock();
+    lastEditTimeRef.current = Date.now();
     
+    const newQty = quantityRef.current + 1;
+    quantityRef.current = newQty;
+    setDisplayQty(newQty);
+    
+    // Debounce para propagar ao pai
     if (qtyDebounceRef.current) clearTimeout(qtyDebounceRef.current);
     qtyDebounceRef.current = setTimeout(() => {
-      onQuantityChange(item.product_id, newQty);
-    }, 500);
-  }, [localQuantity, item.product_id, onQuantityChange, activateQtyLock]);
+      onQuantityChange(item.product_id, quantityRef.current);
+    }, 300);
+  }, [item.product_id, onQuantityChange]);
 
   const handleDecrement = useCallback(() => {
-    if (localQuantity <= 1) {
+    if (quantityRef.current <= 1) {
       onRemove(item.product_id);
       return;
     }
     
-    const newQty = localQuantity - 1;
-    setLocalQuantity(newQty);
-    activateQtyLock();
+    lastEditTimeRef.current = Date.now();
     
+    const newQty = quantityRef.current - 1;
+    quantityRef.current = newQty;
+    setDisplayQty(newQty);
+    
+    // Debounce para propagar ao pai
     if (qtyDebounceRef.current) clearTimeout(qtyDebounceRef.current);
     qtyDebounceRef.current = setTimeout(() => {
-      onQuantityChange(item.product_id, newQty);
-    }, 500);
-  }, [localQuantity, item.product_id, onQuantityChange, onRemove, activateQtyLock]);
+      onQuantityChange(item.product_id, quantityRef.current);
+    }, 300);
+  }, [item.product_id, onQuantityChange, onRemove]);
 
   const handleQtyInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value) || 1;
-    setLocalQuantity(value);
-    activateQtyLock();
+    lastEditTimeRef.current = Date.now();
     
+    const value = parseInt(e.target.value) || 1;
+    quantityRef.current = value;
+    setDisplayQty(value);
+    
+    // Debounce para propagar ao pai
     if (qtyDebounceRef.current) clearTimeout(qtyDebounceRef.current);
     qtyDebounceRef.current = setTimeout(() => {
-      onQuantityChange(item.product_id, value);
-    }, 500);
-  }, [item.product_id, onQuantityChange, activateQtyLock]);
+      onQuantityChange(item.product_id, quantityRef.current);
+    }, 300);
+  }, [item.product_id, onQuantityChange]);
 
   // ============ HANDLERS DE PREÇO ============
   
   const handlePriceChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    lastEditTimeRef.current = Date.now();
+    
     const value = e.target.value;
-    setLocalPrice(value);
+    const numValue = value ? parseFloat(value) : null;
     
-    // Ativa trava de edição
-    setIsEditingPrice(true);
-    if (priceLockTimerRef.current) clearTimeout(priceLockTimerRef.current);
-    priceLockTimerRef.current = setTimeout(() => {
-      setIsEditingPrice(false);
-    }, EDIT_LOCK_DURATION);
+    priceRef.current = numValue;
+    setDisplayPrice(value);
     
-    // Propaga para o pai imediatamente (o pai gerencia o estado master)
-    const numValue = parseFloat(value) || null;
+    // Propaga imediatamente (sem debounce)
     onFieldChange(item.product_id, 'unit_price', numValue);
   }, [item.product_id, onFieldChange]);
 
   // ============ HANDLERS DE VASILHAME ============
   
   const handlePackagingChange = useCallback((value: string) => {
-    setLocalPackaging(value);
+    lastEditTimeRef.current = Date.now();
     
-    // Ativa trava de edição
-    setIsEditingPkg(true);
-    if (pkgLockTimerRef.current) clearTimeout(pkgLockTimerRef.current);
-    pkgLockTimerRef.current = setTimeout(() => {
-      setIsEditingPkg(false);
-    }, EDIT_LOCK_DURATION);
+    packagingRef.current = value || null;
+    setDisplayPackaging(value);
     
-    // Propaga para o pai imediatamente
+    // Propaga imediatamente
     onFieldChange(item.product_id, 'packaging_id', value || null);
   }, [item.product_id, onFieldChange]);
 
@@ -196,7 +190,7 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
           </div>
           
           <div className="grid grid-cols-3 gap-2 mt-2">
-            {/* Quantidade com botões +/- otimistas */}
+            {/* Quantidade com botões +/- */}
             <div>
               <Label className="text-xs text-muted-foreground">Qtd Vol.</Label>
               <div className="flex items-center gap-1">
@@ -209,10 +203,9 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
                   <Minus className="h-4 w-4" />
                 </Button>
                 <Input
-                  type="number"
+                  type="text"
                   inputMode="numeric"
-                  min={1}
-                  value={localQuantity}
+                  value={displayQty}
                   onChange={handleQtyInputChange}
                   className="h-10 text-center font-mono w-12 px-1"
                 />
@@ -227,11 +220,11 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
               </div>
             </div>
             
-            {/* Vasilhame - usa estado local */}
+            {/* Vasilhame */}
             <div>
               <Label className="text-xs text-muted-foreground">Vasilhame</Label>
               <Select
-                value={localPackaging}
+                value={displayPackaging}
                 onValueChange={handlePackagingChange}
               >
                 <SelectTrigger className="h-10 text-xs">
@@ -247,14 +240,13 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
               </Select>
             </div>
             
-            {/* Preço - usa estado local */}
+            {/* Preço */}
             <div>
               <Label className="text-xs text-muted-foreground">R$/Vol.</Label>
               <Input
-                type="number"
+                type="text"
                 inputMode="decimal"
-                step="0.01"
-                value={localPrice}
+                value={displayPrice}
                 onChange={handlePriceChange}
                 className="h-10 text-right font-mono"
                 placeholder="0,00"

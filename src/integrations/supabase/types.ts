@@ -187,32 +187,38 @@ export type Database = {
       }
       packagings: {
         Row: {
+          codigo: string | null
           created_at: string
           id: string
           is_active: boolean
           is_returnable: boolean
           material: Database["public"]["Enums"]["packaging_material"]
           name: string
+          peso_liquido: number
           tare_weight: number
           updated_at: string
         }
         Insert: {
+          codigo?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           is_returnable?: boolean
           material?: Database["public"]["Enums"]["packaging_material"]
           name: string
+          peso_liquido?: number
           tare_weight?: number
           updated_at?: string
         }
         Update: {
+          codigo?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           is_returnable?: boolean
           material?: Database["public"]["Enums"]["packaging_material"]
           name?: string
+          peso_liquido?: number
           tare_weight?: number
           updated_at?: string
         }

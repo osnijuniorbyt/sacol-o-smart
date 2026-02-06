@@ -14,6 +14,7 @@ import Quebras from "@/pages/Quebras";
 import Produtos from "@/pages/Produtos";
 import Compras from "@/pages/Compras";
 import Fornecedores from "@/pages/Fornecedores";
+import Vasilhames from "@/pages/Vasilhames";
 import Protocolo from "@/pages/Protocolo";
 import Relatorios from "@/pages/Relatorios";
 import PendingApproval from "@/pages/PendingApproval";
@@ -231,6 +232,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <Fornecedores />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/vasilhames"
+        element={
+          <PrivateRoute>
+            <Vasilhames />
           </PrivateRoute>
         }
       />

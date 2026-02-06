@@ -23,6 +23,7 @@ import {
   Truck,
   Building2,
   Users,
+  Box,
 } from 'lucide-react';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
@@ -41,6 +42,7 @@ const navItems = [
   { path: '/estoque', label: 'Estoque', icon: Package },
   { path: '/quebras', label: 'Quebras', icon: Trash2, shortcut: 'F3' },
   { path: '/produtos', label: 'Produtos', icon: Apple },
+  { path: '/vasilhames', label: 'Vasilhames', icon: Box },
   { path: '/fornecedores', label: 'Fornecedores', icon: Building2 },
 ];
 

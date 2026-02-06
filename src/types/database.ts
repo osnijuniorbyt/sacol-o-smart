@@ -28,8 +28,10 @@ export interface Person {
 
 export interface Packaging {
   id: string;
+  codigo: string | null;
   name: string;
   tare_weight: number;
+  peso_liquido: number;
   material: PackagingMaterial;
   is_returnable: boolean;
   is_active: boolean;

@@ -77,55 +77,50 @@ function OrderItemRow({
         className="flex-shrink-0"
       />
 
-      {/* MIDDLE: Product Info */}
+      {/* MIDDLE: Product Name + Quantity Controls */}
       <div className="flex-1 min-w-0">
         <p className="font-bold text-sm truncate">{item.product_name}</p>
-        <div className="flex items-center gap-2 mt-1">
-          <Input
-            inputMode="decimal"
-            value={item.unit_cost ?? ''}
-            onChange={(e) => onUpdatePrice(item.product_id, e.target.value)}
-            className="h-8 w-20 text-right font-mono text-sm"
-            placeholder="0,00"
-          />
-          <span className="text-xs text-muted-foreground">/cx</span>
-          {item.subtotal !== null && (
-            <span className="text-xs font-semibold text-primary">
-              = R$ {item.subtotal.toFixed(2)}
-            </span>
-          )}
+        <div className="flex items-center gap-1 mt-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 active:scale-95 transition-transform"
+            onClick={handleDecrement}
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+          <span className="font-mono font-bold text-lg w-8 text-center">
+            {localQuantity}
+          </span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 active:scale-95 transition-transform"
+            onClick={handleIncrement}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 text-destructive hover:bg-destructive/10"
+            onClick={() => onRemoveItem(item.product_id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
-      {/* RIGHT: Quantity Controls - Usando localQuantity para UI instantânea */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-12 w-12 active:scale-95 transition-transform"
-          onClick={handleDecrement}
-        >
-          <Minus className="h-5 w-5" />
-        </Button>
-        <span className="font-mono font-bold text-lg w-8 text-center">
-          {localQuantity}
-        </span>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-12 w-12 active:scale-95 transition-transform"
-          onClick={handleIncrement}
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-12 w-12 text-destructive hover:bg-destructive/10"
-          onClick={() => onRemoveItem(item.product_id)}
-        >
-          <Trash2 className="h-5 w-5" />
-        </Button>
+      {/* RIGHT: Volume Value + Unit Cost - CENTRALIZADO */}
+      <div className="flex flex-col items-center justify-center flex-shrink-0 min-w-[80px]">
+        <span className="text-xs text-muted-foreground">R$/Vol</span>
+        <Input
+          inputMode="decimal"
+          value={item.unit_cost ?? ''}
+          onChange={(e) => onUpdatePrice(item.product_id, e.target.value)}
+          className="h-9 w-20 text-center font-mono text-base font-bold"
+          placeholder="0,00"
+        />
       </div>
     </div>
   );

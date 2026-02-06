@@ -200,12 +200,12 @@ export default function Estoque() {
         isRefreshing={isRefreshing}
       />
 
-      {/* Filter */}
-      <Card>
-        <CardContent className="p-3">
-          <Label className="mb-2 block text-sm">Filtrar por Produto</Label>
+      {/* Filter - MD3 Style */}
+      <Card className="bg-white shadow-sm rounded-2xl border-0">
+        <CardContent className="p-4">
+          <Label className="mb-2 block text-sm font-medium">Filtrar por Produto</Label>
           <Select value={filterProduct} onValueChange={setFilterProduct}>
-            <SelectTrigger className="h-12">
+            <SelectTrigger className="h-12 rounded-xl bg-gray-50 border-0">
               <SelectValue placeholder="Todos os produtos" />
             </SelectTrigger>
             <SelectContent className="bg-popover z-50">
@@ -220,32 +220,43 @@ export default function Estoque() {
         </CardContent>
       </Card>
 
-      {/* Stock by product */}
+      {/* Stock by product - MD3 Style */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Carregando...</span>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       ) : Object.keys(groupedBatches).length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            <Package className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p>Nenhum lote em estoque</p>
+        <Card className="bg-white shadow-sm rounded-2xl border-0">
+          <CardContent className="py-12 text-center">
+            <Package className="mx-auto h-16 w-16 mb-4 text-muted-foreground/30" />
+            <p className="text-muted-foreground text-lg">Nenhum lote em estoque</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {Object.entries(groupedBatches).map(([productId, productBatches]) => {
             const product = products.find(p => p.id === productId);
             const totalQuantity = productBatches.reduce((sum, b) => sum + Number(b.quantity), 0);
+            const hasExpiring = productBatches.some(b => {
+              const status = getExpiryStatus(b.expiry_date);
+              return status === 'expired' || status === 'critical';
+            });
             
             return (
-              <Card key={productId}>
+              <Card key={productId} className="bg-white shadow-sm rounded-2xl border-0 overflow-hidden">
                 <CardHeader className="pb-2 px-4 pt-4">
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-base">{product?.name || 'Produto'}</CardTitle>
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "h-10 w-10 rounded-full flex items-center justify-center",
+                        hasExpiring ? "bg-red-50" : "bg-green-50"
+                      )}>
+                        <Package className={cn("h-5 w-5", hasExpiring ? "text-red-600" : "text-green-600")} />
+                      </div>
+                      <CardTitle className="text-base font-semibold">{product?.name || 'Produto'}</CardTitle>
+                    </div>
                     <div className="text-right">
-                      <p className="font-bold text-lg font-mono">{totalQuantity.toFixed(1)}</p>
+                      <p className="font-bold text-xl font-mono text-green-700">{totalQuantity.toFixed(1)}</p>
                       <p className="text-xs text-muted-foreground">{product?.unit}</p>
                     </div>
                   </div>
@@ -258,37 +269,45 @@ export default function Estoque() {
                         <div
                           key={batch.id}
                           className={cn(
-                            "flex items-center justify-between p-3 rounded-lg border",
-                            getExpiryColor(status)
+                            "flex items-center justify-between p-3 rounded-xl transition-colors",
+                            status === 'expired' && "bg-red-50",
+                            status === 'critical' && "bg-orange-50",
+                            status === 'warning' && "bg-amber-50",
+                            status === 'ok' && "bg-gray-50",
+                            status === 'none' && "bg-gray-50"
                           )}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-background text-sm font-medium">
+                            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-white text-sm font-medium shadow-sm">
                               {index + 1}
                             </div>
                             <div>
-                              <p className="font-medium font-mono">
+                              <p className="font-semibold font-mono">
                                 {Number(batch.quantity).toFixed(1)} {product?.unit}
                               </p>
-                              <p className="text-xs opacity-75">
+                              <p className="text-xs text-muted-foreground">
                                 {formatCurrency(Number(batch.cost_per_unit))}/{product?.unit}
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
                             {batch.expiry_date ? (
-                              <div className="flex items-center gap-1">
-                                {status === 'expired' && <AlertTriangle className="h-4 w-4" />}
-                                {(status === 'critical' || status === 'warning') && <Clock className="h-4 w-4" />}
-                                <span className="text-sm font-medium">
-                                  {format(new Date(batch.expiry_date), 'dd/MM')}
-                                </span>
-                              </div>
+                              <span className={cn(
+                                "inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium",
+                                status === 'expired' && "bg-red-100 text-red-700",
+                                status === 'critical' && "bg-orange-100 text-orange-700",
+                                status === 'warning' && "bg-amber-100 text-amber-700",
+                                status === 'ok' && "bg-green-100 text-green-700"
+                              )}>
+                                {status === 'expired' && <AlertTriangle className="h-3 w-3" />}
+                                {(status === 'critical' || status === 'warning') && <Clock className="h-3 w-3" />}
+                                {format(new Date(batch.expiry_date), 'dd/MM')}
+                              </span>
                             ) : (
-                              <span className="text-xs text-muted-foreground">Sem val.</span>
+                              <span className="text-xs text-muted-foreground px-2 py-1 bg-gray-100 rounded-full">Sem val.</span>
                             )}
-                            <p className="text-xs opacity-75">
-                              {format(new Date(batch.received_at), 'dd/MM')}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Entrada: {format(new Date(batch.received_at), 'dd/MM')}
                             </p>
                           </div>
                         </div>

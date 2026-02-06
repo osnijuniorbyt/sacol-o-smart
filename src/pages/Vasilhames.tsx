@@ -116,11 +116,11 @@ export default function Vasilhames() {
 
   const getMaterialColor = (material: PackagingMaterial) => {
     switch (material) {
-      case 'plastico': return 'bg-blue-500/10 text-blue-700 border-blue-500/30';
-      case 'madeira': return 'bg-amber-500/10 text-amber-700 border-amber-500/30';
-      case 'papelao': return 'bg-orange-500/10 text-orange-700 border-orange-500/30';
-      case 'isopor': return 'bg-gray-500/10 text-gray-700 border-gray-500/30';
-      default: return 'bg-muted text-muted-foreground';
+      case 'plastico': return 'bg-blue-50 text-blue-700 border-0';
+      case 'madeira': return 'bg-amber-50 text-amber-700 border-0';
+      case 'papelao': return 'bg-orange-50 text-orange-700 border-0';
+      case 'isopor': return 'bg-cyan-50 text-cyan-700 border-0';
+      default: return 'bg-gray-50 text-gray-600 border-0';
     }
   };
 
@@ -161,118 +161,121 @@ export default function Vasilhames() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - MD3 Style */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Card className="bg-card/50 backdrop-blur-sm">
+        <Card className="bg-blue-50 shadow-sm rounded-2xl border-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
+              <div className="p-2.5 rounded-xl bg-blue-100">
                 <Package className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{packagings.filter(p => p.material === 'plastico').length}</p>
-                <p className="text-xs text-muted-foreground">Plástico</p>
+                <p className="text-2xl font-bold text-blue-700">{packagings.filter(p => p.material === 'plastico').length}</p>
+                <p className="text-xs text-blue-600/70 font-medium">Plástico</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card/50 backdrop-blur-sm">
+        <Card className="bg-amber-50 shadow-sm rounded-2xl border-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10">
+              <div className="p-2.5 rounded-xl bg-amber-100">
                 <Package className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{packagings.filter(p => p.material === 'madeira').length}</p>
-                <p className="text-xs text-muted-foreground">Madeira</p>
+                <p className="text-2xl font-bold text-amber-700">{packagings.filter(p => p.material === 'madeira').length}</p>
+                <p className="text-xs text-amber-600/70 font-medium">Madeira</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card/50 backdrop-blur-sm">
+        <Card className="bg-orange-50 shadow-sm rounded-2xl border-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-orange-500/10">
+              <div className="p-2.5 rounded-xl bg-orange-100">
                 <Package className="h-5 w-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{packagings.filter(p => p.material === 'papelao').length}</p>
-                <p className="text-xs text-muted-foreground">Papelão</p>
+                <p className="text-2xl font-bold text-orange-700">{packagings.filter(p => p.material === 'papelao').length}</p>
+                <p className="text-xs text-orange-600/70 font-medium">Papelão</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card/50 backdrop-blur-sm">
+        <Card className="bg-green-50 shadow-sm rounded-2xl border-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10">
-                <Scale className="h-5 w-5 text-emerald-600" />
+              <div className="p-2.5 rounded-xl bg-green-100">
+                <Scale className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{packagings.filter(p => p.is_returnable).length}</p>
-                <p className="text-xs text-muted-foreground">Retornáveis</p>
+                <p className="text-2xl font-bold text-green-700">{packagings.filter(p => p.is_returnable).length}</p>
+                <p className="text-xs text-green-600/70 font-medium">Retornáveis</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Table */}
-      <Card>
+      {/* Table - MD3 Style */}
+      <Card className="bg-white shadow-sm rounded-2xl border-0 overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-20">Código</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="text-center">Tipo</TableHead>
-                  <TableHead className="text-right">Tara (kg)</TableHead>
-                  <TableHead className="text-right">Peso Líq. (kg)</TableHead>
-                  <TableHead className="text-center">Retornável</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="w-24 text-right">Ações</TableHead>
+                <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
+                  <TableHead className="w-20 font-semibold">Código</TableHead>
+                  <TableHead className="font-semibold">Nome</TableHead>
+                  <TableHead className="text-center font-semibold">Tipo</TableHead>
+                  <TableHead className="text-right font-semibold">Tara (kg)</TableHead>
+                  <TableHead className="text-right font-semibold">Peso Líq. (kg)</TableHead>
+                  <TableHead className="text-center font-semibold">Retornável</TableHead>
+                  <TableHead className="text-center font-semibold">Status</TableHead>
+                  <TableHead className="w-24 text-right font-semibold">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {packagings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Nenhum vasilhame cadastrado
+                    <TableCell colSpan={8} className="text-center py-12">
+                      <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                        <Box className="h-8 w-8 text-muted-foreground/30" />
+                      </div>
+                      <p className="text-muted-foreground">Nenhum vasilhame cadastrado</p>
                     </TableCell>
                   </TableRow>
                 ) : (
                   packagings.map((packaging) => (
-                    <TableRow key={packaging.id} className={!packaging.is_active ? 'opacity-50' : ''}>
-                      <TableCell className="font-mono text-sm">
+                    <TableRow key={packaging.id} className={`hover:bg-gray-50/50 ${!packaging.is_active ? 'opacity-50' : ''}`}>
+                      <TableCell className="font-mono text-sm font-medium">
                         {packaging.codigo || '-'}
                       </TableCell>
-                      <TableCell className="font-medium">{packaging.name}</TableCell>
+                      <TableCell className="font-semibold">{packaging.name}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline" className={getMaterialColor(packaging.material)}>
+                        <Badge className={`rounded-full ${getMaterialColor(packaging.material)}`}>
                           <span className="mr-1">{getMaterialIcon(packaging.material)}</span>
                           {PACKAGING_MATERIAL_LABELS[packaging.material]}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono text-muted-foreground">
                         {packaging.tare_weight.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right font-mono font-semibold text-primary">
+                      <TableCell className="text-right font-mono font-bold text-green-700">
                         {(packaging.peso_liquido || 0).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-center">
                         {packaging.is_returnable ? (
-                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-500/30">
+                          <Badge className="rounded-full bg-green-50 text-green-700 border-0">
                             Sim
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-muted text-muted-foreground">
+                          <Badge className="rounded-full bg-gray-100 text-gray-500 border-0">
                             Não
                           </Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant={packaging.is_active ? 'default' : 'secondary'}>
+                        <Badge className={`rounded-full ${packaging.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'} border-0`}>
                           {packaging.is_active ? 'Ativo' : 'Inativo'}
                         </Badge>
                       </TableCell>
@@ -282,7 +285,7 @@ export default function Vasilhames() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleOpenEdit(packaging)}
-                            className="h-8 w-8"
+                            className="h-8 w-8 rounded-lg hover:bg-gray-100"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -290,7 +293,7 @@ export default function Vasilhames() {
                             variant="ghost"
                             size="icon"
                             onClick={() => setDeleteConfirm(packaging.id)}
-                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            className="h-8 w-8 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

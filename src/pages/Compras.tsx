@@ -145,7 +145,9 @@ export default function Compras() {
           <OrdersList
             orders={receivedOrders}
             type="received"
+            onDelete={handleDeleteOrder}
             onRefresh={handleRefresh}
+            isDeleting={deleteOrder.isPending}
           />
         </TabsContent>
       </Tabs>

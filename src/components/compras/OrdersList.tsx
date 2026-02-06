@@ -226,15 +226,49 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
                 </div>
               )}
 
-              {type === 'received' && order.received_at && (
+              {type === 'received' && (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
-                    <CheckCircle2 className="h-5 w-5 text-primary" />
-                    <span>
-                      Recebido em: {format(new Date(order.received_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </span>
-                  </div>
+                  {order.received_at && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+                      <CheckCircle2 className="h-5 w-5 text-primary" />
+                      <span>
+                        Recebido em: {format(new Date(order.received_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </span>
+                    </div>
+                  )}
                   <PhotoGallery orderId={order.id} order={order} compact />
+                  
+                  {/* Actions for received orders */}
+                  <div className="flex gap-3 pt-2">
+                    <Button 
+                      variant="outline"
+                      className={cn(
+                        "flex-1 h-12 text-sm font-medium transition-all duration-150",
+                        clickedButton === `editar-${order.id}` && "scale-95 opacity-80"
+                      )}
+                      onClick={() => handleButtonClick(`editar-${order.id}`, () => setEditingOrder(order))}
+                    >
+                      <Pencil className="mr-2 h-5 w-5" />
+                      Editar
+                    </Button>
+                    {onDelete && (
+                      <Button 
+                        variant="outline" 
+                        className={cn(
+                          "h-12 px-4 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all duration-150",
+                          clickedButton === `delete-${order.id}` && "scale-95 opacity-80"
+                        )}
+                        onClick={() => handleButtonClick(`delete-${order.id}`, () => onDelete(order.id))}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-5 w-5" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>

@@ -146,8 +146,6 @@ export default function Compras() {
             orders={receivedOrders}
             type="received"
             onRefresh={handleRefresh}
-            onFinalize={(id) => finalizeOrder.mutate(id)}
-            isFinalizing={finalizeOrder.isPending}
           />
         </TabsContent>
       </Tabs>

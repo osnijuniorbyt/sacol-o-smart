@@ -34,7 +34,8 @@ import {
   CheckCircle2,
   Loader2,
   Tag,
-  Percent
+  Percent,
+  Lock
 } from 'lucide-react';
 
 interface ClosingProtocolDialogProps {
@@ -44,12 +45,43 @@ interface ClosingProtocolDialogProps {
   onSuccess: () => void;
 }
 
+// Interface para pricing de cada item - custo real é IMUTÁVEL
 interface ItemPricing {
-  margem: number;
-  precoVenda: number;
-  custoUnitario: number;
-  pesoLiquido: number;
-  custoTotal: number;
+  margem: number;           // Margem de lucro (%)
+  precoVenda: number;       // Preço de venda (R$/kg)
+  custoRealKg: number;      // Custo real por kg (IMUTÁVEL após cálculo)
+  pesoLiquido: number;      // Peso líquido real (kg)
+  custoTotal: number;       // Custo total do item
+  qtdVolumes: number;       // Quantidade de volumes/caixas
+}
+
+// Output estruturado para Relatórios
+export interface ClosingOutput {
+  orderId: string;
+  supplierId: string | null;
+  supplierName: string;
+  closedAt: string;
+  items: Array<{
+    productId: string;
+    productName: string;
+    qtdVolumes: number;
+    pesoLiquido: number;
+    custoRealKg: number;
+    precoVendaKg: number;
+    margemLucro: number;
+    custoTotal: number;
+  }>;
+  totais: {
+    qtdVolumes: number;
+    pesoLiquido: number;
+    custoTotal: number;
+    margemPonderada: number;
+  };
+  custosAdicionais: {
+    frete: number;
+    outros: number;
+    descricao: string;
+  };
 }
 
 const DEFAULT_MARGEM = 60;
@@ -75,40 +107,76 @@ export function ClosingProtocolDialog({
   
   const [isApproving, setIsApproving] = useState(false);
 
-  // Inicializa pricing quando order muda
+  // Calcula peso líquido total para rateio de custos
+  const pesoLiquidoTotal = useMemo(() => {
+    if (!order?.items) return 1;
+    
+    return order.items.reduce((sum, item) => {
+      const pesoBruto = item.quantity_received 
+        ? item.quantity_received * (item.estimated_kg || 1) / item.quantity
+        : item.estimated_kg || 1;
+      const taraTotal = item.tare_total || 0;
+      return sum + Math.max(0.1, pesoBruto - taraTotal);
+    }, 0);
+  }, [order?.items]);
+
+  // Inicializa pricing quando order ou custos adicionais mudam
   useEffect(() => {
     if (!order?.items) return;
+    
+    const custosRateioTotal = valorFrete + outrosCustos;
+    const custoRateioPorKg = pesoLiquidoTotal > 0 ? custosRateioTotal / pesoLiquidoTotal : 0;
     
     const initialPricing: Record<string, ItemPricing> = {};
     
     order.items.forEach((item) => {
-      const custoTotal = item.quantity * (item.unit_cost_estimated || 0);
-      // Peso líquido = estimated_kg - tare_total (aproximação)
-      const pesoLiquido = Math.max(0.1, (item.estimated_kg || 1) - (item.tare_total || 0));
-      const custoUnitario = custoTotal / pesoLiquido;
-      const margem = DEFAULT_MARGEM;
-      const precoVenda = custoUnitario / (1 - margem / 100);
+      // CUSTO REAL: Usa unit_cost_actual (conferido no recebimento) se disponível
+      const custoVolume = item.unit_cost_actual ?? item.unit_cost_estimated ?? 0;
+      const qtdVolumes = item.quantity_received ?? item.quantity;
+      const custoTotal = qtdVolumes * custoVolume;
+      
+      // Peso líquido REAL: peso bruto - tara total
+      const pesoBruto = item.quantity_received 
+        ? item.quantity_received * (item.estimated_kg || 1) / item.quantity
+        : item.estimated_kg || 1;
+      const taraTotal = item.tare_total || 0;
+      const pesoLiquido = Math.max(0.1, pesoBruto - taraTotal);
+      
+      // Custo unitário base (R$/kg) = custo total / peso líquido
+      const custoBaseKg = custoTotal / pesoLiquido;
+      
+      // Custo REAL por kg = custo base + rateio de frete/custos
+      const custoRealKg = custoBaseKg + custoRateioPorKg;
+      
+      // Margem padrão e preço de venda
+      const margem = itemsPricing[item.id]?.margem ?? DEFAULT_MARGEM;
+      
+      // FÓRMULA DE MARGEM DE LUCRO (não markup!):
+      // Preço = Custo / (1 - Margem/100)
+      const precoVenda = custoRealKg / (1 - margem / 100);
       
       initialPricing[item.id] = {
         margem,
         precoVenda,
-        custoUnitario,
+        custoRealKg,
         pesoLiquido,
         custoTotal,
+        qtdVolumes,
       };
     });
     
     setItemsPricing(initialPricing);
-  }, [order?.items]);
+  }, [order?.items, valorFrete, outrosCustos, pesoLiquidoTotal]);
 
-  // Funções bidirecionais de precificação
+  // BIDIRECIONAL: Atualiza preço quando margem muda
   const handleMargemChange = (itemId: string, newMargem: number) => {
     setItemsPricing((prev) => {
       const item = prev[itemId];
       if (!item) return prev;
       
-      const margem = Math.max(0, Math.min(99.9, newMargem));
-      const precoVenda = item.custoUnitario / (1 - margem / 100);
+      const margem = Math.max(0.1, Math.min(99.9, newMargem));
+      // Preço = Custo / (1 - Margem/100)
+      const precoVenda = item.custoRealKg / (1 - margem / 100);
       
       return {
         ...prev,
@@ -117,12 +185,14 @@ export function ClosingProtocolDialog({
     });
   };
 
+  // BIDIRECIONAL: Atualiza margem quando preço muda
   const handlePrecoVendaChange = (itemId: string, newPreco: number) => {
     setItemsPricing((prev) => {
       const item = prev[itemId];
-      if (!item || newPreco <= item.custoUnitario) return prev;
+      if (!item || newPreco <= item.custoRealKg) return prev;
       
-      const margem = (1 - item.custoUnitario / newPreco) * 100;
+      // Margem = (1 - Custo/Preço) * 100
+      const margem = (1 - item.custoRealKg / newPreco) * 100;
       
       return {
         ...prev,
@@ -135,9 +205,9 @@ export function ClosingProtocolDialog({
   const resumo = useMemo(() => {
     if (!order?.items) return null;
 
-    const totalCaixas = order.items.reduce((sum, i) => sum + i.quantity, 0);
+    const totalCaixas = order.items.reduce((sum, i) => sum + (i.quantity_received ?? i.quantity), 0);
     const valorProdutos = order.items.reduce(
-      (sum, i) => sum + (i.quantity * (i.unit_cost_estimated || 0)), 0
+      (sum, i) => sum + ((i.quantity_received ?? i.quantity) * (i.unit_cost_actual ?? i.unit_cost_estimated ?? 0)), 0
     );
     const pesoNota = order.items.reduce(
       (sum, i) => sum + (i.estimated_kg || 1), 0
@@ -154,7 +224,7 @@ export function ClosingProtocolDialog({
   // Totais de precificação
   const precificacaoTotais = useMemo(() => {
     const items = Object.values(itemsPricing);
-    if (items.length === 0) return { totalCusto: 0, margemPonderada: 0 };
+    if (items.length === 0) return { totalCusto: 0, totalPesoLiquido: 0, margemPonderada: 0 };
     
     const totalCusto = items.reduce((sum, i) => sum + i.custoTotal, 0);
     const totalPesoLiquido = items.reduce((sum, i) => sum + i.pesoLiquido, 0);
@@ -164,13 +234,51 @@ export function ClosingProtocolDialog({
       ? items.reduce((sum, i) => sum + (i.margem * i.pesoLiquido), 0) / totalPesoLiquido
       : 0;
     
-    return { totalCusto, margemPonderada };
+    return { totalCusto, totalPesoLiquido, margemPonderada };
   }, [itemsPricing]);
 
   const diferencaPeso = useMemo(() => {
     if (!resumo || !pesoBalancaReal) return null;
     return pesoBalancaReal - resumo.pesoNota;
   }, [resumo, pesoBalancaReal]);
+
+  // Gera output estruturado para Relatórios
+  const generateClosingOutput = (): ClosingOutput | null => {
+    if (!order || !resumo) return null;
+
+    const items = (order.items || []).map((item) => {
+      const pricing = itemsPricing[item.id];
+      return {
+        productId: item.product_id,
+        productName: item.product?.name || 'Produto',
+        qtdVolumes: pricing?.qtdVolumes ?? item.quantity,
+        pesoLiquido: pricing?.pesoLiquido ?? 0,
+        custoRealKg: pricing?.custoRealKg ?? 0,
+        precoVendaKg: pricing?.precoVenda ?? 0,
+        margemLucro: pricing?.margem ?? DEFAULT_MARGEM,
+        custoTotal: pricing?.custoTotal ?? 0,
+      };
+    });
+
+    return {
+      orderId: order.id,
+      supplierId: order.supplier_id,
+      supplierName: order.supplier?.name || 'Fornecedor',
+      closedAt: new Date().toISOString(),
+      items,
+      totais: {
+        qtdVolumes: resumo.totalCaixas,
+        pesoLiquido: precificacaoTotais.totalPesoLiquido,
+        custoTotal: precificacaoTotais.totalCusto + valorFrete + outrosCustos,
+        margemPonderada: precificacaoTotais.margemPonderada,
+      },
+      custosAdicionais: {
+        frete: valorFrete,
+        outros: outrosCustos,
+        descricao: descricaoCustos,
+      },
+    };
+  };
 
   const handleWhatsApp = () => {
     if (!order || !resumo) return;
@@ -223,40 +331,57 @@ export function ClosingProtocolDialog({
 
     setIsApproving(true);
     try {
-      // Atualiza itens com custo real
+      // Gera output para log/debug
+      const closingOutput = generateClosingOutput();
+      console.log('[ClosingProtocol] Output:', closingOutput);
+
+      // Atualiza itens com CUSTO REAL (não estimado!)
       for (const item of order.items || []) {
+        const pricing = itemsPricing[item.id];
+        if (!pricing) continue;
+
+        // Salva o custo real por kg no item (para rastreabilidade)
         await supabase
           .from('purchase_order_items')
           .update({
-            quantity_received: item.quantity,
-            unit_cost_actual: item.unit_cost_estimated,
+            quantity_received: pricing.qtdVolumes,
+            // IMPORTANTE: Salva custo real calculado, NÃO o estimado!
+            unit_cost_actual: pricing.custoRealKg,
           })
           .eq('id', item.id);
 
-        // Atualiza preço de venda do produto
-        const pricing = itemsPricing[item.id];
-        if (pricing && item.product_id) {
+        // Atualiza produto: preço de venda E custo de compra real
+        if (item.product_id) {
           await supabase
             .from('products')
-            .update({ price: pricing.precoVenda })
+            .update({ 
+              price: pricing.precoVenda,
+              custo_compra: pricing.custoRealKg,
+            })
             .eq('id', item.product_id);
         }
       }
 
-      // Atualiza pedido como FECHADO (não recebido)
+      // Atualiza pedido como FECHADO
+      const notesContent = [
+        valorFrete > 0 ? `Frete: R$${valorFrete.toFixed(2)}` : null,
+        outrosCustos > 0 ? `Outros: R$${outrosCustos.toFixed(2)}${descricaoCustos ? ` (${descricaoCustos})` : ''}` : null,
+        pesoBalancaReal > 0 ? `Peso Balança: ${pesoBalancaReal.toFixed(1)}kg` : null,
+      ].filter(Boolean).join(' | ');
+
       const { error } = await supabase
         .from('purchase_orders')
         .update({
           status: 'fechado',
           total_received: resumo.valorTotal,
           received_at: new Date().toISOString(),
-          notes: descricaoCustos ? `Frete: R$${valorFrete} | Outros: R$${outrosCustos} (${descricaoCustos})` : null,
+          notes: notesContent || null,
         })
         .eq('id', order.id);
 
       if (error) throw error;
 
-      toast.success('Pedido fechado! Preços atualizados e estoque gerado.');
+      toast.success('Pedido fechado! Preços e custos atualizados.');
       onSuccess();
       onOpenChange(false);
       
@@ -300,7 +425,7 @@ export function ClosingProtocolDialog({
             <Separator className="my-2" />
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-muted-foreground">Caixas:</span>
+                <span className="text-muted-foreground">Volumes:</span>
                 <span className="ml-2 font-mono">{resumo.totalCaixas}</span>
               </div>
               <div>
@@ -311,6 +436,10 @@ export function ClosingProtocolDialog({
                 <span className="text-muted-foreground">Peso Nota:</span>
                 <span className="ml-2 font-mono">{resumo.pesoNota.toFixed(1)} kg</span>
               </div>
+              <div>
+                <span className="text-muted-foreground">Peso Líq.:</span>
+                <span className="ml-2 font-mono">{precificacaoTotais.totalPesoLiquido.toFixed(1)} kg</span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -320,7 +449,7 @@ export function ClosingProtocolDialog({
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Truck className="h-4 w-4" />
-              Custos Adicionais
+              Custos Adicionais (rateados por kg)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -357,6 +486,11 @@ export function ClosingProtocolDialog({
                   className="h-10"
                   placeholder="Ex: Descarga, taxas..."
                 />
+              </div>
+            )}
+            {(valorFrete > 0 || outrosCustos > 0) && (
+              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                Rateio: R$ {((valorFrete + outrosCustos) / precificacaoTotais.totalPesoLiquido).toFixed(2)}/kg
               </div>
             )}
           </CardContent>
@@ -427,7 +561,7 @@ export function ClosingProtocolDialog({
                     {item.product?.name || 'Produto'}
                   </div>
                   
-                  {/* Info calculada */}
+                  {/* Info calculada - CUSTO REAL IMUTÁVEL */}
                   <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
                     <div>
                       <span className="block">Peso Líq.</span>
@@ -438,8 +572,13 @@ export function ClosingProtocolDialog({
                       <span className="font-mono text-foreground">R$ {pricing.custoTotal.toFixed(2)}</span>
                     </div>
                     <div>
-                      <span className="block">Custo/kg</span>
-                      <span className="font-mono text-foreground">R$ {pricing.custoUnitario.toFixed(2)}</span>
+                      <span className="flex items-center gap-1">
+                        <Lock className="h-3 w-3" />
+                        Custo/kg
+                      </span>
+                      <span className="font-mono text-foreground font-bold">
+                        R$ {pricing.custoRealKg.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                   
@@ -454,7 +593,7 @@ export function ClosingProtocolDialog({
                         type="number"
                         inputMode="decimal"
                         step="1"
-                        min="0"
+                        min="0.1"
                         max="99"
                         value={pricing.margem.toFixed(1)}
                         onChange={(e) => handleMargemChange(item.id, parseFloat(e.target.value) || 0)}
@@ -467,7 +606,7 @@ export function ClosingProtocolDialog({
                         type="number"
                         inputMode="decimal"
                         step="0.01"
-                        min={pricing.custoUnitario}
+                        min={pricing.custoRealKg + 0.01}
                         value={pricing.precoVenda.toFixed(2)}
                         onChange={(e) => handlePrecoVendaChange(item.id, parseFloat(e.target.value) || 0)}
                         className="h-10 font-mono"
@@ -483,7 +622,9 @@ export function ClosingProtocolDialog({
             <div className="grid grid-cols-2 gap-4 pt-2">
               <div className="text-center p-2 bg-muted rounded-lg">
                 <div className="text-xs text-muted-foreground">Total Custo</div>
-                <div className="font-mono font-bold">R$ {precificacaoTotais.totalCusto.toFixed(2)}</div>
+                <div className="font-mono font-bold">
+                  R$ {(precificacaoTotais.totalCusto + valorFrete + outrosCustos).toFixed(2)}
+                </div>
               </div>
               <div className="text-center p-2 bg-primary/10 rounded-lg">
                 <div className="text-xs text-muted-foreground">Margem Ponderada</div>

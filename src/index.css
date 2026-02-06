@@ -20,7 +20,7 @@
     --popover: 40 25% 97%;
     --popover-foreground: 150 35% 12%;
 
-    /* Orange/Gold metallic primary - matches logo */
+    /* Orange/Gold metallic primary - matches logo & sidebar */
     --primary: 36 90% 50%;
     --primary-foreground: 0 0% 100%;
 
@@ -30,7 +30,7 @@
     --muted: 40 15% 92%;
     --muted-foreground: 150 20% 40%;
 
-    /* Green accent - matches logo green */
+    /* Green accent - matches logo & sidebar */
     --accent: 150 45% 30%;
     --accent-foreground: 0 0% 100%;
 
@@ -53,7 +53,24 @@
     --brand-cream: 40 30% 94%;
     --brand-dark: 220 15% 15%;
 
-    /* Sidebar - Dark green premium */
+    /* Semantic Colors - Status */
+    --success: 150 60% 35%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 150 40% 92%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-muted: 38 60% 92%;
+    
+    --info: 200 70% 45%;
+    --info-foreground: 0 0% 100%;
+    --info-muted: 200 50% 92%;
+
+    --danger: 0 70% 50%;
+    --danger-foreground: 0 0% 100%;
+    --danger-muted: 0 50% 94%;
+
+    /* Sidebar - Dark green premium (matches Layout.tsx) */
     --sidebar-background: 150 50% 14%;
     --sidebar-foreground: 40 30% 95%;
     --sidebar-primary: 36 90% 55%;
@@ -99,6 +116,23 @@
     --brand-green: 150 50% 40%;
     --brand-green-light: 150 45% 50%;
     --brand-green-dark: 150 55% 25%;
+
+    /* Semantic Colors - Dark mode */
+    --success: 150 50% 45%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 150 30% 18%;
+    
+    --warning: 38 80% 55%;
+    --warning-foreground: 220 15% 10%;
+    --warning-muted: 38 40% 18%;
+    
+    --info: 200 60% 50%;
+    --info-foreground: 0 0% 100%;
+    --info-muted: 200 40% 18%;
+
+    --danger: 0 60% 50%;
+    --danger-foreground: 0 0% 100%;
+    --danger-muted: 0 40% 18%;
     
     --sidebar-background: 220 15% 8%;
     --sidebar-foreground: 40 25% 92%;

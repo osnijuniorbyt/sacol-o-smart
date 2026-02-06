@@ -366,7 +366,7 @@ export default function Relatorios() {
                           </span>
                         </div>
                       </div>
-                      <Badge className="bg-slate-600 text-white">
+                      <Badge className="bg-accent text-accent-foreground">
                         {PURCHASE_ORDER_STATUS_LABELS[order.status]}
                       </Badge>
                     </div>
@@ -402,7 +402,7 @@ export default function Relatorios() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="h-12 px-4 text-green-600 hover:text-green-700 hover:bg-green-50"
+                        className="h-12 px-4 text-success hover:text-success hover:bg-success-muted"
                         onClick={() => handleShareWhatsApp(order)}
                       >
                         <MessageCircle className="h-4 w-4" />
@@ -495,8 +495,8 @@ export default function Relatorios() {
             </Card>
             <Card className="col-span-2 sm:col-span-1">
               <CardContent className="p-4 text-center">
-                <Percent className="h-6 w-6 mx-auto mb-2 text-green-600" />
-                <p className="text-2xl font-bold text-green-600">
+                <Percent className="h-6 w-6 mx-auto mb-2 text-success" />
+                <p className="text-2xl font-bold text-success">
                   {analysisData.avgMargin.toFixed(1)}%
                 </p>
                 <p className="text-xs text-muted-foreground">Margem Média</p>
@@ -507,7 +507,7 @@ export default function Relatorios() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-yellow-500" />
+                <Trophy className="h-4 w-4 text-warning" />
                 Ranking de Fornecedores por Valor
               </CardTitle>
             </CardHeader>
@@ -576,7 +576,7 @@ export default function Relatorios() {
                 )}
                 <div>
                   <p className="text-muted-foreground">Status</p>
-                  <Badge className="bg-slate-600 text-white">
+                  <Badge className="bg-accent text-accent-foreground">
                     {PURCHASE_ORDER_STATUS_LABELS[detailsOrder.status]}
                   </Badge>
                 </div>

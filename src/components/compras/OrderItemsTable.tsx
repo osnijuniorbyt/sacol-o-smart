@@ -25,36 +25,21 @@ function OrderItemRow({
 }: OrderItemRowProps) {
   // Estado LOCAL para quantidade - atualiza INSTANTÂNEO
   const [localQuantity, setLocalQuantity] = useState(item.quantity);
-  // TRAVA DE EDIÇÃO: impede que o refetch do banco sobrescreva a UI enquanto o usuário interage
-  const [isEditing, setIsEditing] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
-  const editLockTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Sincroniza quando prop muda - MAS SÓ se o usuário NÃO estiver editando
+  // Sincroniza quando prop muda (ex: ao carregar pedido existente)
   useEffect(() => {
-    if (!isEditing && item.quantity !== localQuantity) {
-      setLocalQuantity(item.quantity);
-    }
-  }, [item.quantity, isEditing]);
+    setLocalQuantity(item.quantity);
+  }, [item.quantity]);
 
-  // Cleanup timeouts on unmount
+  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      if (editLockTimeoutRef.current) clearTimeout(editLockTimeoutRef.current);
     };
   }, []);
 
-  // Libera a trava de edição após callback ou timeout de segurança
-  const releaseEditLock = () => {
-    if (editLockTimeoutRef.current) clearTimeout(editLockTimeoutRef.current);
-    editLockTimeoutRef.current = setTimeout(() => {
-      setIsEditing(false);
-    }, 2000); // Timeout de segurança: libera após 2s mesmo se callback falhar
-  };
-
   const handleIncrement = () => {
-    setIsEditing(true); // TRAVA: ignora atualizações externas
     const newQty = localQuantity + 1;
     setLocalQuantity(newQty); // INSTANTÂNEO - UI muda imediatamente
     
@@ -62,7 +47,6 @@ function OrderItemRow({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       onQuantityChange(item.product_id, newQty);
-      releaseEditLock(); // Libera trava após enviar
     }, 500);
   };
 
@@ -73,14 +57,12 @@ function OrderItemRow({
       return;
     }
     
-    setIsEditing(true); // TRAVA: ignora atualizações externas
     const newQty = localQuantity - 1;
     setLocalQuantity(newQty); // INSTANTÂNEO - UI muda imediatamente
     
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       onQuantityChange(item.product_id, newQty);
-      releaseEditLock(); // Libera trava após enviar
     }, 500);
   };
 

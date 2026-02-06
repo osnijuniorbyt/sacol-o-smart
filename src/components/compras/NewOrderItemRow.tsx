@@ -27,83 +27,63 @@
    onRemove: (productId: string) => void;
  }
  
-export const NewOrderItemRow = memo(function NewOrderItemRow({
-  item,
-  packagings,
-  onQuantityChange,
-  onFieldChange,
-  onRemove,
-}: NewOrderItemRowProps) {
-  // Estado LOCAL para quantidade - atualiza INSTANTÂNEO
-  const [localQuantity, setLocalQuantity] = useState(item.quantity);
-  // TRAVA DE EDIÇÃO: impede que o refetch do banco sobrescreva a UI enquanto o usuário interage
-  const [isEditing, setIsEditing] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout>();
-  const editLockTimeoutRef = useRef<NodeJS.Timeout>();
-
-  // Sincroniza quando prop muda - MAS SÓ se o usuário NÃO estiver editando
-  useEffect(() => {
-    if (!isEditing && item.quantity !== localQuantity) {
-      setLocalQuantity(item.quantity);
-    }
-  }, [item.quantity, isEditing]);
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      if (editLockTimeoutRef.current) clearTimeout(editLockTimeoutRef.current);
-    };
-  }, []);
-
-  // Libera a trava de edição após callback ou timeout de segurança
-  const releaseEditLock = () => {
-    if (editLockTimeoutRef.current) clearTimeout(editLockTimeoutRef.current);
-    editLockTimeoutRef.current = setTimeout(() => {
-      setIsEditing(false);
-    }, 2000); // Timeout de segurança: libera após 2s mesmo se callback falhar
-  };
-
-  const handleIncrement = () => {
-    setIsEditing(true); // TRAVA: ignora atualizações externas
-    const newQty = localQuantity + 1;
-    setLocalQuantity(newQty); // INSTANTÂNEO
-    
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      onQuantityChange(item.product_id, newQty);
-      releaseEditLock(); // Libera trava após enviar
-    }, 500);
-  };
-
-  const handleDecrement = () => {
-    if (localQuantity <= 1) {
-      onRemove(item.product_id);
-      return;
-    }
-    
-    setIsEditing(true); // TRAVA: ignora atualizações externas
-    const newQty = localQuantity - 1;
-    setLocalQuantity(newQty); // INSTANTÂNEO
-    
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      onQuantityChange(item.product_id, newQty);
-      releaseEditLock(); // Libera trava após enviar
-    }, 500);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsEditing(true); // TRAVA: ignora atualizações externas
-    const value = parseInt(e.target.value) || 1;
-    setLocalQuantity(value); // INSTANTÂNEO
-    
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      onQuantityChange(item.product_id, value);
-      releaseEditLock(); // Libera trava após enviar
-    }, 500);
-  };
+ export const NewOrderItemRow = memo(function NewOrderItemRow({
+   item,
+   packagings,
+   onQuantityChange,
+   onFieldChange,
+   onRemove,
+ }: NewOrderItemRowProps) {
+   // Estado LOCAL para quantidade - atualiza INSTANTÂNEO
+   const [localQuantity, setLocalQuantity] = useState(item.quantity);
+   const debounceRef = useRef<NodeJS.Timeout>();
+ 
+   // Sincroniza quando prop muda (ex: ao carregar pedido existente)
+   useEffect(() => {
+     setLocalQuantity(item.quantity);
+   }, [item.quantity]);
+ 
+   // Cleanup timeout on unmount
+   useEffect(() => {
+     return () => {
+       if (debounceRef.current) clearTimeout(debounceRef.current);
+     };
+   }, []);
+ 
+   const handleIncrement = () => {
+     const newQty = localQuantity + 1;
+     setLocalQuantity(newQty); // INSTANTÂNEO
+     
+     if (debounceRef.current) clearTimeout(debounceRef.current);
+     debounceRef.current = setTimeout(() => {
+       onQuantityChange(item.product_id, newQty);
+     }, 500);
+   };
+ 
+   const handleDecrement = () => {
+     if (localQuantity <= 1) {
+       onRemove(item.product_id);
+       return;
+     }
+     
+     const newQty = localQuantity - 1;
+     setLocalQuantity(newQty); // INSTANTÂNEO
+     
+     if (debounceRef.current) clearTimeout(debounceRef.current);
+     debounceRef.current = setTimeout(() => {
+       onQuantityChange(item.product_id, newQty);
+     }, 500);
+   };
+ 
+   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+     const value = parseInt(e.target.value) || 1;
+     setLocalQuantity(value); // INSTANTÂNEO
+     
+     if (debounceRef.current) clearTimeout(debounceRef.current);
+     debounceRef.current = setTimeout(() => {
+       onQuantityChange(item.product_id, value);
+     }, 500);
+   };
  
    return (
      <div className="p-3 rounded-lg border bg-card">

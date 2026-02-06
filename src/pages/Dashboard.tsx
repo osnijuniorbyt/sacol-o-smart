@@ -39,11 +39,8 @@ import {
 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
- import { useIsMobile } from '@/hooks/use-mobile';
- import { HomeLauncher } from '@/components/HomeLauncher';
 
 export default function Dashboard() {
-   const isMobile = useIsMobile();
   const { sales, getTodayTotal, getTodayCount } = useSales();
   const { getExpiringBatches, batches, getProductStock } = useStock();
   const { breakages, getTotalLoss, getRecentBreakages } = useBreakages();
@@ -192,11 +189,6 @@ export default function Dashboard() {
     return totalStock <= product.min_stock && product.is_active;
   });
 
-   // Show Home Launcher on mobile instead of full Dashboard
-   if (isMobile) {
-     return <HomeLauncher />;
-   }
- 
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}

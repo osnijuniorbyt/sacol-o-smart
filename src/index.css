@@ -9,59 +9,105 @@
 
 @layer base {
   :root {
-    /* TITAN CORPORATE - Estilo Smart Software */
-    --background: 210 20% 96%;
-    --foreground: 203 35% 28%;
+    /* Premium cream/beige background matching logo style */
+    --background: 40 30% 94%;
+    --foreground: 150 35% 12%;
 
-    /* Cards - white/light gray */
-    --card: 0 0% 100%;
-    --card-foreground: 203 35% 28%;
+    /* Card with subtle warm tone */
+    --card: 40 25% 97%;
+    --card-foreground: 150 35% 12%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 203 35% 28%;
+    --popover: 40 25% 97%;
+    --popover-foreground: 150 35% 12%;
 
-    /* Primary - Corporate Dark Blue #2D4A5E */
-    --primary: 203 35% 28%;
+    /* Orange/Gold metallic primary - matches logo */
+    --primary: 36 90% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 15% 92%;
-    --secondary-foreground: 203 35% 28%;
+    --secondary: 40 20% 90%;
+    --secondary-foreground: 150 35% 15%;
 
-    --muted: 210 15% 90%;
-    --muted-foreground: 203 25% 45%;
+    --muted: 40 15% 92%;
+    --muted-foreground: 150 20% 40%;
 
-    /* Accent - Orange/Yellow highlight */
-    --accent: 38 95% 55%;
-    --accent-foreground: 203 35% 20%;
+    /* Green accent - matches logo green */
+    --accent: 150 45% 30%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 15% 85%;
-    --input: 210 15% 90%;
-    --ring: 203 35% 28%;
+    --border: 40 25% 82%;
+    --input: 40 20% 88%;
+    --ring: 36 90% 50%;
 
     --radius: 0.75rem;
     
-    /* Brand Palette - Corporate */
-    --brand-blue: 203 35% 28%;
-    --brand-blue-light: 203 30% 45%;
-    --brand-blue-dark: 203 40% 20%;
-    --brand-orange: 38 95% 55%;
-    --brand-orange-light: 40 90% 65%;
-    --brand-teal: 175 50% 35%;
-    --brand-teal-dark: 175 55% 25%;
-    --brand-gray: 210 15% 90%;
+    /* Brand Palette - Metallic 3D Logo Colors */
+    --brand-orange: 36 90% 50%;
+    --brand-orange-light: 38 85% 60%;
+    --brand-orange-dark: 34 95% 40%;
+    --brand-green: 150 100% 20%;
+    --brand-green-light: 150 60% 35%;
+    --brand-green-dark: 150 100% 12%;
+    --brand-cream: 40 30% 94%;
+    --brand-dark: 220 15% 15%;
 
-    /* Sidebar - Corporate Dark Blue */
-    --sidebar-background: 203 35% 28%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 38 95% 55%;
-    --sidebar-primary-foreground: 203 35% 20%;
-    --sidebar-accent: 203 30% 35%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 203 30% 35%;
-    --sidebar-ring: 38 95% 55%;
+    /* Sidebar - Dark green premium */
+    --sidebar-background: 150 50% 14%;
+    --sidebar-foreground: 40 30% 95%;
+    --sidebar-primary: 36 90% 55%;
+    --sidebar-primary-foreground: 150 35% 10%;
+    --sidebar-accent: 150 35% 22%;
+    --sidebar-accent-foreground: 40 30% 95%;
+    --sidebar-border: 150 30% 20%;
+    --sidebar-ring: 36 90% 55%;
+  }
+
+  .dark {
+    --background: 220 15% 10%;
+    --foreground: 40 25% 95%;
+
+    --card: 220 15% 14%;
+    --card-foreground: 40 25% 95%;
+
+    --popover: 220 15% 14%;
+    --popover-foreground: 40 25% 95%;
+
+    --primary: 36 85% 55%;
+    --primary-foreground: 220 15% 10%;
+
+    --secondary: 220 12% 20%;
+    --secondary-foreground: 40 25% 90%;
+
+    --muted: 220 12% 20%;
+    --muted-foreground: 40 15% 60%;
+
+    --accent: 150 40% 35%;
+    --accent-foreground: 40 25% 95%;
+
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 12% 22%;
+    --input: 220 12% 22%;
+    --ring: 36 85% 55%;
+    
+    --brand-orange: 36 85% 55%;
+    --brand-orange-light: 38 80% 65%;
+    --brand-orange-dark: 34 90% 45%;
+    --brand-green: 150 50% 40%;
+    --brand-green-light: 150 45% 50%;
+    --brand-green-dark: 150 55% 25%;
+    
+    --sidebar-background: 220 15% 8%;
+    --sidebar-foreground: 40 25% 92%;
+    --sidebar-primary: 36 85% 55%;
+    --sidebar-primary-foreground: 220 15% 10%;
+    --sidebar-accent: 220 12% 16%;
+    --sidebar-accent-foreground: 40 25% 92%;
+    --sidebar-border: 220 12% 16%;
+    --sidebar-ring: 36 85% 55%;
   }
 }
 
@@ -114,34 +160,31 @@
 /* Premium gradient utilities */
 @layer utilities {
   .gradient-brand {
-    background: linear-gradient(135deg, hsl(203 35% 28%) 0%, hsl(203 30% 35%) 100%);
+    background: linear-gradient(135deg, hsl(var(--brand-green-dark)) 0%, hsl(var(--brand-green)) 50%, hsl(var(--brand-green-dark)) 100%);
   }
   
   .gradient-orange {
-    background: linear-gradient(180deg, hsl(40 90% 65%) 0%, hsl(38 95% 55%) 100%);
+    background: linear-gradient(180deg, hsl(var(--brand-orange-light)) 0%, hsl(var(--brand-orange)) 50%, hsl(var(--brand-orange-dark)) 100%);
   }
   
   .gradient-premium {
-    background: linear-gradient(145deg, hsl(210 20% 98%) 0%, hsl(210 15% 92%) 100%);
+    background: linear-gradient(145deg, hsl(40 35% 96%) 0%, hsl(40 30% 92%) 50%, hsl(40 25% 88%) 100%);
   }
   
   .shadow-premium {
     box-shadow: 
-      0 4px 6px -1px rgba(45, 74, 94, 0.15),
-      0 2px 4px -2px rgba(45, 74, 94, 0.1);
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -2px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
   
   .border-metallic {
     border: 1px solid;
-    border-image: linear-gradient(180deg, hsl(203 30% 45%), hsl(203 35% 28%), hsl(203 40% 20%)) 1;
+    border-image: linear-gradient(180deg, hsl(36 60% 70%), hsl(36 50% 50%), hsl(36 40% 35%)) 1;
   }
   
   .glow-orange {
-    box-shadow: 0 0 20px -5px hsl(38 90% 50% / 0.3);
-  }
-  
-  .btn-pill {
-    @apply rounded-full px-6 py-3 font-medium transition-all;
+    box-shadow: 0 0 20px -5px hsl(36 90% 50% / 0.4);
   }
 }
 

@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,14 +51,19 @@ import {
   Percent,
   Trophy,
   Box,
+  ClipboardCheck,
+  Scale,
 } from 'lucide-react';
 import { generateReceivingPdf } from '@/lib/generateReceivingPdf';
+import { generateClosingReportPdf } from '@/lib/generateClosingReportPdf';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ReturnablePackagingReport from '@/components/relatorios/ReturnablePackagingReport';
+import { ClosingReportCard } from '@/components/relatorios/ClosingReportCard';
 
 export default function Relatorios() {
+  const location = useLocation();
   const { closedOrders, isLoading: loadingOrders } = usePurchaseOrders();
   const { activeSuppliers, isLoading: loadingSuppliers } = useSuppliers();
   const { products, isLoading: loadingProducts } = useProducts();
@@ -67,6 +73,22 @@ export default function Relatorios() {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [detailsOrder, setDetailsOrder] = useState<PurchaseOrder | null>(null);
+  const [fechamentoDate, setFechamentoDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [highlightedOrderId, setHighlightedOrderId] = useState<string | null>(null);
+
+  // Handle navigation state from ClosingProtocolDialog
+  useEffect(() => {
+    const state = location.state as { highlightOrder?: string; activeTab?: string } | null;
+    if (state?.activeTab) {
+      setActiveTab(state.activeTab);
+    }
+    if (state?.highlightOrder) {
+      setHighlightedOrderId(state.highlightOrder);
+      // Clear highlight after 5 seconds
+      const timer = setTimeout(() => setHighlightedOrderId(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   // Filter orders for Compras tab
   const filteredOrders = useMemo(() => {
@@ -151,6 +173,53 @@ export default function Relatorios() {
       supplierRanking,
     };
   }, [closedOrders, productsPricing]);
+
+  // Daily closing data for Fechamento tab
+  const dailyClosingData = useMemo(() => {
+    const selectedDateStr = fechamentoDate;
+    
+    const todaysOrders = closedOrders.filter(order => {
+      const closedDate = order.received_at 
+        ? format(new Date(order.received_at), 'yyyy-MM-dd')
+        : null;
+      return closedDate === selectedDateStr;
+    });
+    
+    const totalCusto = todaysOrders.reduce((sum, o) => 
+      sum + (o.total_received || o.total_estimated), 0
+    );
+    
+    // Calcular margem ponderada dos produtos fechados
+    let totalPesoComMargem = 0;
+    let somaMargemPonderada = 0;
+    
+    todaysOrders.forEach(order => {
+      (order.items || []).forEach(item => {
+        const product = item.product;
+        if (!product) return;
+        const custo = product.custo_compra || 0;
+        const preco = product.price || 0;
+        const pesoLiquido = Math.max(0, (item.estimated_kg || 1) - (item.tare_total || 0));
+        
+        if (custo > 0 && preco > custo) {
+          const margem = (1 - custo / preco) * 100;
+          somaMargemPonderada += margem * pesoLiquido;
+          totalPesoComMargem += pesoLiquido;
+        }
+      });
+    });
+    
+    const margemPonderada = totalPesoComMargem > 0 
+      ? somaMargemPonderada / totalPesoComMargem 
+      : 0;
+    
+    return {
+      orders: todaysOrders,
+      totalCusto,
+      margemPonderada,
+      count: todaysOrders.length,
+    };
+  }, [closedOrders, fechamentoDate]);
 
   const handleGeneratePdf = async (order: PurchaseOrder) => {
     try {
@@ -241,10 +310,14 @@ export default function Relatorios() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-12">
+        <TabsList className="grid w-full grid-cols-5 h-12">
           <TabsTrigger value="compras" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
             <span className="hidden sm:inline">Compras</span>
+          </TabsTrigger>
+          <TabsTrigger value="fechamento" className="flex items-center gap-2">
+            <ClipboardCheck className="h-4 w-4" />
+            <span className="hidden sm:inline">Fechamento</span>
           </TabsTrigger>
           <TabsTrigger value="preparacao" className="flex items-center gap-2">
             <Tag className="h-4 w-4" />
@@ -550,6 +623,84 @@ export default function Relatorios() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ABA FECHAMENTO DO DIA */}
+        <TabsContent value="fechamento" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Selecionar Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Input
+                type="date"
+                value={fechamentoDate}
+                onChange={(e) => setFechamentoDate(e.target.value)}
+                className="h-12"
+              />
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-3 gap-3">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Package className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-2xl font-bold">{dailyClosingData.count}</p>
+                <p className="text-xs text-muted-foreground">Pedidos</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <DollarSign className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <p className="text-2xl font-bold text-primary">
+                  R$ {dailyClosingData.totalCusto.toFixed(0)}
+                </p>
+                <p className="text-xs text-muted-foreground">Custo Total</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Percent className="h-6 w-6 mx-auto mb-2 text-success" />
+                <p className="text-2xl font-bold text-success">
+                  {dailyClosingData.margemPonderada.toFixed(1)}%
+                </p>
+                <p className="text-xs text-muted-foreground">Margem Méd.</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {dailyClosingData.orders.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-12 text-center">
+                <ClipboardCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                <p className="text-muted-foreground">
+                  Nenhum pedido fechado em {format(new Date(fechamentoDate), 'dd/MM/yyyy', { locale: ptBR })}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary">
+                  {dailyClosingData.orders.length} pedido(s) fechado(s)
+                </Badge>
+              </div>
+              
+              <div className="grid gap-4 sm:grid-cols-2">
+                {dailyClosingData.orders.map(order => (
+                  <ClosingReportCard
+                    key={order.id}
+                    order={order}
+                    isHighlighted={order.id === highlightedOrderId}
+                    onExportPdf={() => generateClosingReportPdf(order)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* ABA VASILHAMES RETORNÁVEIS */}

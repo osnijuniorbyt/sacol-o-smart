@@ -359,24 +359,8 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
         
         if (itemError) throw itemError;
 
-        if (item.quantity_received > 0 && item.quality_status !== 'recusado') {
-          const product = order.items?.find(i => i.id === item.id)?.product;
-          const shelfLife = product?.shelf_life || 7;
-          const expiryDate = new Date();
-          expiryDate.setDate(expiryDate.getDate() + shelfLife);
-
-          const { error: batchError } = await supabase
-            .from('stock_batches')
-            .insert({
-              product_id: item.product_id,
-              quantity: item.quantity_received,
-              cost_per_unit: item.unit_cost_actual,
-              expiry_date: expiryDate.toISOString().split('T')[0],
-              received_at: new Date().toISOString(),
-            });
-
-          if (batchError) throw batchError;
-        }
+        // NOTA: stock_batches NÃO são criados aqui
+        // A criação ocorre no ClosingProtocolDialog com custo real por kg
       }
 
       const totalReceived = items.reduce(

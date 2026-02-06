@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +22,7 @@ import { PurchaseOrder, PurchaseOrderItem } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Calendar,
@@ -93,6 +94,7 @@ export function ClosingProtocolDialog({
   onSuccess 
 }: ClosingProtocolDialogProps) {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   
   // Custos adicionais
   const [valorFrete, setValorFrete] = useState<number>(0);
@@ -335,34 +337,63 @@ export function ClosingProtocolDialog({
       const closingOutput = generateClosingOutput();
       console.log('[ClosingProtocol] Output:', closingOutput);
 
-      // Atualiza itens com CUSTO REAL (não estimado!)
+      // === TRANSAÇÃO ATÔMICA ===
+      
+      // 1. Atualizar purchase_order_items com custo real
       for (const item of order.items || []) {
         const pricing = itemsPricing[item.id];
         if (!pricing) continue;
 
-        // Salva o custo real por kg no item (para rastreabilidade)
-        await supabase
+        const { error: itemError } = await supabase
           .from('purchase_order_items')
           .update({
             quantity_received: pricing.qtdVolumes,
-            // IMPORTANTE: Salva custo real calculado, NÃO o estimado!
             unit_cost_actual: pricing.custoRealKg,
           })
           .eq('id', item.id);
-
-        // Atualiza produto: preço de venda E custo de compra real
-        if (item.product_id) {
-          await supabase
-            .from('products')
-            .update({ 
-              price: pricing.precoVenda,
-              custo_compra: pricing.custoRealKg,
-            })
-            .eq('id', item.product_id);
-        }
+        
+        if (itemError) throw itemError;
       }
 
-      // Atualiza pedido como FECHADO
+      // 2. Atualizar produtos (preço de venda + custo de compra)
+      for (const item of order.items || []) {
+        const pricing = itemsPricing[item.id];
+        if (!pricing || !item.product_id) continue;
+
+        const { error: productError } = await supabase
+          .from('products')
+          .update({ 
+            price: pricing.precoVenda,
+            custo_compra: pricing.custoRealKg,
+          })
+          .eq('id', item.product_id);
+        
+        if (productError) throw productError;
+      }
+
+      // 3. CRIAR LOTES DE ESTOQUE com custo real por kg
+      for (const item of order.items || []) {
+        const pricing = itemsPricing[item.id];
+        if (!pricing || pricing.pesoLiquido <= 0) continue;
+        
+        const product = item.product;
+        const shelfLife = product?.shelf_life || 7;
+        const expiryDate = addDays(new Date(), shelfLife).toISOString().split('T')[0];
+
+        const { error: batchError } = await supabase
+          .from('stock_batches')
+          .insert({
+            product_id: item.product_id,
+            quantity: pricing.pesoLiquido,      // Peso líquido real (kg)
+            cost_per_unit: pricing.custoRealKg, // Custo real (R$/kg) com rateio
+            expiry_date: expiryDate,
+            received_at: new Date().toISOString(),
+          });
+
+        if (batchError) throw batchError;
+      }
+
+      // 4. Fechar pedido
       const notesContent = [
         valorFrete > 0 ? `Frete: R$${valorFrete.toFixed(2)}` : null,
         outrosCustos > 0 ? `Outros: R$${outrosCustos.toFixed(2)}${descricaoCustos ? ` (${descricaoCustos})` : ''}` : null,
@@ -381,7 +412,8 @@ export function ClosingProtocolDialog({
 
       if (error) throw error;
 
-      toast.success('Pedido fechado! Preços e custos atualizados.');
+      // 5. Sucesso!
+      toast.success('Pedido fechado! Estoque e preços atualizados.');
       onSuccess();
       onOpenChange(false);
       
@@ -391,6 +423,14 @@ export function ClosingProtocolDialog({
       setDescricaoCustos('');
       setPesoBalancaReal(0);
       setItemsPricing({});
+      
+      // 6. Redirecionar para Relatórios com destaque
+      navigate('/relatorios', { 
+        state: { 
+          highlightOrder: order.id,
+          activeTab: 'fechamento',
+        } 
+      });
       
     } catch (error: any) {
       console.error('Erro ao aprovar:', error);

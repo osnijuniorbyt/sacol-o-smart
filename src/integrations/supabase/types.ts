@@ -967,7 +967,12 @@ export type Database = {
         | "legumes"
         | "temperos"
         | "outros"
-      purchase_order_status: "rascunho" | "enviado" | "recebido" | "cancelado"
+      purchase_order_status:
+        | "rascunho"
+        | "enviado"
+        | "recebido"
+        | "cancelado"
+        | "fechado"
       status_lote_demanda: "ABERTO" | "EM_COMPRA" | "RECEBIDO" | "FECHADO"
       unidade_venda: "PARA_UN" | "PARA_KG"
       unit_type:
@@ -1126,7 +1131,13 @@ export const Constants = {
       person_type: ["funcionario", "cliente", "motorista"],
       prioridade_demanda: ["BAIXA", "NORMAL", "ALTA", "URGENTE"],
       product_category: ["frutas", "verduras", "legumes", "temperos", "outros"],
-      purchase_order_status: ["rascunho", "enviado", "recebido", "cancelado"],
+      purchase_order_status: [
+        "rascunho",
+        "enviado",
+        "recebido",
+        "cancelado",
+        "fechado",
+      ],
       status_lote_demanda: ["ABERTO", "EM_COMPRA", "RECEBIDO", "FECHADO"],
       unidade_venda: ["PARA_UN", "PARA_KG"],
       unit_type: [

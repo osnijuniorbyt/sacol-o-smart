@@ -15,6 +15,7 @@ import Produtos from "@/pages/Produtos";
 import Compras from "@/pages/Compras";
 import Fornecedores from "@/pages/Fornecedores";
 import Protocolo from "@/pages/Protocolo";
+import Relatorios from "@/pages/Relatorios";
 import PendingApproval from "@/pages/PendingApproval";
 import AdminUsers from "@/pages/AdminUsers";
 import ResetPassword from "@/pages/ResetPassword";
@@ -238,6 +239,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <Protocolo />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/relatorios"
+        element={
+          <PrivateRoute>
+            <Relatorios />
           </PrivateRoute>
         }
       />

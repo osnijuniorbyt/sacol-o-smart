@@ -202,7 +202,7 @@ export const LOCATION_TYPE_LABELS: Record<LocationType, string> = {
 };
 
 // Purchase Order Types
-export type PurchaseOrderStatus = 'rascunho' | 'enviado' | 'recebido' | 'cancelado';
+export type PurchaseOrderStatus = 'rascunho' | 'enviado' | 'recebido' | 'cancelado' | 'fechado';
 
 export interface PurchaseOrder {
   id: string;
@@ -243,5 +243,6 @@ export const PURCHASE_ORDER_STATUS_LABELS: Record<PurchaseOrderStatus, string> =
   rascunho: 'Rascunho',
   enviado: 'Enviado',
   recebido: 'Recebido',
-  cancelado: 'Cancelado'
+  cancelado: 'Cancelado',
+  fechado: 'Fechado'
 };

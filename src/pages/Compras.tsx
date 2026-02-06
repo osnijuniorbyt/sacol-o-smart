@@ -29,7 +29,8 @@ export default function Compras() {
     pendingOrders, 
     receivedOrders, 
     isLoading: loadingOrders,
-    deleteOrder 
+    deleteOrder,
+    finalizeOrder
   } = usePurchaseOrders();
   
   const [activeTab, setActiveTab] = useState('novo');
@@ -145,6 +146,8 @@ export default function Compras() {
             orders={receivedOrders}
             type="received"
             onRefresh={handleRefresh}
+            onFinalize={(id) => finalizeOrder.mutate(id)}
+            isFinalizing={finalizeOrder.isPending}
           />
         </TabsContent>
       </Tabs>

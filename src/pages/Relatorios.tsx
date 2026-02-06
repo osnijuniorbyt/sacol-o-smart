@@ -49,11 +49,13 @@ import {
   TrendingUp,
   Percent,
   Trophy,
+  Box,
 } from 'lucide-react';
 import { generateReceivingPdf } from '@/lib/generateReceivingPdf';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ReturnablePackagingReport from '@/components/relatorios/ReturnablePackagingReport';
 
 export default function Relatorios() {
   const { closedOrders, isLoading: loadingOrders } = usePurchaseOrders();
@@ -239,7 +241,7 @@ export default function Relatorios() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-12">
+        <TabsList className="grid w-full grid-cols-4 h-12">
           <TabsTrigger value="compras" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
             <span className="hidden sm:inline">Compras</span>
@@ -251,6 +253,10 @@ export default function Relatorios() {
           <TabsTrigger value="analise" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             <span className="hidden sm:inline">Análise</span>
+          </TabsTrigger>
+          <TabsTrigger value="vasilhames" className="flex items-center gap-2">
+            <Box className="h-4 w-4" />
+            <span className="hidden sm:inline">Vasilhames</span>
           </TabsTrigger>
         </TabsList>
 
@@ -544,6 +550,11 @@ export default function Relatorios() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ABA VASILHAMES RETORNÁVEIS */}
+        <TabsContent value="vasilhames" className="space-y-4 mt-4">
+          <ReturnablePackagingReport />
         </TabsContent>
       </Tabs>
 

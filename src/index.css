@@ -9,29 +9,30 @@
 
 @layer base {
   :root {
-    /* Premium cream/beige background matching logo style */
-    --background: 40 30% 94%;
-    --foreground: 150 35% 12%;
+    /* Premium cream/beige background */
+    --background: 40 30% 96%;
+    --foreground: 153 43% 15%;
 
     /* Card with subtle warm tone */
-    --card: 40 25% 97%;
-    --card-foreground: 150 35% 12%;
+    --card: 40 25% 98%;
+    --card-foreground: 153 43% 15%;
 
-    --popover: 40 25% 97%;
-    --popover-foreground: 150 35% 12%;
+    --popover: 40 25% 98%;
+    --popover-foreground: 153 43% 15%;
 
-    /* Orange/Gold metallic primary - matches logo & sidebar */
-    --primary: 36 90% 50%;
+    /* Primary = #E8920B (laranja/âmbar) */
+    --primary: 38 92% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 40 20% 90%;
-    --secondary-foreground: 150 35% 15%;
+    /* Secondary = verde escuro #1B4332 para bordas e texto */
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 153 43% 15%;
 
     --muted: 40 15% 92%;
-    --muted-foreground: 150 20% 40%;
+    --muted-foreground: 153 30% 35%;
 
-    /* Green accent - matches logo & sidebar */
-    --accent: 150 45% 30%;
+    /* Accent = verde escuro #1B4332 */
+    --accent: 153 43% 15%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 50%;
@@ -39,26 +40,31 @@
 
     --border: 40 25% 82%;
     --input: 40 20% 88%;
-    --ring: 36 90% 50%;
+    --ring: 38 92% 48%;
 
     --radius: 0.75rem;
     
-    /* Brand Palette - Metallic 3D Logo Colors */
-    --brand-orange: 36 90% 50%;
-    --brand-orange-light: 38 85% 60%;
-    --brand-orange-dark: 34 95% 40%;
-    --brand-green: 150 100% 20%;
-    --brand-green-light: 150 60% 35%;
-    --brand-green-dark: 150 100% 12%;
-    --brand-cream: 40 30% 94%;
-    --brand-dark: 220 15% 15%;
+    /* Brand Palette - Cores exatas do menu lateral */
+    /* #E8920B = hsl(38, 92%, 48%) */
+    --brand-orange: 38 92% 48%;
+    --brand-orange-light: 38 85% 58%;
+    --brand-orange-dark: 38 95% 38%;
+    /* #1B4332 = hsl(153, 43%, 15%) */
+    --brand-green: 153 43% 15%;
+    /* #2D6A4F = hsl(153, 41%, 30%) */
+    --brand-green-light: 153 41% 30%;
+    --brand-green-dark: 153 43% 15%;
+    --brand-cream: 40 30% 96%;
 
     /* Semantic Colors - Status */
-    --success: 150 60% 35%;
+    /* Success light = para "Recebido" */
+    --success: 153 41% 30%;
     --success-foreground: 0 0% 100%;
-    --success-muted: 150 40% 92%;
+    --success-muted: 153 30% 92%;
+    /* Success dark = para "Fechado" */
+    --success-dark: 153 43% 15%;
     
-    --warning: 38 92% 50%;
+    --warning: 38 92% 48%;
     --warning-foreground: 0 0% 100%;
     --warning-muted: 38 60% 92%;
     
@@ -70,15 +76,15 @@
     --danger-foreground: 0 0% 100%;
     --danger-muted: 0 50% 94%;
 
-    /* Sidebar - Dark green premium (matches Layout.tsx) */
-    --sidebar-background: 150 50% 14%;
+    /* Sidebar - #1B4332 to #2D6A4F gradient */
+    --sidebar-background: 153 43% 15%;
     --sidebar-foreground: 40 30% 95%;
-    --sidebar-primary: 36 90% 55%;
-    --sidebar-primary-foreground: 150 35% 10%;
-    --sidebar-accent: 150 35% 22%;
+    --sidebar-primary: 38 92% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 153 41% 22%;
     --sidebar-accent-foreground: 40 30% 95%;
-    --sidebar-border: 150 30% 20%;
-    --sidebar-ring: 36 90% 55%;
+    --sidebar-border: 153 35% 20%;
+    --sidebar-ring: 38 92% 48%;
   }
 
   .dark {
@@ -121,6 +127,7 @@
     --success: 150 50% 45%;
     --success-foreground: 0 0% 100%;
     --success-muted: 150 30% 18%;
+    --success-dark: 153 43% 15%;
     
     --warning: 38 80% 55%;
     --warning-foreground: 220 15% 10%;

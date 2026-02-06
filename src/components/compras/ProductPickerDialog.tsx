@@ -16,11 +16,16 @@ import {
 } from '@/components/ui/drawer';
 import { ProductImage } from '@/components/ui/product-image';
 import { Product, CATEGORY_LABELS } from '@/types/database';
-import { Search, Plus, Package, Loader2 } from 'lucide-react';
+import { Search, Plus, Minus, Package, Loader2, Check, ShoppingCart } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+
+interface SelectedProduct {
+  product: Product;
+  quantity: number;
+}
 
 interface ProductPickerDialogProps {
   open: boolean;
@@ -28,6 +33,9 @@ interface ProductPickerDialogProps {
   products: Product[];
   excludeProductIds?: string[];
   onSelectProduct: (product: Product) => void;
+  /** Modo multi-seleção: permite selecionar vários produtos de uma vez */
+  multiSelect?: boolean;
+  onSelectMultiple?: (selections: { product: Product; quantity: number }[]) => void;
 }
 
 export function ProductPickerDialog({
@@ -36,11 +44,14 @@ export function ProductPickerDialog({
   products,
   excludeProductIds = [],
   onSelectProduct,
+  multiSelect = false,
+  onSelectMultiple,
 }: ProductPickerDialogProps) {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [selections, setSelections] = useState<Map<string, SelectedProduct>>(new Map());
 
   // Filtrar produtos não excluídos e pela busca
   const filteredProducts = products.filter(p => {
@@ -59,9 +70,77 @@ export function ProductPickerDialog({
   }, {} as Record<string, Product[]>);
 
   const handleSelect = (product: Product) => {
-    onSelectProduct(product);
-    onOpenChange(false);
+    if (multiSelect) {
+      // No modo multi, adiciona/incrementa a seleção
+      setSelections(prev => {
+        const newMap = new Map(prev);
+        const existing = newMap.get(product.id);
+        if (existing) {
+          newMap.set(product.id, { ...existing, quantity: existing.quantity + 1 });
+        } else {
+          newMap.set(product.id, { product, quantity: 1 });
+        }
+        return newMap;
+      });
+    } else {
+      // Modo single: comportamento original
+      onSelectProduct(product);
+      onOpenChange(false);
+      setSearch('');
+    }
+  };
+
+  const handleDecrement = (productId: string) => {
+    setSelections(prev => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(productId);
+      if (existing && existing.quantity > 1) {
+        newMap.set(productId, { ...existing, quantity: existing.quantity - 1 });
+      } else {
+        newMap.delete(productId);
+      }
+      return newMap;
+    });
+  };
+
+  const handleIncrement = (productId: string) => {
+    setSelections(prev => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(productId);
+      if (existing) {
+        newMap.set(productId, { ...existing, quantity: existing.quantity + 1 });
+      }
+      return newMap;
+    });
+  };
+
+  const handleConfirmMultiple = () => {
+    if (selections.size === 0) return;
+    
+    const selectionsArray = Array.from(selections.values());
+    
+    if (onSelectMultiple) {
+      onSelectMultiple(selectionsArray);
+    } else {
+      // Fallback: adicionar um por um
+      selectionsArray.forEach(({ product, quantity }) => {
+        for (let i = 0; i < quantity; i++) {
+          onSelectProduct(product);
+        }
+      });
+    }
+    
+    setSelections(new Map());
     setSearch('');
+    onOpenChange(false);
+  };
+
+  const handleClose = (isOpen: boolean) => {
+    if (!isOpen) {
+      setSelections(new Map());
+      setSearch('');
+    }
+    onOpenChange(isOpen);
   };
 
   // Criar produto direto ao clicar (sem formulário)
@@ -70,7 +149,6 @@ export function ProductPickerDialog({
 
     setIsCreating(true);
     try {
-      // Buscar maior PLU numérico existente para gerar sequencial
       const { data: allProducts } = await supabase
         .from('products')
         .select('plu')
@@ -97,7 +175,7 @@ export function ProductPickerDialog({
         .insert({
           name: search.trim(),
           plu,
-          category: 'outros', // Padrão Hortii
+          category: 'outros',
           price: 0,
           min_stock: 0,
           is_active: true,
@@ -121,93 +199,174 @@ export function ProductPickerDialog({
     }
   };
 
-  // Mostrar botão criar apenas quando: search > 2 chars E nenhum resultado
   const showCreateButton = search.length > 2 && filteredProducts.length === 0;
+  const totalSelected = Array.from(selections.values()).reduce((sum, s) => sum + s.quantity, 0);
+
+  // Componente de item de produto reutilizável
+  const ProductItem = ({ product }: { product: Product }) => {
+    const selection = selections.get(product.id);
+    const isSelected = !!selection;
+
+    return (
+      <div
+        className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+          isSelected ? 'bg-primary/10 border-primary' : 'hover:bg-accent'
+        }`}
+      >
+        <button
+          onClick={() => handleSelect(product)}
+          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+        >
+          <ProductImage
+            src={product.image_url}
+            alt={product.name}
+            category={product.category}
+            size="sm"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="font-medium truncate">{product.name}</div>
+            <div className="text-xs text-muted-foreground">
+              PLU: {product.plu}
+              {(product as any).ultimo_preco_caixa > 0 && (
+                <span> • Último: R$ {(product as any).ultimo_preco_caixa.toFixed(2)}</span>
+              )}
+            </div>
+          </div>
+        </button>
+
+        {multiSelect ? (
+          isSelected ? (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => handleDecrement(product.id)}
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <span className="font-mono font-bold text-lg w-8 text-center">
+                {selection.quantity}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => handleIncrement(product.id)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-primary"
+              onClick={() => handleSelect(product)}
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          )
+        ) : (
+          <Plus className="h-5 w-5 text-primary" />
+        )}
+      </div>
+    );
+  };
+
+  // Footer com botão de confirmar (multi-select)
+  const MultiSelectFooter = () => (
+    multiSelect && selections.size > 0 ? (
+      <div className="p-4 border-t bg-background">
+        <Button
+          onClick={handleConfirmMultiple}
+          className="w-full h-14 text-base font-semibold"
+        >
+          <Check className="h-5 w-5 mr-2" />
+          Adicionar {totalSelected} {totalSelected === 1 ? 'produto' : 'produtos'}
+        </Button>
+      </div>
+    ) : null
+  );
+
+  // Conteúdo compartilhado entre mobile e desktop
+  const Content = () => (
+    <>
+      {/* Busca */}
+      <div className="p-4 border-b">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar produto por nome ou PLU..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10 h-12 text-base"
+            autoFocus
+          />
+        </div>
+        {multiSelect && (
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            <ShoppingCart className="inline h-3 w-3 mr-1" />
+            Toque para adicionar, ajuste quantidades e confirme
+          </p>
+        )}
+      </div>
+
+      <ScrollArea className="flex-1">
+        {filteredProducts.length === 0 ? (
+          <div className="py-8 text-center px-4">
+            <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-muted-foreground mb-4">
+              {search ? `Nenhum produto encontrado para "${search}"` : 'Nenhum produto encontrado'}
+            </p>
+            {showCreateButton && (
+              <Button
+                onClick={handleQuickCreate}
+                disabled={isCreating}
+                className="h-14 text-base px-6 w-full max-w-xs"
+              >
+                {isCreating ? (
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                ) : (
+                  <Plus className="h-5 w-5 mr-2" />
+                )}
+                {isCreating ? 'Criando...' : `Criar "${search}"`}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="p-4 space-y-4">
+            {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
+              <div key={category}>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                  {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category}
+                </h3>
+                <div className="space-y-2">
+                  {categoryProducts.map(product => (
+                    <ProductItem key={product.id} product={product} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+
+      <MultiSelectFooter />
+    </>
+  );
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[85vh]">
+      <Drawer open={open} onOpenChange={handleClose}>
+        <DrawerContent className="max-h-[85vh] flex flex-col">
           <DrawerHeader className="border-b">
-            <DrawerTitle>Adicionar Produto do Catálogo</DrawerTitle>
+            <DrawerTitle>
+              {multiSelect ? 'Selecionar Produtos' : 'Adicionar Produto do Catálogo'}
+            </DrawerTitle>
           </DrawerHeader>
-          <div className="flex flex-col h-full">
-            {/* Busca */}
-            <div className="p-4 border-b">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar produto por nome ou PLU..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 h-12 text-base"
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            <ScrollArea className="flex-1">
-              {filteredProducts.length === 0 ? (
-                /* ESTADO VAZIO - MOBILE */
-                <div className="py-8 text-center px-4">
-                  <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                  <p className="text-muted-foreground mb-4">
-                    {search ? `Nenhum produto encontrado para "${search}"` : 'Nenhum produto encontrado'}
-                  </p>
-                  {showCreateButton && (
-                    <Button
-                      onClick={handleQuickCreate}
-                      disabled={isCreating}
-                      className="h-14 text-base px-6 w-full max-w-xs"
-                    >
-                      {isCreating ? (
-                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                      ) : (
-                        <Plus className="h-5 w-5 mr-2" />
-                      )}
-                      {isCreating ? 'Criando...' : `Criar "${search}"`}
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                /* LISTA DE PRODUTOS - MOBILE */
-                <div className="p-4 space-y-4">
-                  {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
-                    <div key={category}>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                        {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category}
-                      </h3>
-                      <div className="space-y-2">
-                        {categoryProducts.map(product => (
-                          <button
-                            key={product.id}
-                            onClick={() => handleSelect(product)}
-                            className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors text-left"
-                          >
-                            <ProductImage
-                              src={product.image_url}
-                              alt={product.name}
-                              category={product.category}
-                              size="sm"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{product.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                PLU: {product.plu}
-                                {(product as any).ultimo_preco_caixa > 0 && (
-                                  <span> • Último: R$ {(product as any).ultimo_preco_caixa.toFixed(2)}</span>
-                                )}
-                              </div>
-                            </div>
-                            <Plus className="h-5 w-5 text-primary" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <Content />
           </div>
         </DrawerContent>
       </Drawer>
@@ -216,88 +375,15 @@ export function ProductPickerDialog({
 
   // DESKTOP
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg max-h-[80vh] flex flex-col p-0">
         <DialogHeader className="p-4 border-b">
-          <DialogTitle>Adicionar Produto do Catálogo</DialogTitle>
+          <DialogTitle>
+            {multiSelect ? 'Selecionar Produtos' : 'Adicionar Produto do Catálogo'}
+          </DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col h-full">
-          {/* Busca */}
-          <div className="p-4 border-b">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produto por nome ou PLU..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 h-12 text-base"
-                autoFocus
-              />
-            </div>
-          </div>
-
-          <ScrollArea className="flex-1">
-            {filteredProducts.length === 0 ? (
-              /* ESTADO VAZIO - DESKTOP */
-              <div className="py-8 text-center px-4">
-                <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                <p className="text-muted-foreground mb-4">
-                  {search ? `Nenhum produto encontrado para "${search}"` : 'Nenhum produto encontrado'}
-                </p>
-                {showCreateButton && (
-                  <Button
-                    onClick={handleQuickCreate}
-                    disabled={isCreating}
-                    className="h-14 text-base px-6"
-                  >
-                    {isCreating ? (
-                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                    ) : (
-                      <Plus className="h-5 w-5 mr-2" />
-                    )}
-                    {isCreating ? 'Criando...' : `Criar "${search}"`}
-                  </Button>
-                )}
-              </div>
-            ) : (
-              /* LISTA DE PRODUTOS - DESKTOP */
-              <div className="p-4 space-y-4">
-                {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
-                  <div key={category}>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                      {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category}
-                    </h3>
-                    <div className="space-y-2">
-                      {categoryProducts.map(product => (
-                        <button
-                          key={product.id}
-                          onClick={() => handleSelect(product)}
-                          className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors text-left"
-                        >
-                          <ProductImage
-                            src={product.image_url}
-                            alt={product.name}
-                            category={product.category}
-                            size="sm"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">{product.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              PLU: {product.plu}
-                              {(product as any).ultimo_preco_caixa > 0 && (
-                                <span> • Último: R$ {(product as any).ultimo_preco_caixa.toFixed(2)}</span>
-                              )}
-                            </div>
-                          </div>
-                          <Plus className="h-5 w-5 text-primary" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <Content />
         </div>
       </DialogContent>
     </Dialog>

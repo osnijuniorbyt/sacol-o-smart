@@ -194,6 +194,45 @@ export function NewOrderForm({
     }]);
   }, [items, supplierProducts]);
 
+  // Handler para multi-seleção de produtos
+  const handleAddMultipleProducts = useCallback((selections: { product: Product; quantity: number }[]) => {
+    const newItems: OrderItem[] = [];
+    
+    for (const { product, quantity } of selections) {
+      // Verifica se já existe no pedido
+      const existingIndex = items.findIndex(i => i.product_id === product.id);
+      if (existingIndex >= 0) {
+        // Se já existe, apenas incrementa a quantidade
+        setItems(prev => prev.map((item, idx) => 
+          idx === existingIndex 
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        ));
+      } else {
+        // Busca dados do histórico se existir
+        const historyData = supplierProducts.find(sp => sp.product_id === product.id);
+
+        newItems.push({
+          product_id: product.id,
+          product_name: product.name,
+          product_image: product.image_url,
+          category: product.category,
+          quantity,
+          packaging_id: historyData?.ultimo_vasilhame_id || null,
+          unit_price: historyData?.ultimo_preco || (product as any).ultimo_preco_caixa || null,
+        });
+      }
+    }
+    
+    if (newItems.length > 0) {
+      setItems(prev => [...prev, ...newItems]);
+      toast.success(`${newItems.length} produto(s) adicionado(s)!`);
+    }
+  }, [items, supplierProducts]);
+
+  // Determina se deve usar multi-seleção (quando não há histórico de produtos)
+  const useMultiSelect = productsWithHistory.length === 0 && !loadingHistory;
+
   const handleUpdateItem = useCallback((productId: string, field: keyof OrderItem, value: any) => {
     setItems(prev => prev.map(item =>
       item.product_id === productId ? { ...item, [field]: value } : item
@@ -552,13 +591,15 @@ export function NewOrderForm({
         </div>
       )}
 
-      {/* Dialog para adicionar produtos */}
+      {/* Dialog para adicionar produtos - Multi-select quando sem histórico */}
       <ProductPickerDialog
         open={showProductPicker}
         onOpenChange={setShowProductPicker}
         products={allProducts}
         excludeProductIds={excludeProductIds}
         onSelectProduct={handleAddProductFromCatalog}
+        multiSelect={useMultiSelect}
+        onSelectMultiple={handleAddMultipleProducts}
       />
     </div>
   );

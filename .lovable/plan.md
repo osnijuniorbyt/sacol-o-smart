@@ -1,141 +1,190 @@
 
-# Plano: UI Otimista com Debounce para Botões +/- de Quantidade
+# Plano: Código do Vasilhame como Identificador + Cálculos Derivados
 
-## Problema Atual
-O componente `OrderItemsTable` recebe a lista de itens como prop e chama callbacks do pai (`onAddProduct`, `onDecrement`) ao clicar +/-. Isso causa:
-1. Atualização do estado do pai → re-render de TODOS os itens
-2. Possível lag perceptível no mobile durante a propagação do estado
+## Resumo Executivo
 
-## Solução: Estado Local por Item + Debounce
+Alterar o sistema de compras para usar o **CÓDIGO** do vasilhame como identificador principal (ex: PL-18), com todos os dados complementares (nome, tara, peso líquido) derivados automaticamente para cálculos de quantidade e custo unitário.
 
-Criaremos um componente wrapper `OrderItemRow` que gerencia quantidade localmente para cada item individual.
+## Lógica de Negócio
 
 ```text
-┌─────────────────────────────────────────────────────┐
-│  Clique no +/-                                      │
-│       ↓                                             │
-│  useState local atualiza INSTANTÂNEO (0ms)         │
-│       ↓                                             │
-│  useEffect com debounce (500ms)                    │
-│       ↓                                             │
-│  Callback para pai (sync com useOrderForm)         │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  CADASTRO VASILHAME (fonte de dados)                        │
+│  ─────────────────────────────────────────                  │
+│  codigo: "PL-18"                                            │
+│  nome: "Caixa Plástica 18kg"                                │
+│  material: plastico                                         │
+│  tara: 2.5 kg                                               │
+│  peso_liquido: 18 kg  ← BASE PARA TODOS OS CÁLCULOS         │
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  COMPRAS (NewOrderItemRow)                                  │
+│  ─────────────────────────                                  │
+│  [PL-18 ▼]  Qtd Vol: [5]  R$/Vol: [R$ 108,00]               │
+│                                                             │
+│  ═══════════════════════════════════════════════════════    │
+│  INFO CALCULADA (texto pequeno):                            │
+│  🧊 Plástico | Tara 2.5kg | 5 × 18kg = 90kg                 │
+│  Custo: R$ 6,00/kg (R$ 540 ÷ 90kg)                          │
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  CONFERENTE (ReceivingDialog)                               │
+│  ─────────────────────────────                              │
+│  Vasilhame: [PL-18 ▼]                                       │
+│  Dropdown:                                                  │
+│    ┌──────────────────────────────────┐                     │
+│    │ PL-18                            │                     │
+│    │   Caixa Plástica | 🧊 | 18kg/vol │                     │
+│    ├──────────────────────────────────┤                     │
+│    │ MD-20                            │                     │
+│    │   Caixa Madeira | 🪵 | 20kg/vol  │                     │
+│    └──────────────────────────────────┘                     │
+│                                                             │
+│  ═══════════════════════════════════════════════════════    │
+│  Qtd Total Esperada: 90 kg (5 vol × 18kg)                   │
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  PROTOCOLO (output final)                                   │
+│  ─────────────────────────                                  │
+│  Produto: Alface Crespa                                     │
+│  Vasilhame: PL-18 (Caixa Plástica)                          │
+│  ─────────────────────────────────                          │
+│  5 vol × R$ 108,00 = R$ 540,00                              │
+│  Qtd Total: 90 kg                                           │
+│  CUSTO UNITÁRIO: R$ 6,00/kg  ← OUTPUT PRINCIPAL             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Implementação Técnica
+## Fórmulas de Cálculo
 
-### 1. Criar componente `OrderItemRow`
-Novo componente interno em `OrderItemsTable.tsx`:
+| Campo | Fórmula | Exemplo |
+|-------|---------|---------|
+| Qtd Unitária Total | `qtd_volumes × peso_liquido_vasilhame` | 5 × 18kg = 90kg |
+| Custo Unitário | `(qtd_volumes × preco_volume) ÷ qtd_unitaria_total` | R$ 540 ÷ 90kg = R$ 6,00/kg |
 
-```tsx
-interface OrderItemRowProps {
-  item: PedidoItem;
-  product: Product | undefined;
-  onQuantityChange: (productId: string, newQuantity: number) => void;
-  onUpdatePrice: (productId: string, price: string) => void;
-  onRemoveItem: (productId: string) => void;
-}
+## Mudanças por Componente
 
-function OrderItemRow({ item, product, onQuantityChange, onUpdatePrice, onRemoveItem }: OrderItemRowProps) {
-  // Estado LOCAL para quantidade - atualiza instantaneamente
-  const [localQuantity, setLocalQuantity] = useState(item.quantity);
-  const debounceRef = useRef<NodeJS.Timeout>();
+### 1. NewOrderItemRow.tsx
 
-  // Sincroniza quando prop muda (ex: ao carregar pedido existente)
-  useEffect(() => {
-    setLocalQuantity(item.quantity);
-  }, [item.quantity]);
+**Alterações:**
+- Expandir interface `Packaging` para incluir `codigo`, `material`, `peso_liquido`
+- Select mostra CÓDIGO no trigger (ex: "PL-18")
+- Dropdown mostra: código em destaque + nome + material + peso líquido
+- Adicionar linha de info calculada abaixo dos campos
+- Mostrar custo unitário derivado em texto pequeno
 
-  const handleIncrement = () => {
-    const newQty = localQuantity + 1;
-    setLocalQuantity(newQty); // INSTANTÂNEO
-    
-    // Debounce callback para pai
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      onQuantityChange(item.product_id, newQty);
-    }, 500);
-  };
-
-  const handleDecrement = () => {
-    if (localQuantity <= 1) {
-      onRemoveItem(item.product_id);
-      return;
-    }
-    
-    const newQty = localQuantity - 1;
-    setLocalQuantity(newQty); // INSTANTÂNEO
-    
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      onQuantityChange(item.product_id, newQty);
-    }, 500);
-  };
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => clearTimeout(debounceRef.current);
-  }, []);
-
-  // ... resto do JSX usando localQuantity
-}
+**Antes:**
+```text
+┌──────────────────────┐
+│ Caixa Madeira 20kg   │  ← nome completo
+└──────────────────────┘
 ```
 
-### 2. Atualizar `useOrderForm` hook
-Adicionar função `setQuantity` para atualização direta:
-
-```tsx
-const handleSetQuantity = useCallback((productId: string, newQuantity: number) => {
-  setItems(prev => prev.map(item => 
-    item.product_id === productId
-      ? { 
-          ...item, 
-          quantity: newQuantity, 
-          subtotal: item.unit_cost ? newQuantity * item.unit_cost : null 
-        }
-      : item
-  ));
-}, []);
+**Depois:**
+```text
+┌─────────┐
+│ PL-18   │  ← código compacto
+└─────────┘
+🧊 Plástico | 5×18kg=90kg | R$ 6,00/kg
 ```
 
-### 3. Atualizar `OrderItemsTable`
-- Substituir `onAddProduct`/`onDecrement` por `onQuantityChange`
-- Renderizar `OrderItemRow` em vez de div inline
+### 2. ReceivingDialog.tsx (linhas 585-608)
 
-### 4. Feedback Visual Adicional
-Adicionar indicador de "sincronizando" quando debounce está ativo:
+**Alterações:**
+- Select mostra CÓDIGO no trigger
+- Dropdown expandido com código + nome + tipo + peso líquido
+- Adicionar campo calculado "Qtd Esperada" baseado no peso líquido
 
-```tsx
-const [isPending, setIsPending] = useState(false);
-
-const handleIncrement = () => {
-  setLocalQuantity(prev => prev + 1);
-  setIsPending(true); // Mostra indicador sutil
-  
-  clearTimeout(debounceRef.current);
-  debounceRef.current = setTimeout(() => {
-    onQuantityChange(item.product_id, localQuantity + 1);
-    setIsPending(false);
-  }, 500);
-};
+**Dropdown Proposto:**
+```text
+┌────────────────────────────────────┐
+│ PL-18                              │
+│   🧊 Caixa Plástica | 18kg/vol     │
+├────────────────────────────────────┤
+│ MD-20                              │
+│   🪵 Caixa Madeira | 20kg/vol      │
+└────────────────────────────────────┘
 ```
+
+### 3. Protocolo.tsx
+
+**Alterações:**
+- Exibir código do vasilhame ao lado do nome do produto
+- Mostrar custo unitário calculado como destaque (output principal)
+- Adicionar linha de detalhe: `X vol × Ykg = Zkg total`
 
 ## Arquivos a Modificar
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/compras/OrderItemsTable.tsx` | Criar `OrderItemRow` com estado local + debounce |
-| `src/hooks/useOrderForm.tsx` | Adicionar `handleSetQuantity` |
+| Arquivo | Tipo | Descrição |
+|---------|------|-----------|
+| `src/components/compras/NewOrderItemRow.tsx` | Modificar | Select por código + info calculada |
+| `src/components/compras/ReceivingDialog.tsx` | Modificar | Select por código + qtd esperada |
+| `src/pages/Protocolo.tsx` | Modificar | Custo unitário como output |
 
-## Comportamento Esperado
+## Detalhes Técnicos
 
-1. **Clique em +/-** → Número muda na tela em < 16ms (um frame)
-2. **Cliques rápidos** → Cada clique atualiza visual, mas só o último dispara callback após 500ms
-3. **Remover item** → Se quantidade chegar a 0, remove imediatamente (sem debounce)
-4. **Sync bidirecional** → Se pai atualizar quantidade externamente, local sincroniza
+### Interface Packaging Atualizada (NewOrderItemRow)
 
-## Considerações
+```typescript
+interface Packaging {
+  id: string;
+  codigo: string | null;
+  name: string;
+  tare_weight: number;
+  peso_liquido: number;
+  material: PackagingMaterial;
+}
+```
 
-- O debounce de 500ms é ideal para evitar spam de re-renders no pai
-- Para EditOrderDialog, o mesmo padrão pode ser aplicado posteriormente
-- Não há salvamento no Supabase durante edição - isso só acontece ao "Enviar Pedido"
+### Lógica de Fallback para Código
+
+```typescript
+const displayCode = pkg.codigo || pkg.name.slice(0, 6).toUpperCase();
+```
+
+### Cálculo de Info Derivada
+
+```typescript
+const selectedPkg = packagings.find(p => p.id === displayPackaging);
+const qtdUnitaria = selectedPkg ? item.quantity * selectedPkg.peso_liquido : 0;
+const custoUnitario = qtdUnitaria > 0 ? (item.quantity * (item.unit_price || 0)) / qtdUnitaria : 0;
+```
+
+### Emoji por Material (consistente com Vasilhames.tsx)
+
+```typescript
+const materialIcon = {
+  plastico: '🧊',
+  madeira: '🪵',
+  papelao: '📦',
+  isopor: '❄️',
+};
+```
+
+## Fluxo Visual Completo
+
+```text
+COMPRAS                    CONFERENTE                 PROTOCOLO
+────────                   ──────────                 ─────────
+                           
+[PL-18 ▼]                  [PL-18 ▼]                  PL-18 (Caixa Plástica)
+Qtd: 5                     Esperado: 90kg             
+R$/Vol: 108                Recebido: ___              5 × R$ 108 = R$ 540
+                                                      90kg total
+─────────────              ─────────────              ─────────────
+🧊 Plástico               🧊 Caixa Plástica          CUSTO: R$ 6,00/kg
+5×18kg = 90kg             18kg por volume            
+R$ 6,00/kg                                           
+```
+
+## Validações
+
+- Vasilhames sem código mostrarão nome truncado
+- Campos de cálculo são somente leitura (derivados)
+- Custo unitário exibe "—" se peso líquido for zero

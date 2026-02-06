@@ -60,7 +60,7 @@ export function ProductPickerDialog({
     setSearch('');
   };
 
-  const Content = () => (
+  const contentElement = (
     <div className="flex flex-col h-full">
       {/* Busca */}
       <div className="p-4 border-b">
@@ -70,7 +70,8 @@ export function ProductPickerDialog({
             placeholder="Buscar produto por nome ou PLU..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 h-12"
+            className="pl-10 h-12 text-base"
+            autoFocus
           />
         </div>
       </div>
@@ -130,7 +131,7 @@ export function ProductPickerDialog({
           <DrawerHeader className="border-b">
             <DrawerTitle>Adicionar Produto do Catálogo</DrawerTitle>
           </DrawerHeader>
-          <Content />
+          {contentElement}
         </DrawerContent>
       </Drawer>
     );
@@ -142,7 +143,7 @@ export function ProductPickerDialog({
         <DialogHeader className="p-4 border-b">
           <DialogTitle>Adicionar Produto do Catálogo</DialogTitle>
         </DialogHeader>
-        <Content />
+        {contentElement}
       </DialogContent>
     </Dialog>
   );

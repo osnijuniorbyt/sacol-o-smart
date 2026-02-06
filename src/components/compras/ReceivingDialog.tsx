@@ -34,6 +34,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { NumericInputModal } from '@/components/ui/numeric-input-modal';
 import { 
   CheckCircle2, 
@@ -41,17 +46,20 @@ import {
   XCircle,
   Loader2,
   Package,
-  Scale,
-  DollarSign,
-  Save
+  Save,
+  ChevronDown,
+  ChevronRight,
+  StickyNote,
+  Box
 } from 'lucide-react';
-import { PurchaseOrder } from '@/types/database';
+import { PurchaseOrder, UnitType, UNIT_LABELS } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from '@/components/ui/input';
 import { ReceivingPhotos } from './ReceivingPhotos';
 import { useReceivingDraft, DraftItemData } from '@/hooks/useReceivingDraft';
+import { usePackagings } from '@/hooks/usePackagings';
 
 interface ReceivingPhoto {
   id?: string;
@@ -67,12 +75,14 @@ interface ItemReceiving {
   id: string;
   product_id: string;
   product_name: string;
+  product_unit: UnitType;
   quantity_ordered: number;
   quantity_received: number;
   unit_cost_estimated: number;
   unit_cost_actual: number;
   quality_status: QualityStatus;
   quality_notes: string;
+  packaging_id: string | null;
 }
 
 interface ReceivingDialogProps {
@@ -88,52 +98,28 @@ const QUALITY_OPTIONS = [
   { value: 'recusado', label: 'Recusado', icon: XCircle, color: 'text-red-500' },
 ];
 
-// Separate component for notes input to prevent scroll jumping
-function ItemNotesInput({ 
-  itemId, 
-  initialValue, 
-  onUpdate 
-}: { 
-  itemId: string; 
-  initialValue: string; 
-  onUpdate: (id: string, field: 'quality_notes', value: string) => void;
-}) {
-  const [localValue, setLocalValue] = useState(initialValue);
-  const inputRef = useRef<HTMLInputElement>(null);
-  
-  // Sync with parent only on blur to prevent scroll jumping
-  const handleBlur = () => {
-    if (localValue !== initialValue) {
-      onUpdate(itemId, 'quality_notes', localValue);
-    }
-  };
-
-  // Update local value when initialValue changes (e.g., draft restore)
-  useEffect(() => {
-    setLocalValue(initialValue);
-  }, [initialValue]);
-  
-  return (
-    <Input
-      ref={inputRef}
-      value={localValue}
-      onChange={(e) => setLocalValue(e.target.value)}
-      onBlur={handleBlur}
-      className="h-11 text-base"
-      placeholder="Observação do item..."
-      style={{ fontSize: '16px' }}
-    />
-  );
-}
+// Short unit labels for compact display
+const UNIT_SHORT: Record<UnitType, string> = {
+  kg: 'kg',
+  un: 'un',
+  maco: 'mç',
+  bandeja: 'bd',
+  caixa: 'cx',
+  engradado: 'eng',
+  saco: 'sc',
+  penca: 'pc',
+};
 
 export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: ReceivingDialogProps) {
   const isMobile = useIsMobile();
+  const { activePackagings } = usePackagings();
   const [items, setItems] = useState<ItemReceiving[]>([]);
   const [generalNotes, setGeneralNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [photos, setPhotos] = useState<ReceivingPhoto[]>([]);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   
   // Auto-save hook
   const { hasDraft, lastSaved, loadDraft, saveDraft, clearDraft } = useReceivingDraft(order?.id);
@@ -167,7 +153,8 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
     itemId: string, 
     field: 'quantity_received' | 'unit_cost_actual',
     currentValue: number,
-    productName: string
+    productName: string,
+    productUnit: UnitType
   ) => {
     const isQuantity = field === 'quantity_received';
     setNumericModal({
@@ -176,7 +163,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
       field,
       value: currentValue > 0 ? currentValue.toString().replace('.', ',') : '',
       title: isQuantity ? `Qtd: ${productName}` : `Custo: ${productName}`,
-      unit: isQuantity ? 'kg' : 'R$',
+      unit: isQuantity ? UNIT_SHORT[productUnit] : 'R$',
       maxDecimals: isQuantity ? 1 : 2,
     });
   };
@@ -194,12 +181,14 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
       id: item.id,
       product_id: item.product_id,
       product_name: item.product?.name || 'Produto',
+      product_unit: (item.product?.unit || 'kg') as UnitType,
       quantity_ordered: item.quantity,
       quantity_received: item.quantity,
       unit_cost_estimated: item.unit_cost_estimated || 0,
       unit_cost_actual: item.unit_cost_estimated || 0,
       quality_status: 'ok' as QualityStatus,
       quality_notes: '',
+      packaging_id: item.packaging_id || null,
     }));
   }, [order]);
 
@@ -217,12 +206,14 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
           id: orderItem.id,
           product_id: orderItem.product_id,
           product_name: orderItem.product?.name || 'Produto',
+          product_unit: (orderItem.product?.unit || 'kg') as UnitType,
           quantity_ordered: orderItem.quantity,
           quantity_received: draftItem.quantity_received,
           unit_cost_estimated: orderItem.unit_cost_estimated || 0,
           unit_cost_actual: draftItem.unit_cost_actual,
           quality_status: draftItem.quality_status,
           quality_notes: draftItem.quality_notes,
+          packaging_id: orderItem.packaging_id || null,
         };
       }
       
@@ -231,12 +222,14 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
         id: orderItem.id,
         product_id: orderItem.product_id,
         product_name: orderItem.product?.name || 'Produto',
+        product_unit: (orderItem.product?.unit || 'kg') as UnitType,
         quantity_ordered: orderItem.quantity,
         quantity_received: orderItem.quantity,
         unit_cost_estimated: orderItem.unit_cost_estimated || 0,
         unit_cost_actual: orderItem.unit_cost_estimated || 0,
         quality_status: 'ok' as QualityStatus,
         quality_notes: '',
+        packaging_id: orderItem.packaging_id || null,
       };
     });
     
@@ -460,45 +453,40 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
         className="flex-1 overflow-y-auto overflow-x-hidden px-4 overscroll-contain"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="space-y-3 py-4">
+        <div className="space-y-3 py-3">
           {items.map(item => {
             const qtyDiff = item.quantity_received - item.quantity_ordered;
             const hasDiscrepancy = qtyDiff !== 0 || item.quality_status !== 'ok';
+            const unitLabel = UNIT_SHORT[item.product_unit] || item.product_unit;
             
             return (
               <Card 
                 key={item.id}
                 className={hasDiscrepancy ? 'border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-900/10' : ''}
               >
-                <CardContent className="p-4 space-y-3">
+                <CardContent className="p-3 space-y-2">
                   {/* Product name */}
-                  <div className="font-semibold text-base">
+                  <div className="font-semibold text-sm truncate">
                     {item.product_name}
                   </div>
                   
-                  {/* Quantity row */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Row 1: Pedido, Recebido, Custo */}
+                  <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Scale className="h-3 w-3" />
-                        Pedido
-                      </Label>
-                      <div className="font-mono text-lg mt-1">
-                        {item.quantity_ordered} <span className="text-sm text-muted-foreground">kg</span>
+                      <Label className="text-[10px] text-muted-foreground">Pedido</Label>
+                      <div className="font-mono text-sm">
+                        {item.quantity_ordered} <span className="text-[10px] text-muted-foreground">{unitLabel}</span>
                       </div>
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Scale className="h-3 w-3" />
-                        Recebido
-                      </Label>
+                      <Label className="text-[10px] text-muted-foreground">Recebido</Label>
                       {isMobile ? (
                         <button
                           type="button"
-                          onClick={() => openNumericModal(item.id, 'quantity_received', item.quantity_received, item.product_name)}
-                          className="w-full h-12 mt-1 px-3 rounded-md border border-input bg-background text-left font-mono text-lg hover:bg-accent transition-colors"
+                          onClick={() => openNumericModal(item.id, 'quantity_received', item.quantity_received, item.product_name, item.product_unit)}
+                          className="w-full h-10 px-2 rounded-md border border-input bg-background text-left font-mono text-sm hover:bg-accent transition-colors"
                         >
-                          {item.quantity_received} <span className="text-sm text-muted-foreground">kg</span>
+                          {item.quantity_received} <span className="text-[10px] text-muted-foreground">{unitLabel}</span>
                         </button>
                       ) : (
                         <Input
@@ -512,24 +500,17 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                               updateItem(item.id, 'quantity_received', parseFloat(val) || 0);
                             }
                           }}
-                          className="h-12 text-lg font-mono mt-1"
+                          className="h-10 text-sm font-mono"
                         />
                       )}
                     </div>
-                  </div>
-
-                  {/* Cost and Quality row */}
-                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                        <DollarSign className="h-3 w-3" />
-                        Custo Real
-                      </Label>
+                      <Label className="text-[10px] text-muted-foreground">Custo/{unitLabel}</Label>
                       {isMobile ? (
                         <button
                           type="button"
-                          onClick={() => openNumericModal(item.id, 'unit_cost_actual', item.unit_cost_actual, item.product_name)}
-                          className="w-full h-12 mt-1 px-3 rounded-md border border-input bg-background text-left font-mono text-lg hover:bg-accent transition-colors"
+                          onClick={() => openNumericModal(item.id, 'unit_cost_actual', item.unit_cost_actual, item.product_name, item.product_unit)}
+                          className="w-full h-10 px-2 rounded-md border border-input bg-background text-left font-mono text-sm hover:bg-accent transition-colors"
                         >
                           R$ {item.unit_cost_actual.toFixed(2)}
                         </button>
@@ -545,26 +526,30 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                               updateItem(item.id, 'unit_cost_actual', parseFloat(val) || 0);
                             }
                           }}
-                          className="h-12 text-lg font-mono mt-1"
+                          className="h-10 text-sm font-mono"
                         />
                       )}
                     </div>
+                  </div>
+
+                  {/* Row 2: Qualidade e Vasilhame */}
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Qualidade</Label>
+                      <Label className="text-[10px] text-muted-foreground">Qualidade</Label>
                       <Select
                         value={item.quality_status}
                         onValueChange={(v) => updateItem(item.id, 'quality_status', v as QualityStatus)}
                       >
-                        <SelectTrigger className="h-12 mt-1">
+                        <SelectTrigger className="h-10">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-popover z-50">
                           {QUALITY_OPTIONS.map(opt => {
                             const Icon = opt.icon;
                             return (
-                              <SelectItem key={opt.value} value={opt.value} className="py-3">
+                              <SelectItem key={opt.value} value={opt.value} className="py-2">
                                 <div className="flex items-center gap-2">
-                                  <Icon className={`h-5 w-5 ${opt.color}`} />
+                                  <Icon className={`h-4 w-4 ${opt.color}`} />
                                   {opt.label}
                                 </div>
                               </SelectItem>
@@ -573,14 +558,32 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
                         </SelectContent>
                       </Select>
                     </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <Box className="h-3 w-3" />
+                        Vasilhame
+                      </Label>
+                      <Select
+                        value={item.packaging_id || ''}
+                        onValueChange={(v) => updateItem(item.id, 'packaging_id', v || null)}
+                      >
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          <SelectItem value="">Nenhum</SelectItem>
+                          {activePackagings.map(pkg => (
+                            <SelectItem key={pkg.id} value={pkg.id} className="py-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span>{pkg.name}</span>
+                                <span className="text-xs text-muted-foreground">{pkg.tare_weight}kg</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-
-                  {/* Notes */}
-                  <ItemNotesInput
-                    itemId={item.id}
-                    initialValue={item.quality_notes}
-                    onUpdate={updateItem}
-                  />
                 </CardContent>
               </Card>
             );
@@ -588,30 +591,24 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
         </div>
       </div>
 
-      {/* Totals Summary */}
-      <div className="border-t bg-card p-4 space-y-3 pb-safe">
+      {/* Footer Summary - Compact */}
+      <div className="border-t bg-card px-4 py-2 space-y-2 pb-safe flex-shrink-0">
+        {/* Totals row */}
         <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="p-2 bg-muted rounded-lg">
-            <p className="text-xs text-muted-foreground">Estimado</p>
-            <p className="text-sm font-bold font-mono">
-              R$ {totalEstimated.toFixed(2)}
-            </p>
+          <div className="p-1.5 bg-muted rounded">
+            <p className="text-[10px] text-muted-foreground">Estimado</p>
+            <p className="text-xs font-bold font-mono">R$ {totalEstimated.toFixed(2)}</p>
           </div>
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <p className="text-xs text-muted-foreground">Real</p>
-            <p className="text-sm font-bold font-mono text-primary">
-              R$ {totalActual.toFixed(2)}
-            </p>
+          <div className="p-1.5 bg-primary/10 rounded">
+            <p className="text-[10px] text-muted-foreground">Real</p>
+            <p className="text-xs font-bold font-mono text-primary">R$ {totalActual.toFixed(2)}</p>
           </div>
-          <div className={`p-2 rounded-lg ${
-            difference > 0 
-              ? 'bg-red-100 dark:bg-red-900/20' 
-              : difference < 0 
-                ? 'bg-green-100 dark:bg-green-900/20'
-                : 'bg-muted'
+          <div className={`p-1.5 rounded ${
+            difference > 0 ? 'bg-red-100 dark:bg-red-900/20' 
+              : difference < 0 ? 'bg-green-100 dark:bg-green-900/20' : 'bg-muted'
           }`}>
-            <p className="text-xs text-muted-foreground">Diferença</p>
-            <p className={`text-sm font-bold font-mono ${
+            <p className="text-[10px] text-muted-foreground">Diferença</p>
+            <p className={`text-xs font-bold font-mono ${
               difference > 0 ? 'text-red-600' : difference < 0 ? 'text-green-600' : ''
             }`}>
               {difference > 0 ? '+' : ''}{difference.toFixed(2)}
@@ -619,7 +616,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
           </div>
         </div>
 
-        {/* Receiving Photos */}
+        {/* Photos row - Compact (max 40px) */}
         {order && (
           <ReceivingPhotos
             orderId={order.id}
@@ -629,15 +626,32 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
           />
         )}
 
-        {/* General Notes */}
-        <Textarea
-          value={generalNotes}
-          onChange={(e) => setGeneralNotes(e.target.value)}
-          placeholder="Observações gerais do recebimento..."
-          className="min-h-[60px] text-base"
-          rows={2}
-          style={{ fontSize: '16px' }}
-        />
+        {/* Notes - Collapsible */}
+        <Collapsible open={notesOpen} onOpenChange={setNotesOpen}>
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 w-full py-1.5 px-2 text-sm text-muted-foreground hover:text-foreground rounded border border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 transition-colors"
+            >
+              {notesOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              <StickyNote className="h-4 w-4" />
+              <span>Observações gerais</span>
+              {generalNotes && !notesOpen && (
+                <span className="ml-auto text-xs text-primary">✓</span>
+              )}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <Textarea
+              value={generalNotes}
+              onChange={(e) => setGeneralNotes(e.target.value)}
+              placeholder="Observações gerais do recebimento..."
+              className="min-h-[60px] text-base mt-2"
+              rows={2}
+              style={{ fontSize: '16px' }}
+            />
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </div>
   );

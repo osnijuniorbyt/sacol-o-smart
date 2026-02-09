@@ -9,10 +9,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import { ProductImage } from '@/components/ui/product-image';
+import { NumericKeypad } from '@/components/ui/numeric-keypad';
 import { X, Plus, Minus } from 'lucide-react';
 import { OrderItem } from './NewOrderForm';
 import { PackagingMaterial } from '@/types/database';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Packaging {
   id: string;
@@ -63,6 +71,11 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
     item.unit_price !== null ? String(item.unit_price) : ''
   );
   const [displayPackaging, setDisplayPackaging] = useState(item.packaging_id || '');
+  
+  // Estado para modal do teclado numérico
+  const [showQtyKeypad, setShowQtyKeypad] = useState(false);
+  const [keypadValue, setKeypadValue] = useState('');
+  const isMobile = useIsMobile();
 
   // Timer para debounce de quantidade
   const qtyDebounceRef = useRef<NodeJS.Timeout>();
@@ -169,6 +182,29 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
     }, 300);
   }, [item.product_id, onQuantityChange]);
 
+  // ============ HANDLERS DO KEYPAD NUMÉRICO ============
+  
+  const handleOpenQtyKeypad = useCallback(() => {
+    setKeypadValue(String(displayQty));
+    setShowQtyKeypad(true);
+  }, [displayQty]);
+
+  const handleConfirmQtyKeypad = useCallback(() => {
+    lastEditTimeRef.current = Date.now();
+    
+    const value = parseInt(keypadValue) || 1;
+    quantityRef.current = value;
+    setDisplayQty(value);
+    setShowQtyKeypad(false);
+    
+    // Propaga imediatamente
+    onQuantityChange(item.product_id, value);
+  }, [keypadValue, item.product_id, onQuantityChange]);
+
+  const handleCancelQtyKeypad = useCallback(() => {
+    setShowQtyKeypad(false);
+  }, []);
+
   // ============ HANDLERS DE PREÇO ============
   
   const handlePriceChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,14 +271,25 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
               >
                 <Minus className="h-5 w-5" />
               </Button>
-              <Input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={displayQty}
-                onChange={handleQtyInputChange}
-                className="h-12 text-center font-mono text-xl font-bold flex-1 min-w-[60px] max-w-[80px] bg-muted/50 border-2 border-dashed border-muted-foreground/30 focus:border-primary focus:bg-background rounded-lg"
-              />
+              {/* Área clicável para abrir keypad no mobile */}
+              {isMobile ? (
+                <button
+                  type="button"
+                  onClick={handleOpenQtyKeypad}
+                  className="h-12 flex-1 min-w-[60px] max-w-[80px] bg-muted/50 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center active:scale-95 active:bg-primary/10 active:border-primary transition-all"
+                >
+                  <span className="font-mono text-xl font-bold">{displayQty}</span>
+                </button>
+              ) : (
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={displayQty}
+                  onChange={handleQtyInputChange}
+                  className="h-12 text-center font-mono text-xl font-bold flex-1 min-w-[60px] max-w-[80px] bg-muted/50 border-2 border-dashed border-muted-foreground/30 focus:border-primary focus:bg-background rounded-lg"
+                />
+              )}
               <Button
                 variant="outline"
                 size="icon"
@@ -321,6 +368,31 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
           )}
         </div>
       </div>
+
+      {/* Drawer com Teclado Numérico para Mobile */}
+      <Drawer open={showQtyKeypad} onOpenChange={setShowQtyKeypad}>
+        <DrawerContent className="px-4 pb-safe">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle className="text-center">
+              Quantidade: {item.product_name}
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="pb-6">
+            <NumericKeypad
+              value={keypadValue}
+              onChange={setKeypadValue}
+              onConfirm={handleConfirmQtyKeypad}
+              onCancel={handleCancelQtyKeypad}
+              allowDecimal={false}
+              minValue={1}
+              maxValue={999}
+              label="Volumes"
+              unit="vol."
+              placeholder="0"
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 });

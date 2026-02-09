@@ -133,9 +133,17 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
     };
   }, []);
 
+  // ============ VIBRAÇÃO HÁPTICA ============
+  const vibrate = useCallback((pattern: number | number[] = 10) => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(pattern);
+    }
+  }, []);
+
   // ============ HANDLERS DE QUANTIDADE ============
   
   const handleIncrement = useCallback(() => {
+    vibrate(15); // Vibração curta
     lastEditTimeRef.current = Date.now();
     
     const newQty = quantityRef.current + 1;
@@ -147,14 +155,16 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
     qtyDebounceRef.current = setTimeout(() => {
       onQuantityChange(item.product_id, quantityRef.current);
     }, 300);
-  }, [item.product_id, onQuantityChange]);
+  }, [item.product_id, onQuantityChange, vibrate]);
 
   const handleDecrement = useCallback(() => {
     if (quantityRef.current <= 1) {
+      vibrate([30, 50, 30]); // Vibração dupla de alerta antes de remover
       onRemove(item.product_id);
       return;
     }
     
+    vibrate(15); // Vibração curta
     lastEditTimeRef.current = Date.now();
     
     const newQty = quantityRef.current - 1;
@@ -166,7 +176,7 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
     qtyDebounceRef.current = setTimeout(() => {
       onQuantityChange(item.product_id, quantityRef.current);
     }, 300);
-  }, [item.product_id, onQuantityChange, onRemove]);
+  }, [item.product_id, onQuantityChange, onRemove, vibrate]);
 
   const handleQtyInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     lastEditTimeRef.current = Date.now();

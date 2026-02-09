@@ -223,38 +223,40 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
             </Button>
           </div>
           
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            {/* Quantidade com botões +/- */}
-            <div>
-              <Label className="text-xs text-muted-foreground">Qtd Vol.</Label>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 flex-shrink-0 active:scale-95 transition-transform"
-                  onClick={handleDecrement}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={displayQty}
-                  onChange={handleQtyInputChange}
-                  className="h-10 text-center font-mono w-14 px-1 text-base"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 flex-shrink-0 active:scale-95 transition-transform"
-                  onClick={handleIncrement}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
+          {/* Quantidade com botões +/- - FULL WIDTH */}
+          <div className="mt-2">
+            <Label className="text-xs text-muted-foreground">Quantidade</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-12 w-12 flex-shrink-0 active:scale-95 transition-transform"
+                onClick={handleDecrement}
+              >
+                <Minus className="h-5 w-5" />
+              </Button>
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={displayQty}
+                onChange={handleQtyInputChange}
+                className="h-12 text-center font-mono text-lg font-bold flex-1 min-w-[60px] max-w-[80px]"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-12 w-12 flex-shrink-0 active:scale-95 transition-transform"
+                onClick={handleIncrement}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+              <span className="text-sm text-muted-foreground ml-2">vol.</span>
             </div>
-            
+          </div>
+
+          {/* Vasilhame e Preço em 2 colunas */}
+          <div className="grid grid-cols-2 gap-2 mt-2">
             {/* Vasilhame - Mostra CÓDIGO */}
             <div>
               <Label className="text-xs text-muted-foreground">Vasilhame</Label>
@@ -262,7 +264,7 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
                 value={displayPackaging}
                 onValueChange={handlePackagingChange}
               >
-                <SelectTrigger className="h-10 text-xs font-mono font-medium">
+                <SelectTrigger className="h-12 text-xs font-mono font-medium">
                   <SelectValue placeholder="Selecione">
                     {displayPackaging && packagings.find(p => p.id === displayPackaging) && (
                       <span>{getDisplayCode(packagings.find(p => p.id === displayPackaging)!)}</span>
@@ -295,7 +297,7 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
                 pattern="[0-9]*[.,]?[0-9]*"
                 value={displayPrice}
                 onChange={handlePriceChange}
-                className="h-10 text-right font-mono text-base"
+                className="h-12 text-right font-mono text-lg"
                 placeholder="0,00"
               />
             </div>

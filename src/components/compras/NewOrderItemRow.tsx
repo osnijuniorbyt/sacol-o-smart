@@ -241,7 +241,7 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
                 pattern="[0-9]*"
                 value={displayQty}
                 onChange={handleQtyInputChange}
-                className="h-12 text-center font-mono text-lg font-bold flex-1 min-w-[60px] max-w-[80px]"
+                className="h-12 text-center font-mono text-xl font-bold flex-1 min-w-[60px] max-w-[80px] bg-muted/50 border-2 border-dashed border-muted-foreground/30 focus:border-primary focus:bg-background rounded-lg"
               />
               <Button
                 variant="outline"

@@ -230,7 +230,7 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-12 w-12 flex-shrink-0 active:scale-95 transition-transform"
+                className="h-12 w-12 flex-shrink-0 active:scale-90 active:bg-destructive/20 active:border-destructive transition-all duration-150 hover:bg-destructive/10 hover:border-destructive/50"
                 onClick={handleDecrement}
               >
                 <Minus className="h-5 w-5" />
@@ -246,7 +246,7 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-12 w-12 flex-shrink-0 active:scale-95 transition-transform"
+                className="h-12 w-12 flex-shrink-0 active:scale-90 active:bg-primary/20 active:border-primary transition-all duration-150 hover:bg-primary/10 hover:border-primary/50"
                 onClick={handleIncrement}
               >
                 <Plus className="h-5 w-5" />

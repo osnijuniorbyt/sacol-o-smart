@@ -74,7 +74,9 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
   
   // Estado para modal do teclado numérico
   const [showQtyKeypad, setShowQtyKeypad] = useState(false);
+  const [showPriceKeypad, setShowPriceKeypad] = useState(false);
   const [keypadValue, setKeypadValue] = useState('');
+  const [priceKeypadValue, setPriceKeypadValue] = useState('');
   const isMobile = useIsMobile();
 
   // Timer para debounce de quantidade
@@ -221,7 +223,7 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
     lastEditTimeRef.current = Date.now();
     
     const value = e.target.value;
-    const numValue = value ? parseFloat(value) : null;
+    const numValue = value ? parseFloat(value.replace(',', '.')) : null;
     
     priceRef.current = numValue;
     setDisplayPrice(value);
@@ -229,6 +231,30 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
     // Propaga imediatamente (sem debounce)
     onFieldChange(item.product_id, 'unit_price', numValue);
   }, [item.product_id, onFieldChange]);
+
+  // ============ HANDLERS DO KEYPAD DE PREÇO ============
+  
+  const handleOpenPriceKeypad = useCallback(() => {
+    setPriceKeypadValue(displayPrice);
+    setShowPriceKeypad(true);
+  }, [displayPrice]);
+
+  const handleConfirmPriceKeypad = useCallback(() => {
+    vibrate(15);
+    lastEditTimeRef.current = Date.now();
+    
+    const numValue = priceKeypadValue ? parseFloat(priceKeypadValue.replace(',', '.')) : null;
+    priceRef.current = numValue;
+    setDisplayPrice(priceKeypadValue);
+    setShowPriceKeypad(false);
+    
+    // Propaga imediatamente
+    onFieldChange(item.product_id, 'unit_price', numValue);
+  }, [priceKeypadValue, item.product_id, onFieldChange, vibrate]);
+
+  const handleCancelPriceKeypad = useCallback(() => {
+    setShowPriceKeypad(false);
+  }, []);
 
   // ============ HANDLERS DE VASILHAME ============
   
@@ -348,15 +374,27 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
             {/* Preço */}
             <div>
               <Label className="text-xs text-muted-foreground">R$/Vol.</Label>
-              <Input
-                type="text"
-                inputMode="decimal"
-                pattern="[0-9]*[.,]?[0-9]*"
-                value={displayPrice}
-                onChange={handlePriceChange}
-                className="h-12 text-right font-mono text-lg"
-                placeholder="0,00"
-              />
+              {isMobile ? (
+                <button
+                  type="button"
+                  onClick={handleOpenPriceKeypad}
+                  className="w-full h-12 bg-muted/50 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-end px-3 active:scale-95 active:bg-primary/10 active:border-primary transition-all"
+                >
+                  <span className="font-mono text-lg font-bold">
+                    {displayPrice || <span className="text-muted-foreground/50">0,00</span>}
+                  </span>
+                </button>
+              ) : (
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.,]?[0-9]*"
+                  value={displayPrice}
+                  onChange={handlePriceChange}
+                  className="h-12 text-right font-mono text-lg"
+                  placeholder="0,00"
+                />
+              )}
             </div>
           </div>
 
@@ -379,7 +417,7 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
         </div>
       </div>
 
-      {/* Drawer com Teclado Numérico para Mobile */}
+      {/* Drawer com Teclado Numérico para Quantidade */}
       <Drawer open={showQtyKeypad} onOpenChange={setShowQtyKeypad}>
         <DrawerContent className="px-4 pb-safe">
           <DrawerHeader className="pb-2">
@@ -399,6 +437,32 @@ export const NewOrderItemRow = memo(function NewOrderItemRow({
               label="Volumes"
               unit="vol."
               placeholder="0"
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Drawer com Teclado Numérico para Preço */}
+      <Drawer open={showPriceKeypad} onOpenChange={setShowPriceKeypad}>
+        <DrawerContent className="px-4 pb-safe">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle className="text-center">
+              Preço/Vol: {item.product_name}
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="pb-6">
+            <NumericKeypad
+              value={priceKeypadValue}
+              onChange={setPriceKeypadValue}
+              onConfirm={handleConfirmPriceKeypad}
+              onCancel={handleCancelPriceKeypad}
+              allowDecimal={true}
+              maxDecimals={2}
+              minValue={0}
+              maxValue={99999}
+              label="Valor por Volume"
+              unit="R$"
+              placeholder="0,00"
             />
           </div>
         </DrawerContent>

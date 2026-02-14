@@ -1,108 +1,74 @@
 
-# Correção: ProductPickerDialog abre vazio no iPhone Safari
+# Auditoria Completa - Fase 1: Correcao de 3 Bugs Criticos
 
-## Problema Identificado
+## Bug 1: Icone "+" nao funciona no seletor de produtos (single-select)
 
-O seletor de produtos no módulo Compras **abre vazio** no iPhone Safari, mas quando o usuário toca novamente no campo de busca, os produtos aparecem corretamente. Este é um bug relacionado à combinação de:
+**Arquivo:** `src/components/compras/ProductPickerDialog.tsx` (linha 108)
 
-1. **ScrollArea do Radix UI com Drawer (vaul)** - O Radix ScrollArea não recalcula suas dimensões corretamente quando o Drawer ainda está animando a abertura no iOS Safari
-2. **Renderização inicial atrasada** - Os produtos são filtrados e agrupados, mas o ScrollArea não "sabe" que tem conteúdo porque suas dimensões são calculadas antes da animação terminar
-3. **CSS flexbox + overflow** - O container `flex-1 overflow-hidden` dentro do DrawerContent não permite que o ScrollArea detecte sua altura real até que o layout seja recalculado
+**Problema:** No modo single-select (quando o usuario adiciona mais um produto a um pedido existente), o icone `<Plus>` do lado direito de cada produto e um SVG estatico sem handler de clique. O usuario toca no "+" esperando adicionar o produto, mas nada acontece. So funciona se tocar na area esquerda (nome/imagem).
 
-## Por que funciona ao clicar no input?
-
-Ao focar o input, o iOS Safari recalcula o layout para acomodar o teclado virtual, o que força um re-layout do ScrollArea e revela os produtos.
-
----
-
-## Solução Proposta
-
-### 1. Forçar re-layout após abertura do Drawer
-
-Usar um estado `isReady` com delay para garantir que o conteúdo só renderize após a animação do Drawer terminar:
+**Correcao:** Envolver o icone Plus em um `<button>` com o mesmo handler `onSelect`:
 
 ```tsx
-const [isReady, setIsReady] = useState(false);
-
-useEffect(() => {
-  if (open) {
-    // Aguarda animação do Drawer (300ms) + margem
-    const timer = setTimeout(() => setIsReady(true), 50);
-    return () => clearTimeout(timer);
-  } else {
-    setIsReady(false);
-  }
-}, [open]);
-```
-
-### 2. Substituir ScrollArea por div nativa com overflow-y-auto
-
-O Radix ScrollArea tem problemas conhecidos no iOS Safari com layouts dinâmicos. Usar um `div` nativo é mais confiável:
-
-```tsx
-// ANTES
-<ScrollArea className="flex-1">
-  {content}
-</ScrollArea>
+// ANTES (linha 108)
+<Plus className="h-5 w-5 text-primary" />
 
 // DEPOIS
-<div className="flex-1 overflow-y-auto overscroll-contain">
-  {content}
-</div>
+<button onClick={() => onSelect(product)} className="p-2 -m-2 active:scale-90 transition-transform">
+  <Plus className="h-5 w-5 text-primary" />
+</button>
 ```
 
-### 3. Garantir altura mínima inicial
+---
 
-Adicionar uma altura mínima para evitar o colapso do container antes dos produtos serem renderizados:
+## Bug 2: Badge sem forwardRef causa erros no Dashboard
+
+**Arquivo:** `src/components/ui/badge.tsx`
+
+**Problema:** O componente Badge e uma funcao simples que nao usa `React.forwardRef`. Quando usado dentro de componentes Radix que passam refs (como `TooltipTrigger asChild`), gera warnings no console. No Dashboard, esses warnings aparecem repetidamente e podem causar comportamento inesperado nos tooltips (especialmente em mobile onde o touch depende da ref).
+
+**Correcao:** Converter Badge para usar `React.forwardRef`:
 
 ```tsx
-<div className="flex-1 overflow-y-auto min-h-[200px]">
-```
-
-### 4. Melhorar experiência de busca vazia
-
-Quando o campo está vazio, mostrar todos os produtos (comportamento atual), mas garantir um estado de carregamento visual enquanto `isReady` é false.
-
----
-
-## Arquivos a Modificar
-
-| Arquivo | Modificação |
-|---------|-------------|
-| `src/components/compras/ProductPickerDialog.tsx` | Substituir ScrollArea por div nativa, adicionar estado `isReady`, garantir min-height |
-
----
-
-## Detalhes Técnicos
-
-### Mudanças no ProductPickerDialog.tsx
-
-1. **Remover import** de `ScrollArea` do Radix
-2. **Adicionar estado** `isReady` sincronizado com prop `open`
-3. **Substituir** `<ScrollArea>` por `<div className="flex-1 overflow-y-auto overscroll-contain -webkit-overflow-scrolling-touch">`
-4. **Adicionar** indicador de carregamento enquanto `!isReady`
-5. **Garantir** que `filteredProducts` renderize mesmo sem texto de busca (já funciona assim)
-
-### CSS iOS-specific
-
-Adicionar propriedades para scroll suave no iOS:
-```tsx
-className="flex-1 overflow-y-auto overscroll-contain"
-style={{ WebkitOverflowScrolling: 'touch' }}
+const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
+  ({ className, variant, ...props }, ref) => {
+    return <div ref={ref} className={cn(badgeVariants({ variant }), className)} {...props} />;
+  }
+);
+Badge.displayName = "Badge";
 ```
 
 ---
 
-## Resultado Esperado
+## Bug 3: Componentes inline no ReceivingDialog causam remontagem no mobile
 
-- Ao abrir o seletor de produtos, ele mostra um skeleton/spinner breve (50ms) e depois renderiza todos os produtos imediatamente
-- Busca continua funcionando normalmente
-- Não há mais tela vazia ao abrir
+**Arquivo:** `src/components/compras/ReceivingDialog.tsx`
+
+**Problema:** Tres componentes sao definidos como funcoes inline dentro do corpo do componente principal:
+- `ReceivingContent` (definido como funcao dentro do render)
+- `FooterButtons` (definido como funcao inline)
+- `DraftRecoveryDialog` (definido como funcao inline)
+
+Cada vez que qualquer estado muda (ex: digitar no campo de quantidade recebida), o React cria novas referencias para esses componentes, desmontando e remontando a arvore inteira. Isso causa:
+- Teclado virtual fecha sozinho durante digitacao no mobile
+- Perda de foco nos inputs
+- Animacoes reiniciam a cada keystroke
+
+**Correcao:** Converter os 3 componentes inline em JSX direto (inline no return) ou em variaveis JSX estativas (nao funcoes). O padrao ja documentado na memoria do projeto e "inlinar o JSX diretamente" em vez de criar sub-funcoes.
 
 ---
 
-## Notas de Segurança
+## Resumo das Mudancas
 
-- Nenhuma mudança em lógica de negócio
-- Mantém toda funcionalidade existente de multi-seleção, exclusão de IDs, etc.
-- Apenas correção de renderização/CSS
+| Arquivo | O que muda |
+|---------|-----------|
+| `src/components/compras/ProductPickerDialog.tsx` | Tornar icone "+" clicavel em single-select |
+| `src/components/ui/badge.tsx` | Adicionar React.forwardRef ao Badge |
+| `src/components/compras/ReceivingDialog.tsx` | Substituir 3 componentes inline por JSX direto |
+
+## Impacto
+
+- Nenhuma mudanca em logica de negocios ou banco de dados
+- Nenhuma mudanca em RLS ou seguranca
+- Todas as funcionalidades existentes sao preservadas
+- Correcoes focadas em renderizacao e interatividade mobile

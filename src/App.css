@@ -40,3 +40,30 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Print styles */
+@media print {
+  /* Hide everything except the print view */
+  body * {
+    visibility: hidden;
+  }
+  .print-order-view,
+  .print-order-view * {
+    visibility: visible !important;
+    display: block;
+  }
+  .print-order-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+  .print-order-view table,
+  .print-order-view table * {
+    display: revert;
+  }
+  /* Ensure hidden class is overridden for print */
+  .print\\:block {
+    display: block !important;
+  }
+}

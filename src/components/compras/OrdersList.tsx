@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,15 +15,19 @@ import {
   Pencil,
   FileText,
   DollarSign,
-  ChevronRight
+  ChevronRight,
+  MessageCircle,
+  Printer
 } from 'lucide-react';
 import { PurchaseOrder, PURCHASE_ORDER_STATUS_LABELS } from '@/types/database';
 import { ReceivingDialog } from './ReceivingDialog';
 import { EditOrderDialog } from './EditOrderDialog';
 import { PhotoGallery } from './PhotoGallery';
+import { OrderPrintView } from './OrderPrintView';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface OrdersListProps {
   orders: PurchaseOrder[];
@@ -38,6 +42,53 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
   const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
   const [clickedButton, setClickedButton] = useState<string | null>(null);
+  const [printingOrder, setPrintingOrder] = useState<PurchaseOrder | null>(null);
+
+  const generateWhatsAppText = (order: PurchaseOrder): string => {
+    const date = format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR });
+    const lines: string[] = [
+      `🛒 *PEDIDO DE COMPRA*`,
+      `📅 ${date}`,
+      `🏢 *${order.supplier?.name || 'Fornecedor'}*`,
+      ``,
+      `📦 *Itens:*`,
+    ];
+    
+    order.items?.forEach((item, i) => {
+      const cost = item.unit_cost_estimated || 0;
+      lines.push(`${i + 1}. ${item.product?.name || 'Produto'} — ${item.quantity} ${item.unit} × R$ ${cost.toFixed(2)}`);
+    });
+    
+    lines.push(``);
+    lines.push(`💰 *Total Estimado: R$ ${order.total_estimated.toFixed(2)}*`);
+    
+    if (order.notes) {
+      lines.push(``);
+      lines.push(`📝 Obs: ${order.notes}`);
+    }
+    
+    return lines.join('\n');
+  };
+
+  const handleWhatsApp = (order: PurchaseOrder) => {
+    const text = generateWhatsAppText(order);
+    const encoded = encodeURIComponent(text);
+    const phone = order.supplier?.phone?.replace(/\D/g, '') || '';
+    const url = phone 
+      ? `https://wa.me/55${phone}?text=${encoded}`
+      : `https://wa.me/?text=${encoded}`;
+    window.open(url, '_blank');
+    toast.success('Abrindo WhatsApp...');
+  };
+
+  const handlePrint = (order: PurchaseOrder) => {
+    setPrintingOrder(order);
+    // Wait for render then print
+    setTimeout(() => {
+      window.print();
+      setPrintingOrder(null);
+    }, 100);
+  };
 
   const statusConfig: Record<string, { bg: string; text: string; border: string }> = {
     rascunho: { 
@@ -168,6 +219,32 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
 
               {type === 'pending' && (
                 <div className="space-y-3">
+                  {/* WhatsApp & Print */}
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "flex-1 h-12 text-sm font-medium border-green-300 text-green-700 hover:bg-green-50 transition-all duration-150",
+                        clickedButton === `whatsapp-${order.id}` && "scale-95 opacity-80"
+                      )}
+                      onClick={() => handleButtonClick(`whatsapp-${order.id}`, () => handleWhatsApp(order))}
+                    >
+                      <MessageCircle className="mr-2 h-5 w-5" />
+                      WhatsApp
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "flex-1 h-12 text-sm font-medium transition-all duration-150",
+                        clickedButton === `print-${order.id}` && "scale-95 opacity-80"
+                      )}
+                      onClick={() => handleButtonClick(`print-${order.id}`, () => handlePrint(order))}
+                    >
+                      <Printer className="mr-2 h-5 w-5" />
+                      Imprimir
+                    </Button>
+                  </div>
+
                   {/* Primary Actions - Large Touch Targets */}
                   <Button 
                     className={cn(
@@ -291,6 +368,9 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
         onOpenChange={(open) => !open && setEditingOrder(null)}
         onSuccess={onRefresh}
       />
+
+      {/* Hidden print view */}
+      {printingOrder && <OrderPrintView order={printingOrder} />}
     </>
   );
 }

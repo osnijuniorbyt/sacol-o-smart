@@ -937,6 +937,7 @@ export type Database = {
       }
       is_manager: { Args: { _user_id: string }; Returns: boolean }
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
+      process_sale: { Args: { p_items: Json }; Returns: string }
       update_supplier_product_packaging: {
         Args: {
           p_packaging_id: string

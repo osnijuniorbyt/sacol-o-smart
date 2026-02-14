@@ -83,21 +83,24 @@ export default function Dashboard() {
       ? getTodayRealProfit() - todayBreakageLoss
       : todayRevenue - (todayRevenue * 0.6) - todayBreakageLoss;
 
-    // MARGEM REAL: calcula a partir de custo_compra dos produtos (R$/kg vs R$/kg)
-    const productsWithCost = products.filter(p => p.custo_compra && p.custo_compra > 0 && p.price > 0);
-    
+    // MARGEM REAL: calcula a partir das vendas reais do dia (FIFO)
+    // Dados históricos podem ter cost_per_unit incorreto (por volume em vez de por kg)
+    // devido ao bug corrigido no trigger create_stock_batch_on_receiving.
+    // Margens fora do range -100% a +100% indicam dados legados com custo incorreto.
     let realMargin = 0;
-    if (productsWithCost.length > 0) {
-      const marginSum = productsWithCost.reduce((sum, p) => {
-        const margin = (Number(p.price) - Number(p.custo_compra!)) / Number(p.price);
-        return sum + margin;
-      }, 0);
-      realMargin = marginSum / productsWithCost.length;
-    } else if (hasRealCostData && todayRevenue > 0) {
-      // Calcula margem baseado nas vendas reais do dia
-      realMargin = (todayRevenue - realCost) / todayRevenue;
+    let marginIsReliable = false;
+    if (hasRealCostData && todayRevenue > 0) {
+      const rawMargin = (todayRevenue - realCost) / todayRevenue;
+      // Se a margem é plausível (entre -100% e +100%), usa o valor real
+      if (rawMargin >= -1 && rawMargin <= 1) {
+        realMargin = rawMargin;
+        marginIsReliable = true;
+      } else {
+        // Dados de custo legados com unidade incorreta - fallback
+        realMargin = 0.60;
+      }
     } else {
-      // Fallback: margem alvo de 60%
+      // Sem vendas hoje - fallback para margem alvo
       realMargin = 0.60;
     }
 
@@ -108,7 +111,8 @@ export default function Dashboard() {
       expiringCount: expiringIn3Days.length,
       todayProfit,
       realMargin,
-      hasRealCostData
+      hasRealCostData,
+      marginIsReliable
     };
   }, [sales, batches, breakages, products, getExpiringBatches, getTodayTotal, getTodayRealProfit, getTodayRealCost]);
 
@@ -238,10 +242,15 @@ export default function Dashboard() {
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 p-4">
               <ShadcnTooltip>
                 <TooltipTrigger asChild>
-                  <CardTitle className="text-xs font-medium text-muted-foreground cursor-help">Margem Real</CardTitle>
+                  <CardTitle className="text-xs font-medium text-muted-foreground cursor-help">
+                    Margem Real {!metrics.marginIsReliable ? '~' : ''}
+                  </CardTitle>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Percentual de lucro sobre o preço de venda</p>
+                  <p>{metrics.marginIsReliable 
+                    ? 'Margem real calculada com vendas FIFO do dia'
+                    : 'Margem alvo (sem vendas com custo rastreável hoje)'
+                  }</p>
                 </TooltipContent>
               </ShadcnTooltip>
               <Target className="h-4 w-4 text-muted-foreground" />
@@ -251,7 +260,7 @@ export default function Dashboard() {
                 {formatPercent(metrics.realMargin)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Preço - Custo
+                {metrics.marginIsReliable ? 'Receita - Custo Real' : 'Meta de margem'}
               </p>
             </CardContent>
           </Card>

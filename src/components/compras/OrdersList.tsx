@@ -70,15 +70,29 @@ export function OrdersList({ orders, type, onDelete, onRefresh, isDeleting }: Or
     return lines.join('\n');
   };
 
-  const handleWhatsApp = (order: PurchaseOrder) => {
+  const handleWhatsApp = async (order: PurchaseOrder) => {
     const text = generateWhatsAppText(order);
     const encoded = encodeURIComponent(text);
     const phone = order.supplier?.phone?.replace(/\D/g, '') || '';
-    const url = phone 
-      ? `https://wa.me/55${phone}?text=${encoded}`
+    const phoneWithCountry = phone.startsWith('55') ? phone : `55${phone}`;
+    const fullUrl = phone 
+      ? `https://wa.me/${phoneWithCountry}?text=${encoded}`
       : `https://wa.me/?text=${encoded}`;
-    window.open(url, '_blank');
-    toast.success('Abrindo WhatsApp...');
+    
+    if (fullUrl.length > 1800) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const baseUrl = phone ? `https://wa.me/${phoneWithCountry}` : `https://wa.me/`;
+        window.open(baseUrl, '_blank');
+        toast.success('Texto copiado! Cole no WhatsApp.');
+      } catch {
+        window.open(fullUrl, '_blank');
+        toast.success('Abrindo WhatsApp...');
+      }
+    } else {
+      window.open(fullUrl, '_blank');
+      toast.success('Abrindo WhatsApp...');
+    }
   };
 
   const handlePrint = (order: PurchaseOrder) => {

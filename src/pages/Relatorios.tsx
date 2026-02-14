@@ -264,28 +264,40 @@ export default function Relatorios() {
     }
   };
 
-  const handleShareWhatsApp = (order: PurchaseOrder) => {
+  const handleShareWhatsApp = async (order: PurchaseOrder) => {
     const supplierName = order.supplier?.name || 'Fornecedor';
     const phone = order.supplier?.phone?.replace(/\D/g, '');
+    const phoneWithCountry = phone?.startsWith('55') ? phone : `55${phone}`;
     const total = (order.total_received || order.total_estimated).toFixed(2);
     const itemsList = order.items?.map((item, idx) => 
       `${idx + 1}. ${item.product?.name || 'Produto'}: ${item.quantity_received || item.quantity} ${item.unit}`
     ).join('\n') || '';
     
-    const message = encodeURIComponent(
+    const text = 
       `📦 *Relatório de Pedido Fechado*\n\n` +
       `🏪 *Horti Campos*\n` +
       `📅 ${format(new Date(order.created_at), 'dd/MM/yyyy', { locale: ptBR })}\n` +
       `🏢 ${supplierName}\n\n` +
       `*Itens:*\n${itemsList}\n\n` +
-      `💰 *Total: R$ ${total}*`
-    );
+      `💰 *Total: R$ ${total}*`;
     
-    const url = phone 
-      ? `https://wa.me/55${phone}?text=${message}`
-      : `https://wa.me/?text=${message}`;
+    const encoded = encodeURIComponent(text);
+    const fullUrl = phone 
+      ? `https://wa.me/${phoneWithCountry}?text=${encoded}`
+      : `https://wa.me/?text=${encoded}`;
     
-    window.open(url, '_blank');
+    if (fullUrl.length > 1800) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const baseUrl = phone ? `https://wa.me/${phoneWithCountry}` : `https://wa.me/`;
+        window.open(baseUrl, '_blank');
+        toast.success('Texto copiado! Cole no WhatsApp.');
+      } catch {
+        window.open(fullUrl, '_blank');
+      }
+    } else {
+      window.open(fullUrl, '_blank');
+    }
   };
 
   const clearFilters = () => {

@@ -105,7 +105,9 @@ const ProductItem = memo(function ProductItem({
           </Button>
         )
       ) : (
-        <Plus className="h-5 w-5 text-primary" />
+        <button onClick={() => onSelect(product)} className="p-2 -m-2 active:scale-90 transition-transform">
+          <Plus className="h-5 w-5 text-primary" />
+        </button>
       )}
     </div>
   );

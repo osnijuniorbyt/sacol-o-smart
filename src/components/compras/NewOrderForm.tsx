@@ -342,32 +342,17 @@ export function NewOrderForm({
         }
       }
 
-      // VINCULA produtos ao fornecedor e atualiza último preço
+      // Upsert associações fornecedor-produto (N:N)
       for (const item of itemsWithQty) {
-        // Busca produto atual para verificar supplier_id
-        const product = allProducts.find(p => p.id === item.product_id);
-        
-        if (product) {
-          const updates: Record<string, any> = {};
-          
-          // Só vincula se supplier_id for null (não sobrescreve existente)
-          if (!product.supplier_id) {
-            updates.supplier_id = selectedSupplier;
-          }
-          
-          // Atualiza ultimo_preco_caixa se tiver preço informado
-          if (item.unit_price && item.unit_price > 0) {
-            updates.ultimo_preco_caixa = item.unit_price;
-          }
-          
-          // Só faz update se tiver algo para atualizar
-          if (Object.keys(updates).length > 0) {
-            await supabase
-              .from('products')
-              .update(updates)
-              .eq('id', item.product_id);
-          }
-        }
+        await supabase
+          .from('supplier_product_associations')
+          .upsert({
+            supplier_id: selectedSupplier,
+            product_id: item.product_id,
+            last_purchase_at: new Date().toISOString(),
+            ...(item.unit_price && item.unit_price > 0 ? { ultimo_preco: item.unit_price } : {}),
+            ...(item.packaging_id ? { ultimo_vasilhame_id: item.packaging_id } : {}),
+          }, { onConflict: 'supplier_id,product_id' });
       }
 
       toast.success('Pedido enviado com sucesso!');

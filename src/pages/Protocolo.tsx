@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { PurchaseOrder, PURCHASE_ORDER_STATUS_LABELS } from '@/types/database';
+import { PricingCard, PricingItem } from '@/components/compras/PricingCard';
 
 // Status válidos para acessar o protocolo
 const ALLOWED_STATUSES = ['enviado'];
@@ -48,6 +49,9 @@ export default function Protocolo() {
   const [pesoBalancaReal, setPesoBalancaReal] = useState<number>(0);
   
   const [isApproving, setIsApproving] = useState(false);
+  
+  // Precificação
+  const [pricingItems, setPricingItems] = useState<PricingItem[]>([]);
 
   useEffect(() => {
     if (orderId) {
@@ -136,6 +140,65 @@ export default function Protocolo() {
     return pesoBalancaReal - resumo.pesoNota;
   }, [resumo, pesoBalancaReal]);
 
+  // Inicializa precificação quando order/resumo mudam
+  useEffect(() => {
+    if (!order?.items || !resumo || pricingItems.length > 0) return;
+    
+    const totalCustosAdicionais = resumo.totalCustosAdicionais;
+    const pesoLiqTotal = resumo.pesoLiquido || 1;
+    const custoRateadoKg = totalCustosAdicionais / pesoLiqTotal;
+    
+    const items: PricingItem[] = order.items.map(item => {
+      const pesoLiquidoVol = item.packaging?.peso_liquido || item.estimated_kg || 1;
+      const pesoLiquidoItem = item.quantity * pesoLiquidoVol;
+      const custoBaseKg = pesoLiquidoItem > 0 
+        ? (item.quantity * (item.unit_cost_estimated || 0)) / pesoLiquidoItem 
+        : 0;
+      const custoKg = custoBaseKg + custoRateadoKg;
+      const margem = 60;
+      const precoVenda = Math.round((custoKg / (1 - margem / 100)) * 100) / 100;
+      
+      return {
+        product_id: item.product_id,
+        product_name: item.product?.name || 'Produto',
+        custo_kg: Math.round(custoKg * 100) / 100,
+        margem,
+        preco_venda: precoVenda,
+      };
+    });
+    
+    setPricingItems(items);
+  }, [order?.items, resumo]);
+
+  // Recalcula custo quando custos adicionais mudam
+  const recalcPricing = useCallback(() => {
+    if (!order?.items || !resumo || pricingItems.length === 0) return;
+    
+    const pesoLiqTotal = resumo.pesoLiquido || 1;
+    const custoRateadoKg = resumo.totalCustosAdicionais / pesoLiqTotal;
+    
+    const updated = pricingItems.map((pi, idx) => {
+      const item = order.items![idx];
+      if (!item) return pi;
+      const pesoLiquidoVol = item.packaging?.peso_liquido || item.estimated_kg || 1;
+      const pesoLiquidoItem = item.quantity * pesoLiquidoVol;
+      const custoBaseKg = pesoLiquidoItem > 0 
+        ? (item.quantity * (item.unit_cost_estimated || 0)) / pesoLiquidoItem 
+        : 0;
+      const custoKg = Math.round((custoBaseKg + custoRateadoKg) * 100) / 100;
+      const precoVenda = Math.round((custoKg / (1 - pi.margem / 100)) * 100) / 100;
+      return { ...pi, custo_kg: custoKg, preco_venda: precoVenda };
+    });
+    
+    setPricingItems(updated);
+  }, [order?.items, resumo, pricingItems]);
+
+  useEffect(() => {
+    if (pricingItems.length > 0) {
+      recalcPricing();
+    }
+  }, [resumo?.totalCustosAdicionais]);
+
   const handleWhatsApp = () => {
     if (!order || !resumo) return;
 
@@ -212,6 +275,17 @@ export default function Protocolo() {
           .eq('id', item.id);
       }
 
+      // Atualiza preços de venda e custo nos produtos
+      for (const pi of pricingItems) {
+        await supabase
+          .from('products')
+          .update({
+            price: pi.preco_venda,
+            custo_compra: pi.custo_kg,
+          })
+          .eq('id', pi.product_id);
+      }
+
       // Monta notas com custos
       const notesArray: string[] = [];
       if (valorFrete > 0) notesArray.push(`Frete: R$${valorFrete.toFixed(2)}`);
@@ -234,7 +308,7 @@ export default function Protocolo() {
         })
         .eq('id', order.id);
 
-      toast.success('Pedido aprovado! Estoque gerado automaticamente.');
+      toast.success('Pedido aprovado! Preços atualizados no PDV.');
       navigate('/compras');
       
     } catch (error: any) {
@@ -509,6 +583,10 @@ export default function Protocolo() {
             )}
           </CardContent>
         </Card>
+
+
+        {/* PRECIFICAÇÃO */}
+        <PricingCard items={pricingItems} onChange={setPricingItems} />
 
         {/* TOTAL */}
         <Card className="bg-primary/5 border-primary">

@@ -120,8 +120,10 @@ export default function Protocolo() {
     const taraTotal = order.items.reduce(
       (sum, i) => sum + (i.tare_total || 0), 0
     );
-    // Peso líquido = peso bruto - tara
-    const pesoLiquido = pesoBruto - taraTotal;
+    // Peso líquido = peso bruto - tara (nunca negativo)
+    const pesoLiquidoRaw = pesoBruto - taraTotal;
+    const pesoLiquido = Math.max(0, pesoLiquidoRaw);
+    const pesoLiquidoNegativo = pesoLiquidoRaw < 0;
     
     const totalCustosAdicionais = valorFrete + taxaDescarga + outrosCustos;
     
@@ -131,6 +133,7 @@ export default function Protocolo() {
       pesoBruto,
       taraTotal,
       pesoLiquido,
+      pesoLiquidoNegativo,
       pesoNota: pesoLiquido, // Para compatibilidade
       totalCustosAdicionais,
       valorTotal: valorProdutos + totalCustosAdicionais,
@@ -438,10 +441,16 @@ export default function Protocolo() {
                 </div>
               )}
               <Separator className="my-1" />
-              <div className="flex justify-between font-medium">
+              <div className={`flex justify-between font-medium ${resumo.pesoLiquidoNegativo ? 'text-destructive' : ''}`}>
                 <span>Peso Líquido:</span>
                 <span className="font-mono">{resumo.pesoLiquido.toFixed(1)} kg</span>
               </div>
+              {resumo.pesoLiquidoNegativo && (
+                <div className="flex items-center gap-1 text-destructive text-[10px] mt-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>Tara maior que peso bruto — verifique os dados</span>
+                </div>
+              )}
             </div>
 
             {/* Lista de itens */}

@@ -114,7 +114,7 @@ export function PricingCard({ items, onChange }: PricingCardProps) {
                     <Input
                       type="text"
                       inputMode="decimal"
-                      value={item.margem || ''}
+                      value={item.margem}
                       onChange={(e) => {
                         const v = parseFloat(e.target.value) || 0;
                         updateItem(index, 'margem', v);
@@ -139,7 +139,7 @@ export function PricingCard({ items, onChange }: PricingCardProps) {
                     <Input
                       type="text"
                       inputMode="decimal"
-                      value={item.preco_venda || ''}
+                      value={item.preco_venda}
                       onChange={(e) => {
                         const v = parseFloat(e.target.value) || 0;
                         updateItem(index, 'preco', v);

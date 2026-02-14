@@ -438,8 +438,9 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
 
   if (!order) return null;
 
-  // Content shared between Dialog and Drawer
-  const ReceivingContent = () => (
+  // Content shared between Dialog and Drawer — inlined as JSX variable (not a function component)
+  // to prevent React from remounting the entire tree on every state change
+  const receivingContent = (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header info */}
       <div className="px-4 py-2 bg-muted/50 text-sm flex-shrink-0 flex items-center justify-between">
@@ -753,7 +754,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   );
 
   // Footer buttons
-  const FooterButtons = () => (
+  const footerButtons = (
     <div className="flex gap-2 w-full">
       <Button 
         variant="outline" 
@@ -783,7 +784,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   );
 
   // Draft recovery dialog
-  const DraftRecoveryDialog = () => (
+  const draftRecoveryDialog = (
     <AlertDialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -811,7 +812,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   if (isMobile) {
     return (
       <>
-        <DraftRecoveryDialog />
+        {draftRecoveryDialog}
         
         <Drawer open={open && isInitialized} onOpenChange={onOpenChange}>
           <DrawerContent className="h-[95vh] flex flex-col">
@@ -822,10 +823,10 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
               </DrawerTitle>
             </DrawerHeader>
             
-            <ReceivingContent />
+            {receivingContent}
             
             <DrawerFooter className="border-t pt-3 fixed-bottom-safe">
-              <FooterButtons />
+              {footerButtons}
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
@@ -848,7 +849,7 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
   // Desktop: use Dialog
   return (
     <>
-      <DraftRecoveryDialog />
+      {draftRecoveryDialog}
       
       <Dialog open={open && isInitialized} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
@@ -859,10 +860,10 @@ export function ReceivingDialog({ order, open, onOpenChange, onSuccess }: Receiv
             </DialogTitle>
           </DialogHeader>
           
-          <ReceivingContent />
+          {receivingContent}
           
           <DialogFooter className="p-4 border-t">
-            <FooterButtons />
+            {footerButtons}
           </DialogFooter>
         </DialogContent>
       </Dialog>

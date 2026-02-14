@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +52,8 @@ export default function Protocolo() {
   
   // Precificação
   const [pricingItems, setPricingItems] = useState<PricingItem[]>([]);
+  const pricingInitializedRef = useRef(false);
+  const prevCustosAdicionaisRef = useRef(0);
 
   useEffect(() => {
     if (orderId) {
@@ -140,13 +142,18 @@ export default function Protocolo() {
     return pesoBalancaReal - resumo.pesoNota;
   }, [resumo, pesoBalancaReal]);
 
-  // Inicializa precificação quando order/resumo mudam
+  // Inicializa precificação quando order carrega (uma vez por orderId)
   useEffect(() => {
-    if (!order?.items || !resumo || pricingItems.length > 0) return;
+    pricingInitializedRef.current = false;
+    setPricingItems([]);
+    prevCustosAdicionaisRef.current = 0;
+  }, [orderId]);
+
+  useEffect(() => {
+    if (!order?.items || !resumo || pricingInitializedRef.current) return;
     
-    const totalCustosAdicionais = resumo.totalCustosAdicionais;
     const pesoLiqTotal = resumo.pesoLiquido || 1;
-    const custoRateadoKg = totalCustosAdicionais / pesoLiqTotal;
+    const custoRateadoKg = resumo.totalCustosAdicionais / pesoLiqTotal;
     
     const items: PricingItem[] = order.items.map(item => {
       const pesoLiquidoVol = item.packaging?.peso_liquido || item.estimated_kg || 1;
@@ -168,16 +175,20 @@ export default function Protocolo() {
     });
     
     setPricingItems(items);
+    pricingInitializedRef.current = true;
+    prevCustosAdicionaisRef.current = resumo.totalCustosAdicionais;
   }, [order?.items, resumo]);
 
-  // Recalcula custo quando custos adicionais mudam
-  const recalcPricing = useCallback(() => {
-    if (!order?.items || !resumo || pricingItems.length === 0) return;
+  // Recalcula custo quando custos adicionais REALMENTE mudam (via ref)
+  useEffect(() => {
+    if (!order?.items || !resumo || !pricingInitializedRef.current) return;
+    if (resumo.totalCustosAdicionais === prevCustosAdicionaisRef.current) return;
     
+    prevCustosAdicionaisRef.current = resumo.totalCustosAdicionais;
     const pesoLiqTotal = resumo.pesoLiquido || 1;
     const custoRateadoKg = resumo.totalCustosAdicionais / pesoLiqTotal;
     
-    const updated = pricingItems.map((pi, idx) => {
+    setPricingItems(prev => prev.map((pi, idx) => {
       const item = order.items![idx];
       if (!item) return pi;
       const pesoLiquidoVol = item.packaging?.peso_liquido || item.estimated_kg || 1;
@@ -188,16 +199,8 @@ export default function Protocolo() {
       const custoKg = Math.round((custoBaseKg + custoRateadoKg) * 100) / 100;
       const precoVenda = Math.round((custoKg / (1 - pi.margem / 100)) * 100) / 100;
       return { ...pi, custo_kg: custoKg, preco_venda: precoVenda };
-    });
-    
-    setPricingItems(updated);
-  }, [order?.items, resumo, pricingItems]);
-
-  useEffect(() => {
-    if (pricingItems.length > 0) {
-      recalcPricing();
-    }
-  }, [resumo?.totalCustosAdicionais]);
+    }));
+  }, [resumo?.totalCustosAdicionais, order?.items, resumo?.pesoLiquido]);
 
   const handleWhatsApp = () => {
     if (!order || !resumo) return;

@@ -134,7 +134,7 @@ export function usePurchaseOrders() {
   const pendingOrders = orders.filter(o => o.status === 'enviado');
   const receivedOrders = orders.filter(o => o.status === 'recebido');
   const draftOrders = orders.filter(o => o.status === 'rascunho');
-  const closedOrders = orders.filter(o => o.status === 'fechado');
+  const closedOrders = orders.filter(o => o.status === 'recebido');
 
   return {
     orders,

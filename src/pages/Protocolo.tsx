@@ -202,7 +202,7 @@ export default function Protocolo() {
     }));
   }, [resumo?.totalCustosAdicionais, order?.items, resumo?.pesoLiquido]);
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     if (!order || !resumo) return;
 
     const supplierName = order.supplier?.name || 'Fornecedor';
@@ -254,12 +254,24 @@ export default function Protocolo() {
     const phoneWithCountry = supplierPhone?.startsWith('55') ? supplierPhone : `55${supplierPhone}`;
     
     const encodedMessage = encodeURIComponent(message);
-    const url = supplierPhone 
+    const fullUrl = supplierPhone 
       ? `https://wa.me/${phoneWithCountry}?text=${encodedMessage}`
       : `https://wa.me/?text=${encodedMessage}`;
     
-    window.open(url, '_blank');
-    toast.success('WhatsApp aberto!');
+    if (fullUrl.length > 1800) {
+      try {
+        await navigator.clipboard.writeText(message);
+        const baseUrl = supplierPhone ? `https://wa.me/${phoneWithCountry}` : `https://wa.me/`;
+        window.open(baseUrl, '_blank');
+        toast.success('Texto copiado! Cole no WhatsApp.');
+      } catch {
+        window.open(fullUrl, '_blank');
+        toast.success('WhatsApp aberto!');
+      }
+    } else {
+      window.open(fullUrl, '_blank');
+      toast.success('WhatsApp aberto!');
+    }
   };
 
   const handleAprovar = async () => {

@@ -1,12 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Sale, SaleItem, CartItem } from '@/types/database';
+import { Sale, CartItem } from '@/types/database';
 import { toast } from 'sonner';
-import { useStock } from './useStock';
 
 export function useSales() {
   const queryClient = useQueryClient();
-  const { deductStockFIFO } = useStock();
 
   const { data: sales = [], isLoading, error } = useQuery({
     queryKey: ['sales'],
@@ -81,45 +79,23 @@ export function useSales() {
 
   const createSale = useMutation({
     mutationFn: async (items: CartItem[]) => {
-      const total = items.reduce((sum, item) => sum + item.total, 0);
-      
-      // Create the sale
-      const { data: sale, error: saleError } = await supabase
-        .from('sales')
-        .insert({
-          total,
-          items_count: items.length
-        })
-        .select()
-        .single();
-      
-      if (saleError) throw saleError;
-
-      // Create sale items
-      const saleItems = items.map(item => ({
-        sale_id: sale.id,
+      const rpcItems = items.map(item => ({
         product_id: item.product.id,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        total: item.total
+        total: item.total,
       }));
 
-      const { error: itemsError } = await supabase
-        .from('sale_items')
-        .insert(saleItems);
-      
-      if (itemsError) throw itemsError;
+      const { data, error } = await supabase
+        .rpc('process_sale', { p_items: rpcItems });
 
-      // Deduct stock for each item
-      for (const item of items) {
-        await deductStockFIFO(item.product.id, item.quantity);
-      }
-
-      return sale;
+      if (error) throw error;
+      return { id: data as string };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales'] });
       queryClient.invalidateQueries({ queryKey: ['stock_batches'] });
+      queryClient.invalidateQueries({ queryKey: ['sale_items'] });
       toast.success('Venda finalizada com sucesso!');
     },
     onError: (error: Error) => {

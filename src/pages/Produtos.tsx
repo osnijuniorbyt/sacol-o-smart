@@ -22,13 +22,14 @@ import { useProducts } from '@/hooks/useProducts';
 import { useStock } from '@/hooks/useStock';
 import { useSuppliers } from '@/hooks/useSuppliers';
 import { ProductImage } from '@/components/ui/product-image';
+import { AiPricingAssistant } from '@/components/pricing/AiPricingAssistant';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Product, 
-  ProductCategory, 
-  UnitType, 
-  CATEGORY_LABELS, 
-  UNIT_LABELS 
+import {
+  Product,
+  ProductCategory,
+  UnitType,
+  CATEGORY_LABELS,
+  UNIT_LABELS
 } from '@/types/database';
 import { Apple, Plus, Pencil, Search, Building2, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -42,7 +43,8 @@ export default function Produtos() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  
+  const [expandedAiProductId, setExpandedAiProductId] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     plu: '',
     name: '',
@@ -108,7 +110,7 @@ export default function Produtos() {
       toast.error('Salve o produto primeiro antes de gerar a imagem');
       return;
     }
-    
+
     if (!formData.name.trim()) {
       toast.error('Nome do produto é obrigatório para gerar imagem');
       return;
@@ -125,7 +127,7 @@ export default function Produtos() {
       });
 
       if (error) throw error;
-      
+
       if (data?.success) {
         toast.success('Ilustração gerada com sucesso!');
         refresh();
@@ -144,7 +146,7 @@ export default function Produtos() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const data = {
       plu: formData.plu,
       name: formData.name,
@@ -172,7 +174,7 @@ export default function Produtos() {
   };
 
   const filteredProducts = products.filter(p => {
-    const matchesSearch = 
+    const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.plu.includes(searchQuery);
     const matchesCategory = filterCategory === 'all' || p.category === filterCategory;
@@ -218,9 +220,9 @@ export default function Produtos() {
                   <Label>PLU (5 dígitos)</Label>
                   <Input
                     value={formData.plu}
-                    onChange={(e) => setFormData(prev => ({ 
-                      ...prev, 
-                      plu: e.target.value.replace(/\D/g, '').slice(0, 5) 
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      plu: e.target.value.replace(/\D/g, '').slice(0, 5)
                     }))}
                     placeholder="00001"
                     className="h-12"
@@ -232,9 +234,9 @@ export default function Produtos() {
                   <Label>Código Balança</Label>
                   <Input
                     value={formData.codigo_balanca}
-                    onChange={(e) => setFormData(prev => ({ 
-                      ...prev, 
-                      codigo_balanca: e.target.value.replace(/\D/g, '').slice(0, 20) 
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      codigo_balanca: e.target.value.replace(/\D/g, '').slice(0, 20)
                     }))}
                     placeholder="Opcional"
                     className="h-12"
@@ -258,9 +260,9 @@ export default function Produtos() {
                   <Label>Categoria</Label>
                   <Select
                     value={formData.category}
-                    onValueChange={(value) => setFormData(prev => ({ 
-                      ...prev, 
-                      category: value as ProductCategory 
+                    onValueChange={(value) => setFormData(prev => ({
+                      ...prev,
+                      category: value as ProductCategory
                     }))}
                   >
                     <SelectTrigger className="h-12">
@@ -279,9 +281,9 @@ export default function Produtos() {
                   <Label>Unidade</Label>
                   <Select
                     value={formData.unit}
-                    onValueChange={(value) => setFormData(prev => ({ 
-                      ...prev, 
-                      unit: value as UnitType 
+                    onValueChange={(value) => setFormData(prev => ({
+                      ...prev,
+                      unit: value as UnitType
                     }))}
                   >
                     <SelectTrigger className="h-12">
@@ -328,9 +330,9 @@ export default function Produtos() {
                 <Label>Fornecedor Principal</Label>
                 <Select
                   value={formData.supplier_id}
-                  onValueChange={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    supplier_id: value === 'none' ? '' : value 
+                  onValueChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    supplier_id: value === 'none' ? '' : value
                   }))}
                 >
                   <SelectTrigger className="h-12">
@@ -352,8 +354,8 @@ export default function Produtos() {
                   <Label>Conversão PDV</Label>
                   <Select
                     value={formData.unidade_venda}
-                    onValueChange={(value) => setFormData(prev => ({ 
-                      ...prev, 
+                    onValueChange={(value) => setFormData(prev => ({
+                      ...prev,
                       unidade_venda: value as 'PARA_UN' | 'PARA_KG'
                     }))}
                   >
@@ -408,7 +410,7 @@ export default function Produtos() {
                 <div className="space-y-3 p-4 rounded-lg border border-border">
                   <Label>Imagem do Produto</Label>
                   <div className="flex items-center gap-4">
-                    <ProductImage 
+                    <ProductImage
                       src={editingProduct.image_url}
                       alt={editingProduct.name}
                       category={editingProduct.category}
@@ -416,7 +418,7 @@ export default function Produtos() {
                     />
                     <div className="flex-1 space-y-2">
                       <p className="text-sm text-muted-foreground">
-                        {editingProduct.image_url 
+                        {editingProduct.image_url
                           ? 'Ilustração atual do produto'
                           : 'Nenhuma ilustração cadastrada'}
                       </p>
@@ -453,15 +455,15 @@ export default function Produtos() {
                 />
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-14" 
+              <Button
+                type="submit"
+                className="w-full h-14"
                 disabled={createProduct.isPending || updateProduct.isPending}
               >
-                {createProduct.isPending || updateProduct.isPending 
-                  ? 'Salvando...' 
-                  : editingProduct 
-                    ? 'Salvar Alterações' 
+                {createProduct.isPending || updateProduct.isPending
+                  ? 'Salvando...'
+                  : editingProduct
+                    ? 'Salvar Alterações'
                     : 'Criar Produto'}
               </Button>
             </form>
@@ -517,7 +519,7 @@ export default function Produtos() {
             const stock = getProductStock(product.id);
             const isLowStock = stock <= product.min_stock;
             const supplierName = getSupplierName(product.supplier_id);
-            
+
             // Pastel backgrounds based on category - ALWAYS applied
             const categoryBgColors: Record<string, string> = {
               verduras: 'bg-green-50',
@@ -526,7 +528,7 @@ export default function Produtos() {
               temperos: 'bg-purple-50',
               outros: 'bg-gray-50',
             };
-            
+
             const categoryEmojis: Record<string, string> = {
               frutas: '🍎',
               verduras: '🥬',
@@ -534,13 +536,13 @@ export default function Produtos() {
               temperos: '🌿',
               outros: '📦',
             };
-            
+
             const bgColor = categoryBgColors[product.category] || 'bg-gray-50';
             const emoji = categoryEmojis[product.category] || '📦';
-            
+
             return (
-              <Card 
-                key={product.id} 
+              <Card
+                key={product.id}
                 className={`bg-white shadow-sm hover:shadow-md rounded-2xl border-0 transition-all duration-200 overflow-hidden ${!product.is_active ? 'opacity-60' : ''}`}
               >
                 {/* Image Area - Fixed h-32 with pastel background */}
@@ -554,14 +556,14 @@ export default function Produtos() {
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  
+
                   {/* Inactive Badge */}
                   {!product.is_active && (
                     <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full bg-white/80 text-muted-foreground z-10">
                       Inativo
                     </span>
                   )}
-                  
+
                   {/* Image or Emoji - Fixed size h-20 w-20 */}
                   {product.image_url ? (
                     <img
@@ -574,19 +576,19 @@ export default function Produtos() {
                     <span className="text-5xl">{emoji}</span>
                   )}
                 </div>
-                
+
                 {/* Content Area - p-4 */}
                 <CardContent className="p-4 pt-3">
                   {/* Product Name */}
                   <h3 className="font-semibold text-center line-clamp-2 mb-0.5 text-sm leading-tight">
                     {product.name}
                   </h3>
-                  
+
                   {/* PLU - Discrete */}
                   <p className="text-xs text-muted-foreground text-center mb-2">
                     PLU: {product.plu}
                   </p>
-                  
+
                   {/* Price - Highlighted */}
                   <div className="text-center mb-2">
                     <span className="text-lg font-bold text-green-700">
@@ -594,21 +596,20 @@ export default function Produtos() {
                     </span>
                     <span className="text-xs text-muted-foreground ml-1">/{product.unit}</span>
                   </div>
-                  
+
                   {/* Pills: Stock + Category */}
                   <div className="flex flex-wrap justify-center gap-1.5">
-                    <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${
-                      isLowStock 
-                        ? 'bg-red-50 text-red-700' 
-                        : 'bg-blue-50 text-blue-700'
-                    }`}>
+                    <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${isLowStock
+                      ? 'bg-red-50 text-red-700'
+                      : 'bg-blue-50 text-blue-700'
+                      }`}>
                       {stock.toFixed(1)} {product.unit}
                     </span>
                     <span className="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">
                       {CATEGORY_LABELS[product.category]}
                     </span>
                   </div>
-                  
+
                   {/* Supplier - if exists */}
                   {supplierName && (
                     <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground mt-2 pt-2 border-t border-gray-100">
@@ -616,6 +617,14 @@ export default function Produtos() {
                       <span className="truncate">{supplierName}</span>
                     </div>
                   )}
+
+                  {/* AI Pricing Assistant */}
+                  <div className="mt-2 pt-2 border-t border-gray-100">
+                    <AiPricingAssistant
+                      product={product}
+                      onPriceUpdated={() => setExpandedAiProductId(null)}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             );

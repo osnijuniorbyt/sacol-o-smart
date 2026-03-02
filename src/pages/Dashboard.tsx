@@ -82,11 +82,15 @@ export default function Dashboard() {
     
     for (const item of todaySaleItemsWithCost) {
       const costPerUnit = Number(item.stock_batches?.cost_per_unit ?? 0);
-      if (costPerUnit > 0) {
+      const unitPrice = Number(item.unit_price ?? 0);
+      // Dados legados: cost_per_unit foi salvo como custo da caixa inteira (ex: R$60/cx)
+      // em vez de custo por kg (ex: R$3/kg). Detectamos isso quando custo > preço de venda.
+      const isLegacyCost = costPerUnit > 0 && unitPrice > 0 && costPerUnit > unitPrice * 2;
+      if (costPerUnit > 0 && !isLegacyCost) {
         realCost += Number(item.quantity) * costPerUnit;
         itemsWithCost++;
       } else {
-        // Fallback: usa 60% do total deste item como custo
+        // Fallback 60%: dados legados ou sem custo
         realCost += Number(item.total) * 0.6;
       }
     }

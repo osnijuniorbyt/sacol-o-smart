@@ -36,7 +36,7 @@ import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fn
 import { ptBR } from 'date-fns/locale';
 
 export default function Dashboard() {
-  const { sales, getTodayTotal, getTodayRealProfit, getTodayRealCost } = useSales();
+  const { sales, todaySales, todaySaleItemsWithCost, getTodayTotal } = useSales();
   const { getExpiringBatches, batches, getProductStock } = useStock();
   const { breakages } = useBreakages();
   const { products } = useProducts();
@@ -74,34 +74,40 @@ export default function Dashboard() {
     // Products expiring in 3 days
     const expiringIn3Days = getExpiringBatches(3);
 
-    // LUCRO REAL: usa custo dos lotes vendidos via FIFO (dados reais do banco)
-    const realCost = getTodayRealCost();
-    const hasRealCostData = realCost > 0;
+    // LUCRO REAL: Receita - (cost_per_unit * quantidade) de cada item vendido hoje
+    // cost_per_unit nos lotes é armazenado em R$/kg (mesmo que price)
+    // Fórmula: margem = (preco_venda - cost_per_unit) / preco_venda
+    let realCost = 0;
+    let itemsWithCost = 0;
     
-    // Se temos dados de custo real, usa; senão fallback para estimativa 60%
-    const todayProfit = hasRealCostData 
-      ? getTodayRealProfit() - todayBreakageLoss
+    for (const item of todaySaleItemsWithCost) {
+      const costPerUnit = Number(item.stock_batches?.cost_per_unit ?? 0);
+      if (costPerUnit > 0) {
+        realCost += Number(item.quantity) * costPerUnit;
+        itemsWithCost++;
+      } else {
+        // Fallback: usa 60% do total deste item como custo
+        realCost += Number(item.total) * 0.6;
+      }
+    }
+    
+    const hasRealCostData = todaySaleItemsWithCost.length > 0;
+
+    const todayProfit = hasRealCostData
+      ? todayRevenue - realCost - todayBreakageLoss
       : todayRevenue - (todayRevenue * 0.6) - todayBreakageLoss;
 
-    // MARGEM REAL: calcula a partir das vendas reais do dia (FIFO)
-    // Dados históricos podem ter cost_per_unit incorreto (por volume em vez de por kg)
-    // devido ao bug corrigido no trigger create_stock_batch_on_receiving.
-    // Margens fora do range -100% a +100% indicam dados legados com custo incorreto.
-    let realMargin = 0;
+    // MARGEM REAL: (Receita - Custo Real) / Receita
+    let realMargin = 0.60;
     let marginIsReliable = false;
     if (hasRealCostData && todayRevenue > 0) {
       const rawMargin = (todayRevenue - realCost) / todayRevenue;
-      // Se a margem é plausível (entre -100% e +100%), usa o valor real
+      // Plausível entre -100% e +100%
       if (rawMargin >= -1 && rawMargin <= 1) {
         realMargin = rawMargin;
         marginIsReliable = true;
-      } else {
-        // Dados de custo legados com unidade incorreta - fallback
-        realMargin = 0.60;
       }
-    } else {
-      // Sem vendas hoje - fallback para margem alvo
-      realMargin = 0.60;
+      // else: dados legados com custo incorreto → mantém fallback 60%
     }
 
     return {
@@ -114,7 +120,7 @@ export default function Dashboard() {
       hasRealCostData,
       marginIsReliable
     };
-  }, [sales, batches, breakages, products, getExpiringBatches, getTodayTotal, getTodayRealProfit, getTodayRealCost]);
+  }, [sales, todaySaleItemsWithCost, batches, breakages, products, getExpiringBatches, getTodayTotal]);
 
   // Data for stacked bar chart (last 7 days)
   const stackedBarData = useMemo(() => {
